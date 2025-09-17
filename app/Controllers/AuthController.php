@@ -12,10 +12,8 @@ class AuthController extends BaseController
         return view('auth/register');
     }
 
-    // --- TAMBAHKAN FUNGSI DI BAWAH INI ---
     public function processRegister()
     {
-        // 1. Validasi
         $rules = [
             'full_name' => 'required|min_length[3]',
             'email' => 'required|valid_email|is_unique[users.email]',
@@ -25,11 +23,9 @@ class AuthController extends BaseController
         ];
 
         if (!$this->validate($rules)) {
-            // Jika validasi gagal, kembali ke form dengan error dan input lama
             return redirect()->to('/register')->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // 2. Simpan ke Database
         $userModel = new UserModel();
         $userModel->save([
             'full_name' => $this->request->getPost('full_name'),
@@ -39,7 +35,6 @@ class AuthController extends BaseController
             'password' => $this->request->getPost('password'), // akan di-hash oleh Model
         ]);
 
-        // 3. Redirect ke halaman login dengan pesan sukses
         return redirect()->to('/login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 
@@ -50,7 +45,6 @@ class AuthController extends BaseController
 
     public function processLogin()
     {
-        // 1. Validasi
         $rules = [
             'email' => 'required|valid_email',
             'password' => 'required'
@@ -59,7 +53,6 @@ class AuthController extends BaseController
             return redirect()->to('/login')->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // 2. Cek User
         $userModel = new UserModel();
         $user = $userModel->where('email', $this->request->getPost('email'))->first();
 
@@ -67,7 +60,6 @@ class AuthController extends BaseController
             return redirect()->to('/login')->withInput()->with('error', 'Email atau password salah.');
         }
 
-        // 3. Buat Session
         $session = session();
         $sessionData = [
             'user_id'       => $user->id,
@@ -78,7 +70,6 @@ class AuthController extends BaseController
         ];
         $session->set($sessionData);
 
-        // Redirect ke dashboard (halaman ini akan kita buat nanti)
         return redirect()->to('/dashboard');
     }
 }

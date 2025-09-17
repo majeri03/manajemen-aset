@@ -13,7 +13,6 @@ class UserModel extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
 
-    // Field yang diizinkan untuk diisi
     protected $allowedFields    = [
         'full_name',
         'email',
