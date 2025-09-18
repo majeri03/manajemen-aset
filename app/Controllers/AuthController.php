@@ -43,6 +43,13 @@ class AuthController extends BaseController
         return view('auth/login');
     }
 
+
+    public function logout()
+    {
+        session()->destroy();
+        return redirect()->to('/login');
+    }
+
     public function processLogin()
     {
         $rules = [
