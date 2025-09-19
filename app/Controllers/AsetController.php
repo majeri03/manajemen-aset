@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Models\AsetModel;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -16,15 +18,12 @@ class AsetController extends ResourceController
      */
     public function index()
     {
-            $data = [
-            'title' => 'Manajemen Aset',
-            'asets' => $this->asetModel->findAll(), // Ambil semua data aset
+        $data = [
+            'title' => 'Data Aset',
+            'asets' => $this->asetModel->orderBy('updated_at', 'DESC')->findAll(),
         ];
 
-        // Anda akan memuat view tabel aset di sini
-        // Contoh: return view('aset/index', $data);
-        // Untuk sementara, kita siapkan datanya dulu
-        return $this->response->setJSON($data); // Contoh output JSON
+        return view('aset/index', $data);
     }
 
 
@@ -39,7 +38,16 @@ class AsetController extends ResourceController
      */
     public function show($id = null)
     {
-        //
+            $aset = $this->asetModel->find($id);
+
+    if ($aset) {
+        // Format tanggal agar lebih mudah dibaca
+        $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
+        return $this->response->setJSON($aset);
+    }
+    
+    // Jika aset tidak ditemukan, kirim response error
+    return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
     }
 
     /**
@@ -79,6 +87,36 @@ class AsetController extends ResourceController
             // Jika gagal, kembalikan dengan pesan error
             return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
         }
+
+        $data = [
+        'kode' => $this->request->getPost('kode'),
+        // ... data lainnya
+    ];
+
+    // Simpan data aset terlebih dahulu
+    if ($this->asetModel->save($data)) {
+        // Ambil ID dari aset yang baru saja disimpan
+        $newAsetId = $this->asetModel->getInsertID();
+
+        // Buat URL unik untuk halaman detail aset
+        $url = base_url('tracking/aset/' . $newAsetId);
+
+        // Generate QR Code
+        $qrCode = QrCode::create($url);
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+
+        // Simpan gambar QR code ke folder public
+        $qrCodePath = 'qrcodes/aset-' . $newAsetId . '.png';
+        $result->saveToFile(FCPATH . $qrCodePath);
+
+        // Update database dengan path gambar QR code
+        $this->asetModel->update($newAsetId, ['qrcode' => $qrCodePath]);
+
+        return redirect()->to('/dashboard')->with('success', 'Aset baru berhasil ditambahkan.');
+    } else {
+        return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
+    }
     }
 
     public function getDetail($id = null)
@@ -129,7 +167,11 @@ class AsetController extends ResourceController
      */
     public function delete($id = null)
     {
-        //
+        if ($this->asetModel->delete($id)) {
+            return redirect()->to('/aset')->with('success', 'Aset berhasil dihapus.');
+        } else {
+            return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
+        }
     }
 
     public function __construct()
@@ -158,6 +200,17 @@ class AsetController extends ResourceController
 
         // Kembalikan hasil sebagai JSON
         return $this->response->setJSON($results);
+    }
+
+    public function publicDetail($id)
+    {
+        $data = [
+            'title' => 'Detail Aset',
+            'aset'  => $this->asetModel->find($id),
+        ];
+
+        // Buat view baru untuk halaman ini, misal: 'aset/public_detail'
+        return view('aset/public_detail', $data);
     }
 
 }
