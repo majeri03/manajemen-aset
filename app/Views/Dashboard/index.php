@@ -156,8 +156,10 @@ Dashboard
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="/dashboard/tambah-aset" method="post">
+                <form action="<?= base_url('aset') ?>" method="post">
                     <?= csrf_field() ?>
+                    <input type="hidden" name="redirect_to" value="aset">
+                    <input type="hidden" name="redirect_to" value="dashboard">
 
                     <div class="mb-3">
                         <label for="kategori" class="form-label">Kategori Barang</label>
@@ -214,7 +216,30 @@ Dashboard
     </div>
 </div>
 
-
+<div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">Aset Berhasil Ditambahkan!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center" id="qrCodePrintArea">
+                <p>Berikut adalah detail dan QR Code untuk aset baru:</p>
+                <h5 id="qr-kode" class="mt-3"></h5>
+                <p id="qr-detail" class="text-muted"></p>
+                <div class="my-3">
+                    <img id="qr-image" src="" alt="QR Code" class="img-fluid" style="max-width: 250px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" onclick="printQrCode()">
+                    <i class="bi bi-printer-fill me-2"></i>Cetak
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <?= $this->endSection() ?>
@@ -416,6 +441,36 @@ var assetStatusChart = new Chart(ctx2, {
                 .catch(error => console.error('Error:', error));
         });
     });
+
+
+    // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
+    <?php if (session()->getFlashdata('new_aset')): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ambil data aset dari session flash
+            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
+            
+            // Isi konten modal dengan data
+            document.getElementById('qr-kode').textContent = newAset.kode;
+            document.getElementById('qr-detail').textContent = `${newAset.kategori} - ${newAset.merk}`;
+            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
+            
+            // Tampilkan modal
+            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+            qrModal.show();
+        });
+    <?php endif; ?>
+
+    // --- FUNGSI UNTUK MENCETAK AREA QR CODE ---
+    function printQrCode() {
+        const printContent = document.getElementById('qrCodePrintArea').innerHTML;
+        const originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        // Kita perlu me-reload agar event listener dan fungsionalitas lain kembali normal
+        window.location.reload(); 
+    }
 
 </script>
 <?= $this->endSection() ?>

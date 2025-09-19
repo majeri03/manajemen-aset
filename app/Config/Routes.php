@@ -51,3 +51,9 @@ $routes->get('aset/search', 'AsetController::search');
 
 // Rute ini tidak perlu login
 $routes->get('tracking/aset/(:num)', 'AsetController::publicDetail/$1');
+
+// di dalam grup filter auth
+$routes->resource('requests', ['controller' => 'RequestController']);
+
+//  fungsi untuk mengekspor data yang sudah difilter
+$routes->get('aset/laporan/export', 'AsetController::export');
