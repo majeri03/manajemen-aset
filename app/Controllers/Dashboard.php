@@ -3,33 +3,53 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Models\AsetModel;
 
 class Dashboard extends BaseController
 {
     public function index()
-    {
-        $data = [
-            'title' => 'Dashboard',
-            'user'  => session()->get('full_name') ?: 'Guest',
+{
+    $asetModel = new AsetModel();
 
-            // Opsional: tinggal aktifkan saat datanya sudah siap
-            // 'stats' => [
-            //     'total_value'  => 1250000000,
-            //     'broken_count' => 15,
-            //     'user_count'   => 42,
-            // ],
-            // 'filters' => [
-            //     'categories' => ['Elektronik','Mebel','Kendaraan','Proyek'],
-            // ],
-            // 'latestAssets' => [
-            //     ['kode'=>'LP-001','nama'=>'Macbook Pro M3','kategori'=>'Elektronik','lokasi'=>'Lantai 12 - Tim Dev','status'=>'Aktif'],
-            // ],
-            // 'charts' => [
-            //     'kategori' => ['labels'=>['Elektronik','Mebel','Kendaraan'],'data'=>[45,18,9]],
-            //     'lokasi'   => ['labels'=>['Dev','Meeting A','Gudang','HR','Workshop'],'data'=>[20,14,12,9,7]],
-            // ],
-        ];
+    // --- Data untuk Pie Chart Kategori ---
+    $distribusiAset = $asetModel->select('kategori, COUNT(id) as jumlah')
+                                ->groupBy('kategori')
+                                ->findAll();
+    $labelsKategori = array_column($distribusiAset, 'kategori');
+    $dataKategori = array_column($distribusiAset, 'jumlah');
 
-        return view('dashboard/index', $data);
+    // --- Logika untuk Bar Chart Status ---
+    $semuaStatus = ['Baik', 'Rusak', 'Tidak terpakai'];
+    $hasilStatus = array_fill_keys($semuaStatus, 0);
+    $statusDariDB = $asetModel->select('status, COUNT(id) as jumlah')
+                              ->groupBy('status')
+                              ->findAll();
+    foreach ($statusDariDB as $status) {
+        if (array_key_exists($status['status'], $hasilStatus)) {
+            $hasilStatus[$status['status']] = (int)$status['jumlah'];
+        }
     }
+    $labelsStatus = array_keys($hasilStatus);
+    $dataStatus = array_values($hasilStatus);
+
+    // --- Hitung Permintaan Pending ---
+    $db = \Config\Database::connect();
+    $pendingRequests = $db->table('aset_update_requests')
+                           ->where('status', 'pending')
+                           ->countAllResults();
+
+    // --- Kirim SEMUA data ke View dalam SATU array $data ---
+    $data = [
+        'title'            => 'Dashboard',
+        'user'             => session()->get('full_name') ?: 'Guest',
+        'asets'            => $asetModel->orderBy('updated_at', 'DESC')->findAll(),
+        'chartLabels'      => $labelsKategori,
+        'chartData'        => $dataKategori,
+        'statusLabels'     => $labelsStatus,
+        'statusData'       => $dataStatus,
+        'pending_requests' => $pendingRequests
+    ];
+
+    return view('dashboard/index', $data);
+}
 }

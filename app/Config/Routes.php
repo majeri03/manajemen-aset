@@ -20,5 +20,19 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('/dashboard', 'Dashboard::index');
 });
 
+
+$routes->get('/dashboard', 'Dashboard::index');
+
+    // TAMBAHKAN INI: Rute untuk proses simpan aset dari modal
+    $routes->post('/dashboard/tambah-aset', 'AsetController::create');
+
+    // Anda juga bisa menggunakan resource route untuk CRUD lengkap
+    // $routes->resource('aset', ['controller' => 'AsetController']);
+
+$routes->get('aset/detail/(:num)', 'AsetController::getDetail/$1');
+
 // Tambahkan juga route untuk logout
 $routes->get('/logout', 'AuthController::logout');
+
+// TAMBAHKAN RUTE INI UNTUK PENCARIAN
+$routes->get('aset/search', 'AsetController::search');
