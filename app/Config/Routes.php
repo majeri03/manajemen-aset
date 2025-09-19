@@ -18,6 +18,18 @@ $routes->get('/dashboard', 'Dashboard::index');
 // Routes untuk halaman yang memerlukan login
 $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('/dashboard', 'Dashboard::index');
+
+    // Gunakan resource route untuk menangani semua URL aset
+    // Ini sudah mencakup:
+    // GET /aset -> AsetController::index() (halaman daftar)
+    // POST /aset -> AsetController::create() (simpan data baru)
+    // GET /aset/(:num) -> AsetController::show($id) (detail, API kita)
+    // ...dan lainnya untuk edit/update/delete
+    $routes->resource('aset', ['controller' => 'AsetController']);
+
+    // Rute lama bisa dihapus jika sudah dicakup oleh resource
+    // $routes->post('/dashboard/tambah-aset', 'AsetController::create'); // sudah dicakup
+    // $routes->get('aset/detail/(:num)', 'AsetController::getDetail/$1'); // ganti ke 'show'
 });
 
 
@@ -36,3 +48,6 @@ $routes->get('/logout', 'AuthController::logout');
 
 // TAMBAHKAN RUTE INI UNTUK PENCARIAN
 $routes->get('aset/search', 'AsetController::search');
+
+// Rute ini tidak perlu login
+$routes->get('tracking/aset/(:num)', 'AsetController::publicDetail/$1');

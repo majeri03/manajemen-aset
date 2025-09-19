@@ -25,7 +25,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
+                    <a href="<?= base_url('aset') ?>" class="nav-link">
                         <i class="bi bi-box-seam"></i> <span>Data Aset</span>
                     </a>
                 </li>
@@ -37,11 +37,6 @@
                 <li>
                     <a href="#" class="nav-link">
                         <i class="bi bi-people"></i> <span>Pengguna</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-arrow-down-up"></i> <span>Transaksi Aset</span>
                     </a>
                 </li>
                 <li>

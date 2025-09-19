@@ -34,7 +34,7 @@ Dashboard
                 </div>
                 <div class="card-text">
                     <h6 class="text-muted">Total Jumlah Aset</h6>
-                    <h4 class="count-up" data-to="110">110</h4>
+                    <h4 class="count-up" data-to="1250000000">110</h4>
                 </div>
             </div>
         </div>
@@ -51,16 +51,13 @@ Dashboard
         </div>
         <div class="col-md-6 col-lg-4">
             <div class="summary-card shadow-sm">
-                <div class="card-icon pengguna">
-                    <i class="bi bi-bell-fill"></i>
-                </div>
+                <div class="card-icon pengguna"> <i class="bi bi-bell-fill"></i> </div>
                 <div class="card-text">
                     <h6 class="text-muted">Permintaan Perubahan</h6>
                     <h4 class="count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?> Permintaan</h4>
                 </div>
             </div>
         </div>
-    </div>
 
     <div class="row mt-5 g-4">
         <div class="col-lg-6">
@@ -81,56 +78,47 @@ Dashboard
         </div>
     </div>
 
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="table-container shadow-sm">
-                <h5 class="mb-4">Aset Terbaru</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th scope="col">KODE</th>
-                                <th scope="col">KATEGORI</th>
-                                <th scope="col">MERK</th>
-                                <th scope="col">SERIAL NUMBER</th>
-                                <th scope="col">TAHUN</th>
-                                <th scope="col">LOKASI</th>
-                                <th scope="col">KETERANGAN</th>
-                                <th scope="col">AKSI</th>
-                            </tr>
-                        </thead>
-                        <tbody id="asetTableBody">
-                            <?php if (!empty($asets)): ?>
-                                <?php foreach ($asets as $aset): ?>
-                                    <tr>
-                                        <td><?= esc($aset['kode']) ?></td>
-                                        <td><?= esc($aset['kategori']) ?></td>
-                                        <td><?= esc($aset['merk']) ?></td>
-                                        <td><?= esc($aset['serial_number']) ?></td>
-                                        <td><?= esc($aset['tahun']) ?></td>
-                                        <td><?= esc($aset['lokasi']) ?></td>
-                                        <td><?= esc($aset['keterangan']) ?></td>
-                                        <td>
-                                            <button type="button" class="btn btn-info btn-sm view-detail" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#detailAsetModal"
-                                                    data-id="<?= $aset['id'] ?>">
-                                                <i class="bi bi-eye-fill"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="8" class="text-center">Belum ada data aset.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th scope="col">KODE</th>
+                <th scope="col">KATEGORI BARANG</th>
+                <th scope="col">MERK</th>
+                <th scope="col">SERIAL NUMBER</th>
+                <th scope="col">TAHUN</th>
+                <th scope="col">LOKASI</th>
+                <th scope="col">KETERANGAN</th>
+                <th scope="col">AKSI</th> </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($asets)): ?>
+                <?php foreach ($asets as $aset): ?>
+                    <tr>
+                        <td><?= esc($aset['kode']) ?></td>
+                        <td><?= esc($aset['kategori']) ?></td>
+                        <td><?= esc($aset['merk']) ?></td>
+                        <td><?= esc($aset['serial_number']) ?></td>
+                        <td><?= esc($aset['tahun']) ?></td>
+                        <td><?= esc($aset['lokasi']) ?></td>
+                        <td><?= esc($aset['keterangan']) ?></td>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm view-detail" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#detailAsetModal"
+                                    data-id="<?= $aset['id'] ?>">
+                                <i class="bi bi-eye-fill"></i>
+                            </button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="8" class="text-center">Belum ada data aset.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
 </div>
 
 <div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
@@ -158,6 +146,8 @@ Dashboard
     </div>
 </div>
 
+
+
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -168,22 +158,28 @@ Dashboard
             <div class="modal-body">
                 <form action="/dashboard/tambah-aset" method="post">
                     <?= csrf_field() ?>
+
                     <div class="mb-3">
                         <label for="kategori" class="form-label">Kategori Barang</label>
                         <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Misalnya: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
+
                     <div class="mb-3">
                         <label for="merk" class="form-label">Merk</label>
                         <input type="text" class="form-control" id="merk" name="merk" placeholder="Misalnya: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
+
                     <div class="mb-3">
                         <label for="serial_number" class="form-label">Serial Number</label>
                         <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Misalnya: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                     </div>
+
                     <div class="mb-3">
                         <label for="tahun" class="form-label">Tahun</label>
                         <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Misalnya: 2025" oninput="generateKodeAset();" required>
                     </div>
+
+
                     <div class="mb-3">
                         <label for="status" class="form-label">Status Aset</label>
                         <select class="form-select" id="status" name="status" required>
@@ -192,18 +188,22 @@ Dashboard
                             <option value="Tidak terpakai">Tidak terpakai</option>
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label for="lokasi" class="form-label">Lokasi</label>
                         <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Misalnya: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
                     </div>
+
                     <div class="mb-3">
                         <label for="keterangan" class="form-label">Keterangan</label>
                         <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
                     </div>
+                    
                     <div class="mb-3">
                         <label for="kode" class="form-label">Kode Aset (Otomatis)</label>
                         <input type="text" class="form-control" id="kode" name="kode" readonly style="background-color: #e9ecef;">
                     </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan Aset</button>
@@ -213,6 +213,10 @@ Dashboard
         </div>
     </div>
 </div>
+
+
+
+
 <?= $this->endSection() ?>
 
 
@@ -220,109 +224,198 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
-    // --- FUNGSI GLOBAL ---
+
+    // GENERATE KODE ASET OTOMATIS
     function generateKodeAset() {
         const kategori = document.getElementById('kategori').value.toUpperCase().replace(/\s+/g, '').substring(0, 5);
         const tahun = document.getElementById('tahun').value;
         const merk = document.getElementById('merk').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
         
         if (kategori && tahun && merk) {
-            document.getElementById('kode').value = `BTR/${kategori}/${tahun}/${merk}`;
+            const kodeAset = `BTR/${kategori}/${tahun}/${merk}`;
+            document.getElementById('kode').value = kodeAset;
         } else {
             document.getElementById('kode').value = '';
         }
     }
 
-    // --- INISIALISASI SETELAH SEMUA ELEMEN HTML SIAP ---
-    document.addEventListener('DOMContentLoaded', function() {
 
-        // Inisialisasi CountUp.js
+
+    // Inisialisasi Chart.js
+    
+    // --- PIE CHART DINAMIS ---
+    
+    // 1. Ambil data dari controller PHP
+    const labels = <?= json_encode($chartLabels) ?>;
+    const data = <?= json_encode($chartData) ?>;
+
+    // 2. Fungsi untuk menghasilkan warna acak
+    function generateRandomColor() {
+        const r = Math.floor(Math.random() * 200);
+        const g = Math.floor(Math.random() * 200);
+        const b = Math.floor(Math.random() * 200);
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // 3. Buat array warna dinamis sejumlah data yang ada
+    const dynamicColors = labels.map(() => generateRandomColor());
+
+    // 4. Inisialisasi Chart.js dengan data dinamis
+    var ctx1 = document.getElementById('assetCategoryChart').getContext('2d');
+    var assetCategoryChart = new Chart(ctx1, {
+        type: 'pie',
+        data: {
+            labels: labels, // Gunakan data label dari controller
+            datasets: [{
+                label: 'Jumlah Aset',
+                data: data, // Gunakan data jumlah dari controller
+                backgroundColor: dynamicColors, // Gunakan warna yang digenerate otomatis
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: false,
+                }
+            }
+        }
+    });
+
+
+    // --- FUNGSI DETAIL ASET (MODAL) ---
+const detailAsetModal = document.getElementById('detailAsetModal');
+if (detailAsetModal) {
+    detailAsetModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const asetId = button.getAttribute('data-id');
+        
+        // Sesuaikan URL fetch dengan resource route
+        fetch(`/aset/${asetId}`) 
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('detail-kode').textContent = data.kode;
+                document.getElementById('detail-kategori').textContent = data.kategori;
+                document.getElementById('detail-merk').textContent = data.merk;
+                document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
+                document.getElementById('detail-tahun').textContent = data.tahun;
+                document.getElementById('detail-lokasi').textContent = data.lokasi;
+                document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                document.getElementById('detail-updated_at').textContent = data.updated_at;
+            })
+            .catch(error => console.error('Error fetching detail:', error));
+    });
+}
+
+// Ganti kode JavaScript untuk assetStatusChart dengan ini:
+
+// 1. Ambil data status dari controller
+const statusLabels = <?= json_encode($statusLabels) ?>;
+const statusData = <?= json_encode($statusData) ?>;
+
+// 2. Siapkan warna (Anda bisa menambahkannya jika statusnya lebih banyak)
+const statusColors = {
+    'BAIK': '#065f46', // Hijau
+    'RUSAK': '#991b1b', // Merah
+    'TIDAK TERPAKAI': '#92400e' // Oranye tua
+    // Tambahkan warna lain di sini jika ada status baru, misal: 'DALAM PERBAIKAN': '#...'
+};
+
+// 3. Buat array warna dinamis berdasarkan label status
+const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d'); // Abu-abu jika status tidak dikenali
+
+// 4. Inisialisasi Chart.js dengan data dinamis
+var ctx2 = document.getElementById('assetStatusChart').getContext('2d');
+var assetStatusChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            label: 'Jumlah Aset',
+            data: statusData,
+            backgroundColor: dynamicStatusColors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            title: { display: false }
+        }
+    }
+});
+
+
+
+    // Inisialisasi CountUp.js
+    window.onload = function() {
         const countUpElements = document.querySelectorAll('.count-up');
         countUpElements.forEach(el => {
             const endValue = el.getAttribute('data-to');
-            if (typeof CountUp !== 'undefined') {
-                const instance = new CountUp(el, endValue, { duration: 2.5 });
-                if (!instance.error) {
-                    instance.start();
-                } else {
-                    console.error(instance.error);
-                }
+            const isRupiah = el.innerText.includes('Rp');
+            let instance;
+
+            if (isRupiah) {
+                instance = new CountUp(el, endValue, {
+                    prefix: 'Rp ',
+                    separator: '.',
+                    decimal: ',',
+                    duration: 2.5
+                });
+            } else {
+                instance = new CountUp(el, endValue, {
+                    suffix: ' ' + (el.innerText.split(' ')[1] || ''),
+                    duration: 2.5
+                });
+            }
+
+            if (!instance.error) {
+                instance.start();
+            } else {
+                console.error(instance.error);
             }
         });
+    };
 
-        // --- PIE CHART DINAMIS ---
-        const labels = <?= json_encode($chartLabels) ?>;
-        const data = <?= json_encode($chartData) ?>;
-        const assetCategoryChartCanvas = document.getElementById('assetCategoryChart');
-        if (assetCategoryChartCanvas) {
-            const dynamicColors = labels.map(() => `rgb(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)})`);
-            const ctx1 = assetCategoryChartCanvas.getContext('2d');
-            new Chart(ctx1, {
-                type: 'pie',
-                data: { labels: labels, datasets: [{ label: 'Jumlah Aset', data: data, backgroundColor: dynamicColors, hoverOffset: 4 }] },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: false } } }
-            });
-        }
-
-        // --- BAR CHART STATUS DINAMIS ---
-        const statusLabels = <?= json_encode($statusLabels) ?>;
-        const statusData = <?= json_encode($statusData) ?>;
-        const assetStatusChartCanvas = document.getElementById('assetStatusChart');
-        if (assetStatusChartCanvas) {
-            const statusColors = { 'BAIK': '#065f46', 'RUSAK': '#991b1b', 'TIDAK TERPAKAI': '#92400e' };
-            const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d');
-            const ctx2 = assetStatusChartCanvas.getContext('2d');
-            new Chart(ctx2, {
-                type: 'bar',
-                data: { labels: statusLabels, datasets: [{ label: 'Jumlah Aset', data: statusData, backgroundColor: dynamicStatusColors, borderWidth: 1 }] },
-                options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: false } } }
-            });
-        }
-
-        // --- FUNGSI DETAIL ASET (MODAL) ---
+    document.addEventListener('DOMContentLoaded', function() {
         const detailAsetModal = document.getElementById('detailAsetModal');
-        if (detailAsetModal) {
-            detailAsetModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const asetId = button.getAttribute('data-id');
-                fetch(`/aset/detail/${asetId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('detail-kode').textContent = data.kode;
-                        document.getElementById('detail-kategori').textContent = data.kategori;
-                        document.getElementById('detail-merk').textContent = data.merk;
-                        document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun').textContent = data.tahun;
-                        document.getElementById('detail-lokasi').textContent = data.lokasi;
-                        document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                        document.getElementById('detail-updated_at').textContent = data.updated_at;
-                    })
-                    .catch(error => console.error('Error fetching detail:', error));
-            });
-        }
+        
+        detailAsetModal.addEventListener('show.bs.modal', function(event) {
+            // Tombol yang memicu modal
+            const button = event.relatedTarget;
+            // Ambil ID dari atribut data-*
+            const asetId = button.getAttribute('data-id');
 
-        // --- FUNGSI PENCARIAN ASET ---
-        const searchInput = document.getElementById('searchInput');
-        const tableBody = document.getElementById('asetTableBody');
-        if (searchInput && tableBody) {
-            searchInput.addEventListener('keyup', function() {
-                const keyword = this.value;
-                fetch(`/aset/search?q=${keyword}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        tableBody.innerHTML = '';
-                        if (data.length > 0) {
-                            data.forEach(aset => {
-                                const row = `<tr><td>${aset.kode}</td><td>${aset.kategori}</td><td>${aset.merk}</td><td>${aset.serial_number || '-'}</td><td>${aset.tahun}</td><td>${aset.lokasi}</td><td>${aset.keterangan || '-'}</td><td><button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button></td></tr>`;
-                                tableBody.innerHTML += row;
-                            });
-                        } else {
-                            tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
-                        }
-                    })
-                    .catch(error => console.error('Error searching:', error));
-            });
-        }
+            // Ambil data dari server menggunakan Fetch API
+            fetch(`/aset/detail/${asetId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Isi konten modal dengan data yang diterima
+                    document.getElementById('detail-kode').textContent = data.kode;
+                    document.getElementById('detail-kategori').textContent = data.kategori;
+                    document.getElementById('detail-merk').textContent = data.merk;
+                    document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
+                    document.getElementById('detail-tahun').textContent = data.tahun;
+                    document.getElementById('detail-lokasi').textContent = data.lokasi;
+                    document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                    document.getElementById('detail-updated_at').textContent = data.updated_at;
+                })
+                .catch(error => console.error('Error:', error));
+        });
     });
+
 </script>
 <?= $this->endSection() ?>
