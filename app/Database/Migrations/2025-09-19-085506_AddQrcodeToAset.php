@@ -1,16 +1,25 @@
-public function up()
-{
-    $this->forge->addColumn('aset', [
-        'qrcode' => [
-            'type'       => 'VARCHAR',
-            'constraint' => '255',
-            'null'       => true,
-            'after'      => 'status',
-        ],
-    ]);
-}
+<?php
 
-public function down()
+namespace App\Database\Migrations;
+
+use CodeIgniter\Database\Migration;
+
+class AddQrcodeToAset extends Migration
 {
-    $this->forge->dropColumn('aset', 'qrcode');
+    public function up()
+    {
+        $this->forge->addColumn('aset', [
+            'qrcode' => [
+                'type'       => 'VARCHAR',
+                'constraint' => '255',
+                'null'       => true,
+                'after'      => 'status', // Posisi kolom setelah kolom status
+            ],
+        ]);
+    }
+
+    public function down()
+    {
+        $this->forge->dropColumn('aset', 'qrcode');
+    }
 }

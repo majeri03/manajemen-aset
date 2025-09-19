@@ -22,8 +22,10 @@ class AsetModel extends Model
         'tahun',
         'lokasi',
         'keterangan',
-        'status'
+        'status',
+        'qrcode',
     ];
+   
 
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;

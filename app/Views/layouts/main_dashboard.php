@@ -35,8 +35,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-people"></i> <span>Pengguna</span>
+                    <a href="<?= base_url('requests') ?>" class="nav-link">
+                        <i class="bi bi-person-check-fill"></i> <span>Perubahan Aset</span>
                     </a>
                 </li>
                 <li>
