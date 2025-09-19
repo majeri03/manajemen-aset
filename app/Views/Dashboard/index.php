@@ -13,7 +13,7 @@ Dashboard
         </div>
         <div class="col-md-6 col-lg-8 mt-3 mt-md-0 d-flex justify-content-end align-items-center flex-wrap">
             <div class="input-group search-bar me-3">
-                <input type="text" class="form-control" placeholder="Cari aset...">
+                <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
                 <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
             </div>
             <button class="btn btn-custom-icon me-2" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
@@ -34,7 +34,7 @@ Dashboard
                 </div>
                 <div class="card-text">
                     <h6 class="text-muted">Total Jumlah Aset</h6>
-                    <h4 class="count-up" data-to="1250000000">110</h4>
+                    <h4 class="count-up" data-to="110">110</h4>
                 </div>
             </div>
         </div>
@@ -52,11 +52,11 @@ Dashboard
         <div class="col-md-6 col-lg-4">
             <div class="summary-card shadow-sm">
                 <div class="card-icon pengguna">
-                    <i class="bi bi-people-fill"></i>
+                    <i class="bi bi-bell-fill"></i>
                 </div>
                 <div class="card-text">
-                    <h6 class="text-muted">Total Pengguna</h6>
-                    <h4 class="count-up" data-to="42">0 Orang</h4>
+                    <h6 class="text-muted">Permintaan Perubahan</h6>
+                    <h4 class="count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?> Permintaan</h4>
                 </div>
             </div>
         </div>
@@ -81,94 +81,50 @@ Dashboard
         </div>
     </div>
 
-
-    
-
     <div class="row mt-5">
         <div class="col-12">
             <div class="table-container shadow-sm">
                 <h5 class="mb-4">Aset Terbaru</h5>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="d-flex align-items-center">
-                        <select class="form-select me-2">
-                            <option>Semua Kategori</option>
-                            <option>Elektronik</option>
-                            <option>Mebel</option>
-                            <option>Kendaraan</option>
-                        </select>
-                        <select class="form-select me-2">
-                            <option>Semua Lokasi</option>
-                            <option>Lantai 12</option>
-                            <option>Ruang Meeting A</option>
-                            <option>Gudang</option>
-                        </select>
-                        <select class="form-select">
-                            <option>Semua Status</option>
-                            <option>Aktif</option>
-                            <option>Rusak</option>
-                            <option>Dijual</option>
-                        </select>
-                    </div>
-                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th scope="col">KODE</th>
-                                <th scope="col">KATEGORI BARANG</th>
+                                <th scope="col">KATEGORI</th>
                                 <th scope="col">MERK</th>
                                 <th scope="col">SERIAL NUMBER</th>
                                 <th scope="col">TAHUN</th>
                                 <th scope="col">LOKASI</th>
                                 <th scope="col">KETERANGAN</th>
+                                <th scope="col">AKSI</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>BTR/02/01/2021/EPS</td>
-                                <td>Printer</td>
-                                <td>Epson</td>
-                                <td>XBN4503766</td>
-                                <td>2021</td>
-                                <td>Head Office - Rg. HCGA</td>
-                                <td>SO 2024</td>
-                            </tr>
-                            <tr>
-                                <td>BTR/02/04/2023/PST</td>
-                                <td>Printer Label</td>
-                                <td>Postek</td>
-                                <td>C4823G0219</td>
-                                <td>2023</td>
-                                <td>Head Office - Rg. HCGA</td>
-                                <td>SO 2024</td>
-                            </tr>
-                            <tr>
-                                <td>BTR/02/01/2019/SHP</td>
-                                <td>TV</td>
-                                <td>Sharp</td>
-                                <td></td>
-                                <td>2019</td>
-                                <td>Head Office - Rg. HCGA</td>
-                                <td>SO 2024</td>
-                            </tr>
-                            <tr>
-                                <td>BTR/02/04/2020/HP</td>
-                                <td>Printer</td>
-                                <td>HP</td>
-                                <td>VNC5M95560</td>
-                                <td>2020</td>
-                                <td>Head Office - Rg. Finance Acc</td>
-                                <td>SO 2025</td>
-                            </tr>
-                            <tr>
-                                <td>BTR/02/04/2020/EPS.05</td>
-                                <td>Printer</td>
-                                <td>epson</td>
-                                <td>X5DK2X234</td>
-                                <td>2020</td>
-                                <td>Tidak terpakai</td>
-                                <td>SO 2024</td>
-                            </tr>
+                        <tbody id="asetTableBody">
+                            <?php if (!empty($asets)): ?>
+                                <?php foreach ($asets as $aset): ?>
+                                    <tr>
+                                        <td><?= esc($aset['kode']) ?></td>
+                                        <td><?= esc($aset['kategori']) ?></td>
+                                        <td><?= esc($aset['merk']) ?></td>
+                                        <td><?= esc($aset['serial_number']) ?></td>
+                                        <td><?= esc($aset['tahun']) ?></td>
+                                        <td><?= esc($aset['lokasi']) ?></td>
+                                        <td><?= esc($aset['keterangan']) ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-info btn-sm view-detail" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#detailAsetModal"
+                                                    data-id="<?= $aset['id'] ?>">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="8" class="text-center">Belum ada data aset.</td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -177,8 +133,30 @@ Dashboard
     </div>
 </div>
 
-
-
+<div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailAsetModalLabel">Detail Aset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
+                <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
+                <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
+                <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
+                <hr>
+                <p><strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -189,45 +167,43 @@ Dashboard
             </div>
             <div class="modal-body">
                 <form action="/dashboard/tambah-aset" method="post">
-                    <div class="mb-3">
-                        <label for="kode" class="form-label">Kode Aset</label>
-                        <input type="text" class="form-control" id="kode" name="kode" placeholder="Misalnya: BTR/02/01/2021/EPS" 
-                               oninput="this.value = this.value.toUpperCase()"> </div>
+                    <?= csrf_field() ?>
                     <div class="mb-3">
                         <label for="kategori" class="form-label">Kategori Barang</label>
-                        <select class="form-select" id="kategori" name="kategori">
-                            <option selected>Pilih Kategori</option>
-                            <option value="Elektronik">Elektronik</option>
-                            <option value="Perabotan">Perabotan</option>
-                            <option value="Kendaraan">Kendaraan</option>
-                            <option value="Mutasi Aset">Mutasi Aset</option>
-                        </select>
+                        <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Misalnya: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
                     <div class="mb-3">
                         <label for="merk" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk" name="merk" placeholder="Misalnya: Epson" 
-                               oninput="this.value = this.value.toUpperCase()"> </div>
-                    <div class="mb-3">
-                        <label for="serial_number" class="form-label">Serial Number</label>
-                        <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Misalnya: XBN4503766" 
-                               oninput="this.value = this.value.toUpperCase()"> </div>
-                    <div class="mb-3">
-                        <label for="tahun" class="form-label">Tahun</label>
-                        <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Misalnya: 2021">
+                        <input type="text" class="form-control" id="merk" name="merk" placeholder="Misalnya: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
                     <div class="mb-3">
-                        <label for="lokasi" class="form-label">Lokasi</label>
-                        <select class="form-select" id="lokasi" name="lokasi">
-                            <option selected>Pilih Lokasi</option>
-                            <option value="Head Office - Rg. HCGA">Head Office - Rg. HCGA</option>
-                            <option value="Head Office - Rg. Finance Acc">Head Office - Rg. Finance Acc</option>
-                            <option value="Lantai 8 - Bussiness Dev">Lantai 8 - Bussiness Dev</option>
+                        <label for="serial_number" class="form-label">Serial Number</label>
+                        <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Misalnya: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tahun" class="form-label">Tahun</label>
+                        <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Misalnya: 2025" oninput="generateKodeAset();" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status Aset</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="Baik" selected>Baik</option>
+                            <option value="Rusak">Rusak</option>
+                            <option value="Tidak terpakai">Tidak terpakai</option>
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label for="lokasi" class="form-label">Lokasi</label>
+                        <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Misalnya: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                    </div>
+                    <div class="mb-3">
                         <label for="keterangan" class="form-label">Keterangan</label>
-                        <textarea class="form-control" id="keterangan" name="keterangan" rows="3" 
-                                  oninput="this.value = this.value.toUpperCase()"></textarea> </div>
+                        <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kode" class="form-label">Kode Aset (Otomatis)</label>
+                        <input type="text" class="form-control" id="kode" name="kode" readonly style="background-color: #e9ecef;">
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan Aset</button>
@@ -240,106 +216,113 @@ Dashboard
 <?= $this->endSection() ?>
 
 
-
-
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
-    // Inisialisasi Chart.js
-    var ctx1 = document.getElementById('assetCategoryChart').getContext('2d');
-    var assetCategoryChart = new Chart(ctx1, {
-        type: 'pie',
-        data: {
-            labels: ['Elektronik', 'Mebel', 'Kendaraan', 'Perlengkapan Kantor'],
-            datasets: [{
-                label: 'Jumlah Aset',
-                data: [300, 150, 50, 120],
-                backgroundColor: [
-                    '#003481',
-                    '#3da2ff',
-                    '#ffc107',
-                    '#6c757d',
-                ],
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                },
-                title: {
-                    display: false,
-                }
-            }
+    // --- FUNGSI GLOBAL ---
+    function generateKodeAset() {
+        const kategori = document.getElementById('kategori').value.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const tahun = document.getElementById('tahun').value;
+        const merk = document.getElementById('merk').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
+        
+        if (kategori && tahun && merk) {
+            document.getElementById('kode').value = `BTR/${kategori}/${tahun}/${merk}`;
+        } else {
+            document.getElementById('kode').value = '';
         }
-    });
+    }
 
-    var ctx2 = document.getElementById('assetStatusChart').getContext('2d');
-    var assetStatusChart = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-            labels: ['Aktif', 'Rusak', 'Dalam Perbaikan', 'Dijual'],
-            datasets: [{
-                label: 'Jumlah Aset',
-                data: [500, 15, 5, 2],
-                backgroundColor: [
-                    '#065f46',
-                    '#991b1b',
-                    '#92400e',
-                    '#003481',
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false,
-                },
-                title: {
-                    display: false,
-                }
-            }
-        }
-    });
+    // --- INISIALISASI SETELAH SEMUA ELEMEN HTML SIAP ---
+    document.addEventListener('DOMContentLoaded', function() {
 
-    // Inisialisasi CountUp.js
-    window.onload = function() {
+        // Inisialisasi CountUp.js
         const countUpElements = document.querySelectorAll('.count-up');
         countUpElements.forEach(el => {
             const endValue = el.getAttribute('data-to');
-            const isRupiah = el.innerText.includes('Rp');
-            let instance;
-
-            if (isRupiah) {
-                instance = new CountUp(el, endValue, {
-                    prefix: 'Rp ',
-                    separator: '.',
-                    decimal: ',',
-                    duration: 2.5
-                });
-            } else {
-                instance = new CountUp(el, endValue, {
-                    suffix: ' ' + el.innerText.split(' ')[1],
-                    duration: 2.5
-                });
-            }
-
-            if (!instance.error) {
-                instance.start();
-            } else {
-                console.error(instance.error);
+            if (typeof CountUp !== 'undefined') {
+                const instance = new CountUp(el, endValue, { duration: 2.5 });
+                if (!instance.error) {
+                    instance.start();
+                } else {
+                    console.error(instance.error);
+                }
             }
         });
-    };
+
+        // --- PIE CHART DINAMIS ---
+        const labels = <?= json_encode($chartLabels) ?>;
+        const data = <?= json_encode($chartData) ?>;
+        const assetCategoryChartCanvas = document.getElementById('assetCategoryChart');
+        if (assetCategoryChartCanvas) {
+            const dynamicColors = labels.map(() => `rgb(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)})`);
+            const ctx1 = assetCategoryChartCanvas.getContext('2d');
+            new Chart(ctx1, {
+                type: 'pie',
+                data: { labels: labels, datasets: [{ label: 'Jumlah Aset', data: data, backgroundColor: dynamicColors, hoverOffset: 4 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: false } } }
+            });
+        }
+
+        // --- BAR CHART STATUS DINAMIS ---
+        const statusLabels = <?= json_encode($statusLabels) ?>;
+        const statusData = <?= json_encode($statusData) ?>;
+        const assetStatusChartCanvas = document.getElementById('assetStatusChart');
+        if (assetStatusChartCanvas) {
+            const statusColors = { 'BAIK': '#065f46', 'RUSAK': '#991b1b', 'TIDAK TERPAKAI': '#92400e' };
+            const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d');
+            const ctx2 = assetStatusChartCanvas.getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: { labels: statusLabels, datasets: [{ label: 'Jumlah Aset', data: statusData, backgroundColor: dynamicStatusColors, borderWidth: 1 }] },
+                options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: false } } }
+            });
+        }
+
+        // --- FUNGSI DETAIL ASET (MODAL) ---
+        const detailAsetModal = document.getElementById('detailAsetModal');
+        if (detailAsetModal) {
+            detailAsetModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const asetId = button.getAttribute('data-id');
+                fetch(`/aset/detail/${asetId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('detail-kode').textContent = data.kode;
+                        document.getElementById('detail-kategori').textContent = data.kategori;
+                        document.getElementById('detail-merk').textContent = data.merk;
+                        document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
+                        document.getElementById('detail-tahun').textContent = data.tahun;
+                        document.getElementById('detail-lokasi').textContent = data.lokasi;
+                        document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                        document.getElementById('detail-updated_at').textContent = data.updated_at;
+                    })
+                    .catch(error => console.error('Error fetching detail:', error));
+            });
+        }
+
+        // --- FUNGSI PENCARIAN ASET ---
+        const searchInput = document.getElementById('searchInput');
+        const tableBody = document.getElementById('asetTableBody');
+        if (searchInput && tableBody) {
+            searchInput.addEventListener('keyup', function() {
+                const keyword = this.value;
+                fetch(`/aset/search?q=${keyword}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tableBody.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(aset => {
+                                const row = `<tr><td>${aset.kode}</td><td>${aset.kategori}</td><td>${aset.merk}</td><td>${aset.serial_number || '-'}</td><td>${aset.tahun}</td><td>${aset.lokasi}</td><td>${aset.keterangan || '-'}</td><td><button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button></td></tr>`;
+                                tableBody.innerHTML += row;
+                            });
+                        } else {
+                            tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
+                        }
+                    })
+                    .catch(error => console.error('Error searching:', error));
+            });
+        }
+    });
 </script>
 <?= $this->endSection() ?>
