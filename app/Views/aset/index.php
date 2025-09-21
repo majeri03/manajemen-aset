@@ -23,6 +23,33 @@ Data Aset
     </div>
 </div>
 
+
+<div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailAsetModalLabel">Detail Aset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
+                <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
+                <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
+                <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
+                <hr>
+                <p><strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form action="<?= base_url('aset') ?>" method="get" class="row g-3">
@@ -63,6 +90,32 @@ Data Aset
         <i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel
     </a>
 </div>
+
+
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('error') ?>
+
+        <?php if ($conflictingId = session()->getFlashdata('conflicting_asset_id')): ?>
+            <button type="button" class="btn btn-dark btn-sm ms-3 view-detail" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#detailAsetModal"
+                    data-id="<?= $conflictingId ?>">
+                Lihat Aset yang Sudah Ada
+            </button>
+        <?php endif; ?>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 
 <div class="table-container shadow-sm">
     <div class="table-responsive">
@@ -119,19 +172,19 @@ Data Aset
                     <input type="hidden" name="redirect_to" value="aset">
                     <div class="mb-3">
                         <label for="kategori-tambah" class="form-label">Kategori Barang</label>
-                        <input type="text" class="form-control" id="kategori-tambah" name="kategori" placeholder="Misalnya: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <input type="text" class="form-control" id="kategori-tambah" name="kategori" placeholder="Contoh: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
                     <div class="mb-3">
                         <label for="merk-tambah" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Misalnya: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
                     <div class="mb-3">
                         <label for="serial_number-tambah" class="form-label">Serial Number</label>
-                        <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Misalnya: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                        <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                     </div>
                     <div class="mb-3">
                         <label for="tahun-tambah" class="form-label">Tahun</label>
-                        <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Misalnya: 2025" oninput="generateKodeAset();" required>
+                        <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
                     </div>
                     <div class="mb-3">
                         <label for="status-tambah" class="form-label">Status Aset</label>
@@ -143,7 +196,7 @@ Data Aset
                     </div>
                     <div class="mb-3">
                         <label for="lokasi-tambah" class="form-label">Lokasi</label>
-                        <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Misalnya: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                        <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
                     </div>
                     <div class="mb-3">
                         <label for="keterangan-tambah" class="form-label">Keterangan</label>
@@ -238,14 +291,16 @@ Data Aset
                 fetch(`/aset/${asetId}`)
                     .then(response => response.json())
                     .then(data => {
+                        // Mengisi data teks seperti biasa
                         document.getElementById('detail-kode').textContent = data.kode;
                         document.getElementById('detail-kategori').textContent = data.kategori;
                         document.getElementById('detail-merk').textContent = data.merk;
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                         document.getElementById('detail-tahun').textContent = data.tahun;
-                        document.getElementById('detail-lokasi').textContent = data.lokasi;
+                        document.getElementById('detail-lokasi').textContent = data.lokasi || '-';
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                        document.getElementById('detail-updated_at').textContent = data.updated_at;
+                        // Perbaikan format tanggal agar lebih mudah dibaca
+                        document.getElementById('detail-updated_at').textContent = new Date(data.updated_at).toLocaleString('id-ID');
                     })
                     .catch(error => console.error('Error fetching detail:', error));
             });
@@ -253,7 +308,6 @@ Data Aset
 
 
     });
-
     // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
     <?php if (session()->getFlashdata('new_aset')): ?>
         document.addEventListener('DOMContentLoaded', function() {

@@ -83,6 +83,17 @@ class AsetController extends ResourceController
     
     // Jika aset tidak ditemukan, kirim response error
     return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
+
+
+        $aset = $this->asetModel->find($id);
+
+    if ($aset) {
+        // Pastikan $aset sudah mengandung field 'qrcode' dari database
+        return $this->response->setJSON($aset);
+    }
+
+    return $this->response->setStatusCode(404, 'Aset not found');
+
     }
 
 
@@ -109,6 +120,26 @@ class AsetController extends ResourceController
      */
     public function create()
 {
+
+    // Ambil serial number dari form
+    $serialNumber = $this->request->getPost('serial_number');
+
+    // Cek ke database HANYA jika serial number diisi
+    if (!empty($serialNumber)) {
+        $existingAset = $this->asetModel->where('serial_number', $serialNumber)->first();
+
+        // Jika aset dengan serial number yang sama ditemukan
+        if ($existingAset) {
+            $redirectPage = $this->request->getPost('redirect_to');
+            $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
+
+            // Redirect kembali dengan pesan error dan ID aset yang konflik
+            return redirect()->to($redirectTo)
+                             ->with('error', 'Gagal! Serial Number sudah terdaftar pada aset lain.')
+                             ->with('conflicting_asset_id', $existingAset['id']);
+        }
+    }
+
     $data = [
         'kode'          => $this->request->getPost('kode'),
         'kategori'      => $this->request->getPost('kategori'),
@@ -215,7 +246,7 @@ class AsetController extends ResourceController
 
      public function search()
     {
-        // Ambil kata kunci dari request GET, misalnya: /aset/search?q=epson
+        // Ambil kata kunci dari request GET, Contoh: /aset/search?q=epson
         $keyword = $this->request->getGet('q');
         
         if ($keyword) {
