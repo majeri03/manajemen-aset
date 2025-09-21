@@ -5,6 +5,7 @@ Dashboard
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+
 <div class="main-header mb-4">
     <div class="row align-items-center">
         <div class="col-md-6 col-lg-4">
@@ -77,6 +78,33 @@ Dashboard
             </div>
         </div>
     </div>
+
+
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('error') ?>
+
+        <?php if ($conflictingId = session()->getFlashdata('conflicting_asset_id')): ?>
+            <button type="button" class="btn btn-dark btn-sm ms-3 view-detail" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#detailAsetModal"
+                    data-id="<?= $conflictingId ?>">
+                Lihat Aset yang Sudah Ada
+            </button>
+        <?php endif; ?>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+
 
 <div class="table-responsive">
     <table class="table table-hover align-middle">
@@ -163,22 +191,22 @@ Dashboard
 
                     <div class="mb-3">
                         <label for="kategori" class="form-label">Kategori Barang</label>
-                        <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Misalnya: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Contoh: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="merk" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk" name="merk" placeholder="Misalnya: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <input type="text" class="form-control" id="merk" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="serial_number" class="form-label">Serial Number</label>
-                        <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Misalnya: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                        <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                     </div>
 
                     <div class="mb-3">
                         <label for="tahun" class="form-label">Tahun</label>
-                        <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Misalnya: 2025" oninput="generateKodeAset();" required>
+                        <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
                     </div>
 
 
@@ -193,7 +221,7 @@ Dashboard
 
                     <div class="mb-3">
                         <label for="lokasi" class="form-label">Lokasi</label>
-                        <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Misalnya: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                        <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
                     </div>
 
                     <div class="mb-3">
@@ -471,6 +499,8 @@ var assetStatusChart = new Chart(ctx2, {
         // Kita perlu me-reload agar event listener dan fungsionalitas lain kembali normal
         window.location.reload(); 
     }
+
+    
 
 </script>
 <?= $this->endSection() ?>
