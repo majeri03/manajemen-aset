@@ -270,19 +270,29 @@ Data Aset
 
     // SEMUA EVENT LISTENER DIJALANKAN SETELAH HALAMAN SIAP
     document.addEventListener('DOMContentLoaded', function() {
-        // --- FUNGSI PENCARIAN ASET ---
+        // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
         const searchInput = document.getElementById('searchInput');
         const tableBody = document.getElementById('asetTableBody');
+        
         if (searchInput && tableBody) {
             searchInput.addEventListener('keyup', function() {
                 const keyword = this.value;
-                fetch(`/aset/search?q=${keyword}`)
+                // Gunakan URL yang benar dari route Anda
+                fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
                     .then(response => response.json())
                     .then(data => {
                         tableBody.innerHTML = ''; // Kosongkan tabel
                         if (data.length > 0) {
                             data.forEach(aset => {
-                                const row = `<tr><td>${aset.kode}</td><td>${aset.kategori}</td><td>${aset.merk}</td><td>${aset.serial_number || '-'}</td><td><span class="badge bg-light text-dark">${aset.status}</span></td><td>${aset.lokasi}</td><td><button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button></td></tr>`;
+                                const row = `<tr>
+                                    <td>${aset.kode}</td>
+                                    <td>${aset.kategori}</td>
+                                    <td>${aset.merk}</td>
+                                    <td>${aset.serial_number || '-'}</td>
+                                    <td><span class="badge bg-light text-dark">${aset.status}</span></td>
+                                    <td>${aset.lokasi}</td>
+                                    <td><button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button></td>
+                                </tr>`;
                                 tableBody.innerHTML += row;
                             });
                         } else {
