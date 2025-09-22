@@ -11,6 +11,10 @@ class Dashboard extends BaseController
 {
     $asetModel = new AsetModel();
 
+    $totalAset = $asetModel->countAllResults();
+    $asetRusak = $asetModel->where('status', 'Rusak')->countAllResults();
+
+
     // --- Data untuk Pie Chart Kategori ---
     $distribusiAset = $asetModel->select('kategori, COUNT(id) as jumlah')
                                 ->groupBy('kategori')
@@ -43,6 +47,8 @@ class Dashboard extends BaseController
         'title'            => 'Dashboard',
         'user'             => session()->get('full_name') ?: 'Guest',
         'asets'            => $asetModel->orderBy('updated_at', 'DESC')->findAll(),
+        'total_aset'       => $totalAset, // Tambahkan ini
+        'aset_rusak'       => $asetRusak, // Tambahkan ini
         'chartLabels'      => $labelsKategori,
         'chartData'        => $dataKategori,
         'statusLabels'     => $labelsStatus,
