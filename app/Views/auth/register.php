@@ -9,6 +9,11 @@ Register Akun
     <div class="auth-form-section">
         <h2 class="text-center mb-4" style="color: var(--primary-white);">MANAJEMEN ASET</h2>
         <p class="text-center mb-4" style="color: var(--primary-white);" >Halo, Pengguna Baru!</p>
+        <?php if (session()->has('error')) : ?>
+            <div class="alert alert-danger">
+                <?= session('error') ?>
+            </div>
+        <?php endif ?>
         <?php if (session()->has('errors')) : ?>
             <div class="alert alert-danger">
                 <ul class="mb-0">
@@ -20,6 +25,11 @@ Register Akun
         <?php endif ?>
         <form action="/register" method="post">
             <?= csrf_field() ?>
+            
+             <div class="mb-3 input-group">
+                <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="ID Karyawan" value="<?= old('employee_id') ?>" required>
+            </div>
 
             <div class="mb-3 input-group">
                 <span class="input-group-text"><i class="bi bi-person"></i></span>
