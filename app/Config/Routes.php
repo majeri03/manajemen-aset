@@ -18,18 +18,19 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('/dashboard', 'Dashboard::index');
     $routes->get('/logout', 'AuthController::logout');
 
-    // Mengelola semua URL aset (index, show, create, update, delete)
-    $routes->resource('aset', ['controller' => 'AsetController']);
-    
     // Rute untuk pencarian dan ekspor laporan aset
     $routes->get('aset/search', 'AsetController::search');
     $routes->get('aset/laporan/export', 'AsetController::export');
+    $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
+   
+    // Mengelola semua URL aset (index, show, create, update, delete)
+    $routes->resource('aset', ['controller' => 'AsetController']);
+    
 
     // Rute untuk Staff mengajukan permintaan perubahan
     $routes->get('requests/new/(:num)', 'RequestController::newRequest/$1');
     $routes->post('requests/store', 'RequestController::store');
 
-    $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
 });
 
 // --- Rute Khusus untuk Admin ---

@@ -96,6 +96,13 @@ class AuthController extends BaseController
         ];
         $session->set($sessionData);
 
+        if ($redirectUrl = session()->get('redirect_url')) {
+            // Hapus session agar tidak dipakai lagi
+            session()->remove('redirect_url');
+            // Arahkan ke URL tujuan
+            return redirect()->to($redirectUrl);
+        }
+
         return redirect()->to('/dashboard');
     }
 }
