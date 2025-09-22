@@ -73,8 +73,8 @@ class AsetController extends ResourceController
      * @return ResponseInterface
      */
     public function show($id = null)
-    {
-            $aset = $this->asetModel->find($id);
+{
+    $aset = $this->asetModel->find($id);
 
     if ($aset) {
         // Format tanggal agar lebih mudah dibaca
@@ -84,18 +84,7 @@ class AsetController extends ResourceController
     
     // Jika aset tidak ditemukan, kirim response error
     return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
-
-
-        $aset = $this->asetModel->find($id);
-
-    if ($aset) {
-        // Pastikan $aset sudah mengandung field 'qrcode' dari database
-        return $this->response->setJSON($aset);
-    }
-
-    return $this->response->setStatusCode(404, 'Aset not found');
-
-    }
+}
 
 
 
@@ -364,6 +353,21 @@ public function export()
     exit();
 }
     
+
+public function getHistory($asetId)
+{
+    $db = \Config\Database::connect();
+    $history = $db->table('aset_update_requests as aur')
+                  ->select('aur.created_at, aur.proposed_data, u.full_name')
+                  ->join('users as u', 'u.id = aur.user_id')
+                  ->where('aur.aset_id', $asetId)
+                  ->where('aur.status', 'approved') // Hanya tampilkan perubahan yang disetujui
+                  ->orderBy('aur.created_at', 'DESC') // Tampilkan yang terbaru di atas
+                  ->get()->getResultArray();
+
+    return $this->response->setJSON($history);
+}
+
     
 public function exportBulanan($bulan)
     {
@@ -371,6 +375,7 @@ public function exportBulanan($bulan)
         if ($bulan < 1 || $bulan > 12) {
             return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
         }
+
 
         // Tentukan tahun saat ini
         $tahunIni = date('Y');

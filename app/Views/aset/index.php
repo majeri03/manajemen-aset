@@ -40,7 +40,16 @@ Data Aset
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-                <p><strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span></p>
+                <p>
+                    <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
+                    
+                    <button id="lihat-riwayat-btn" class="btn btn-sm btn-outline-primary ms-2">Lihat Riwayat Lengkap</button>
+                </p>
+
+                <div id="timeline-container" class="mt-3" style="display: none;">
+                    <ul class="list-group" id="timeline-list">
+                        </ul>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -284,32 +293,68 @@ Data Aset
             });
         }
 
-        // --- FUNGSI DETAIL ASET (MODAL) ---
+         // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
         const detailAsetModal = document.getElementById('detailAsetModal');
+        let currentAsetId = null;
+
         if (detailAsetModal) {
+             const riwayatBtn = detailAsetModal.querySelector('#lihat-riwayat-btn');
+            const timelineContainer = detailAsetModal.querySelector('#timeline-container');
+            const timelineList = detailAsetModal.querySelector('#timeline-list');
+            
             detailAsetModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                const asetId = button.getAttribute('data-id');
-                fetch(`/aset/${asetId}`)
+                currentAsetId = button.getAttribute('data-id');
+
+                timelineContainer.style.display = 'none';
+                timelineList.innerHTML = '';
+                
+                fetch(`/aset/${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
-                        // Mengisi data teks seperti biasa
                         document.getElementById('detail-kode').textContent = data.kode;
                         document.getElementById('detail-kategori').textContent = data.kategori;
                         document.getElementById('detail-merk').textContent = data.merk;
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                         document.getElementById('detail-tahun').textContent = data.tahun;
-                        document.getElementById('detail-lokasi').textContent = data.lokasi || '-';
+                        document.getElementById('detail-lokasi').textContent = data.lokasi;
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                        // Perbaikan format tanggal agar lebih mudah dibaca
-                        document.getElementById('detail-updated_at').textContent = new Date(data.updated_at).toLocaleString('id-ID');
+                        document.getElementById('detail-updated_at').textContent = data.updated_at;
                     })
                     .catch(error => console.error('Error fetching detail:', error));
             });
-        }
 
+             riwayatBtn.addEventListener('click', function() {
+                if (!currentAsetId) return;
+                timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+                timelineContainer.style.display = 'block';
+                fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        timelineList.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const proposed = JSON.parse(item.proposed_data);
+                                let changes = '';
+                                for (const key in proposed) {
+                                    changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
+                                }
+                                const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
+                                timelineList.innerHTML += listItem;
+                            });
+                        } else {
+                            timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching history:', error);
+                        timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
+                    });
+            });
+        };
 
-    });
+    })  
     // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
     <?php if (session()->getFlashdata('new_aset')): ?>
         document.addEventListener('DOMContentLoaded', function() {
@@ -332,6 +377,7 @@ Data Aset
         window.location.reload(); 
     }
 
+   
 
 </script>
 <?= $this->endSection() ?>

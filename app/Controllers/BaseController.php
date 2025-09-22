@@ -52,7 +52,14 @@ abstract class BaseController extends Controller
     {
         // Do Not Edit This Line
         parent::initController($request, $response, $logger);
+        if (session()->get('isLoggedIn')) {
+            $db = \Config\Database::connect();
+            $pendingRequests = $db->table('aset_update_requests')
+                                ->where('status', 'pending')
+                                ->countAllResults();
 
+            service('renderer')->setVar('pending_requests', $pendingRequests);
+        }
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = service('session');

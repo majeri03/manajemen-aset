@@ -35,7 +35,9 @@
                 <?php endif; ?>
             </div>
             <div class="card-footer text-center">
-                <a href="<?= base_url('/login') ?>" class="btn btn-secondary">Login ke Sistem</a>
+                <a href="<?= base_url('requests/new/' . $aset['id']) ?>" class="btn btn-warning fw-bold">
+                    <i class="bi bi-pencil-square me-2"></i>Ajukan Perubahan Data
+                </a>
             </div>
         </div>
     </div>
