@@ -264,8 +264,7 @@ class AsetController extends ResourceController
             'aset'  => $this->asetModel->find($id),
         ];
 
-        // Nonaktifkan Debug Toolbar untuk halaman publik ini
-        \Config\Services::toolbar()->disable();
+
 
         return view('aset/public_detail', $data);
     }
