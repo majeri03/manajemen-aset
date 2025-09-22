@@ -40,9 +40,21 @@ Data Aset
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-                <p><strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span></p>
+                <p>
+                    <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
+                    
+                    <button id="lihat-riwayat-btn" class="btn btn-sm btn-outline-primary ms-2">Lihat Riwayat Lengkap</button>
+                </p>
+
+                <div id="timeline-container" class="mt-3" style="display: none;">
+                    <ul class="list-group" id="timeline-list">
+                        </ul>
+                </div>
             </div>
             <div class="modal-footer">
+                <a href="#" id="ajukan-perubahan-link" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-2"></i>Ajukan Perubahan
+                </a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -288,6 +300,7 @@ Data Aset
             detailAsetModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
                 const asetId = button.getAttribute('data-id');
+                document.getElementById('ajukan-perubahan-link').href = `<?= base_url('requests/new/') ?>${asetId}`;
                 fetch(`/aset/${asetId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -330,6 +343,64 @@ Data Aset
         window.location.reload(); 
     }
 
+    // --- LOGIKA UNTUK MENAMPILKAN RIWAYAT ASET ---
+const detailAsetModal = document.getElementById('detailAsetModal'); // Ini baris yang diperbaiki
+const riwayatBtn = detailAsetModal.querySelector('#lihat-riwayat-btn');
+const timelineContainer = detailAsetModal.querySelector('#timeline-container');
+const timelineList = detailAsetModal.querySelector('#timeline-list');
+let currentAsetId = null;
+
+// Simpan Aset ID saat modal dibuka
+detailAsetModal.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    currentAsetId = button.getAttribute('data-id');
+    // Sembunyikan riwayat setiap kali modal baru dibuka
+    timelineContainer.style.display = 'none';
+    timelineList.innerHTML = '';
+});
+
+// Event saat tombol "Lihat Riwayat" diklik
+riwayatBtn.addEventListener('click', function() {
+    if (!currentAsetId) return;
+
+    // Tampilkan loading...
+    timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+    timelineContainer.style.display = 'block';
+
+    fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
+        .then(response => response.json())
+        .then(data => {
+            timelineList.innerHTML = ''; // Kosongkan lagi
+            if (data.length > 0) {
+                data.forEach(item => {
+                    const proposed = JSON.parse(item.proposed_data);
+                    let changes = '';
+                    for (const key in proposed) {
+                        changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
+                    }
+
+                    const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+                    
+                    const listItem = `
+                        <li class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6>
+                                <small>${date} WIB</small>
+                            </div>
+                            <p class="mb-1">Data yang diubah: ${changes}</p>
+                        </li>
+                    `;
+                    timelineList.innerHTML += listItem;
+                });
+            } else {
+                timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching history:', error);
+            timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
+        });
+});
 
 </script>
 <?= $this->endSection() ?>

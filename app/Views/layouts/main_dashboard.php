@@ -35,8 +35,12 @@
                     </a>
                 </li>
                 <li>
-                    <a href="<?= base_url('requests') ?>" class="nav-link">
-                        <i class="bi bi-person-check-fill"></i> <span>Perubahan Aset</span>
+                    <a href="<?= base_url('admin/requests') ?>" class="nav-link">
+                        <i class="bi bi-person-check-fill"></i> 
+                        <span>Perubahan Aset</span>
+                        <?php if (isset($pending_requests) && $pending_requests > 0): ?>
+                            <span class="badge bg-danger ms-auto"><?= $pending_requests ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li>

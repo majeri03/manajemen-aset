@@ -165,9 +165,20 @@ Dashboard
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-                <p><strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span></p>
+                <p>
+                    <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
+                    <button id="lihat-riwayat-btn" class="btn btn-sm btn-outline-primary ms-2">Lihat Riwayat Lengkap</button>
+                </p>
+
+                <div id="timeline-container" class="mt-3" style="display: none;">
+                    <ul class="list-group" id="timeline-list">
+                        </ul>
+                </div>
             </div>
             <div class="modal-footer">
+                <a href="#" id="ajukan-perubahan-link" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-2"></i>Ajukan Perubahan
+                </a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -260,6 +271,7 @@ Dashboard
                 </div>
             </div>
             <div class="modal-footer">
+                
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" onclick="printQrCode()">
                     <i class="bi bi-printer-fill me-2"></i>Cetak
@@ -275,7 +287,7 @@ Dashboard
 
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
+<script src="https://unpkg.com/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
 
     // GENERATE KODE ASET OTOMATIS
@@ -451,9 +463,9 @@ var assetStatusChart = new Chart(ctx2, {
             const button = event.relatedTarget;
             // Ambil ID dari atribut data-*
             const asetId = button.getAttribute('data-id');
-
+            document.getElementById('ajukan-perubahan-link').href = `<?= base_url('requests/new/') ?>${asetId}`;
             // Ambil data dari server menggunakan Fetch API
-            fetch(`/aset/detail/${asetId}`)
+            fetch(`/aset/${asetId}`)
                 .then(response => response.json())
                 .then(data => {
                     // Isi konten modal dengan data yang diterima
