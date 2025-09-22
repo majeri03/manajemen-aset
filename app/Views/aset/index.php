@@ -66,11 +66,13 @@ Data Aset
                 <label for="filter-kategori" class="form-label">Kategori</label>
                 <select name="kategori" id="filter-kategori" class="form-select">
                     <option value="">Semua</option>
-                    <?php foreach ($kategori_list as $kategori) : ?>
-                        <option value="<?= esc($kategori['kategori']) ?>" <?= ($filters['kategori'] ?? '') == $kategori['kategori'] ? 'selected' : '' ?>>
-                            <?= esc($kategori['kategori']) ?>
-                        </option>
-                    <?php endforeach; ?>
+                    <?php if (!empty($kategori_list)) : ?>
+                        <?php foreach ($kategori_list as $kategori) : ?>
+                            <option value="<?= esc($kategori['kategori']) ?>" <?= ($filters['kategori'] ?? '') == $kategori['kategori'] ? 'selected' : '' ?>>
+                                <?= esc($kategori['kategori']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </select>
             </div>
             <div class="col-md-3">

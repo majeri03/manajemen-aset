@@ -43,3 +43,8 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
     $routes->get('requests/reject/(:num)', 'RequestController::reject/$1');
 });
 
+
+//  fungsi untuk mengekspor data yang sudah difilter
+$routes->get('aset/laporan/export', 'AsetController::export');
+
+$routes->get('dashboard/export/(:num)', 'AsetController::exportBulanan/$1');
