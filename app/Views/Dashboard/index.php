@@ -20,11 +20,54 @@ Dashboard
             <button class="btn btn-custom-icon me-2" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
                 <i class="bi bi-plus-circle me-2"></i> Tambah Aset
             </button>
-            <button class="btn btn-custom-icon me-2"><i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan</button>
+            <div class="dropdown me-2">
+                <button class="btn btn-custom-icon dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(1)">Januari</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(2)">Februari</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(3)">Maret</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(4)">April</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(5)">Mei</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(6)">Juni</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(7)">Juli</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(8)">Agustus</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(9)">September</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(10)">Oktober</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
+                </ul>
+            </div>
             <button class="btn btn-custom-icon"><i class="bi bi-geo-alt me-2"></i> Tracking Aset</button>
         </div>
     </div>
 </div>
+
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('error') ?>
+
+        <?php if ($conflictingId = session()->getFlashdata('conflicting_asset_id')): ?>
+            <button type="button" class="btn btn-dark btn-sm ms-3 view-detail" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#detailAsetModal"
+                    data-id="<?= $conflictingId ?>">
+                Lihat Aset yang Sudah Ada
+            </button>
+        <?php endif; ?>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 
 <div class="container-fluid">
     <div class="row g-4">
@@ -35,7 +78,7 @@ Dashboard
                 </div>
                 <div class="card-text">
                     <h6 class="text-muted">Total Jumlah Aset</h6>
-                    <h4 class="count-up" data-to="1250000000">110</h4>
+                    <h4 class="count-up" data-to="<?= $total_aset ?>"><?= $total_aset ?> Unit</h4>
                 </div>
             </div>
         </div>
@@ -46,7 +89,7 @@ Dashboard
                 </div>
                 <div class="card-text">
                     <h6 class="text-muted">Aset Rusak</h6>
-                    <h4 class="count-up" data-to="15">0 Unit</h4>
+                    <h4 class="count-up" data-to="<?= $aset_rusak ?>"><?= $aset_rusak ?> Unit</h4>
                 </div>
             </div>
         </div>
@@ -80,73 +123,56 @@ Dashboard
     </div>
 
 
-<?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <?= session()->getFlashdata('success') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-<?php if (session()->getFlashdata('error')): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <?= session()->getFlashdata('error') ?>
-
-        <?php if ($conflictingId = session()->getFlashdata('conflicting_asset_id')): ?>
-            <button type="button" class="btn btn-dark btn-sm ms-3 view-detail" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#detailAsetModal"
-                    data-id="<?= $conflictingId ?>">
-                Lihat Aset yang Sudah Ada
-            </button>
-        <?php endif; ?>
-
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
 
 
 
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th scope="col">KODE</th>
-                <th scope="col">KATEGORI BARANG</th>
-                <th scope="col">MERK</th>
-                <th scope="col">SERIAL NUMBER</th>
-                <th scope="col">TAHUN</th>
-                <th scope="col">LOKASI</th>
-                <th scope="col">KETERANGAN</th>
-                <th scope="col">AKSI</th> </tr>
-        </thead>
-        <tbody>
-            <?php if (!empty($asets)): ?>
-                <?php foreach ($asets as $aset): ?>
+<div class="container-fluid">
+    <div class="table-container shadow-sm mt-5">
+        <h5 class="mb-4">Aset Terbaru</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
-                        <td><?= esc($aset['kode']) ?></td>
-                        <td><?= esc($aset['kategori']) ?></td>
-                        <td><?= esc($aset['merk']) ?></td>
-                        <td><?= esc($aset['serial_number']) ?></td>
-                        <td><?= esc($aset['tahun']) ?></td>
-                        <td><?= esc($aset['lokasi']) ?></td>
-                        <td><?= esc($aset['keterangan']) ?></td>
-                        <td>
-                            <button type="button" class="btn btn-info btn-sm view-detail" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#detailAsetModal"
-                                    data-id="<?= $aset['id'] ?>">
-                                <i class="bi bi-eye-fill"></i>
-                            </button>
-                        </td>
+                        <th scope="col">KODE</th>
+                        <th scope="col">KATEGORI BARANG</th>
+                        <th scope="col">MERK</th>
+                        <th scope="col">SERIAL NUMBER</th>
+                        <th scope="col">TAHUN</th>
+                        <th scope="col">LOKASI</th>
+                        <th scope="col">KETERANGAN</th>
+                        <th scope="col">AKSI</th>
                     </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="8" class="text-center">Belum ada data aset.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                </thead>
+                <tbody id="asetTableBody">
+                    <?php if (!empty($asets)): ?>
+                        <?php foreach ($asets as $aset): ?>
+                            <tr>
+                                <td><?= esc($aset['kode']) ?></td>
+                                <td><?= esc($aset['kategori']) ?></td>
+                                <td><?= esc($aset['merk']) ?></td>
+                                <td><?= esc($aset['serial_number']) ?></td>
+                                <td><?= esc($aset['tahun']) ?></td>
+                                <td><?= esc($aset['lokasi']) ?></td>
+                                <td><?= esc($aset['keterangan']) ?></td>
+                                <td>
+                                    <button type="button" class="btn btn-info btn-sm view-detail" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detailAsetModal"
+                                            data-id="<?= $aset['id'] ?>">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" class="text-center">Belum ada data aset.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
@@ -277,6 +303,11 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
+
+    function exportLaporanBulanan(bulan) {
+        // Arahkan browser ke URL ekspor dengan bulan yang dipilih
+        window.location.href = `<?= base_url('dashboard/export/') ?>${bulan}`;
+    }
 
     // GENERATE KODE ASET OTOMATIS
     function generateKodeAset() {
@@ -442,6 +473,11 @@ var assetStatusChart = new Chart(ctx2, {
             }
         });
     };
+
+    
+
+
+
 
     document.addEventListener('DOMContentLoaded', function() {
         const detailAsetModal = document.getElementById('detailAsetModal');

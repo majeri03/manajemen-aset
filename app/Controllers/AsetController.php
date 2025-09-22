@@ -13,6 +13,7 @@ use CodeIgniter\RESTful\ResourceController;
 
 class AsetController extends ResourceController
 {
+    protected $asetModel; // <-- TAMBAHKAN BARIS INI
 
 
     /**
@@ -21,46 +22,46 @@ class AsetController extends ResourceController
      * @return ResponseInterface
      */
     public function index()
-{
-    // Ambil nilai filter dari URL (method GET)
-    $filters = [
-        'kategori' => $this->request->getGet('kategori'),
-        'status'   => $this->request->getGet('status'),
-        'keyword'  => $this->request->getGet('keyword'),
-    ];
+    {
+        // 1. Ambil nilai filter dari URL
+        $filters = [
+            'kategori' => $this->request->getGet('kategori'),
+            'status'   => $this->request->getGet('status'),
+            'keyword'  => $this->request->getGet('keyword'),
+        ];
 
-    // Mulai query builder
-    $query = $this->asetModel;
+        // 2. Mulai query builder dari model (INI BAGIAN YANG HILANG SEBELUMNYA)
+        $query = $this->asetModel;
 
-    // Terapkan filter jika ada nilainya
-    if (!empty($filters['kategori'])) {
-        $query->where('kategori', $filters['kategori']);
-    }
-    if (!empty($filters['status'])) {
-        $query->where('status', $filters['status']);
-    }
-    if (!empty($filters['keyword'])) {
-        $query->groupStart()
-              ->like('kode', $filters['keyword'])
-              ->orLike('merk', $filters['keyword'])
-              ->orLike('serial_number', $filters['keyword'])
-              ->orLike('lokasi', $filters['keyword'])
-              ->groupEnd();
-    }
-    
-    // Ambil daftar kategori unik untuk dropdown filter
-    $kategori_list = $this->asetModel->distinct()->select('kategori')->findAll();
+        // 3. Terapkan filter jika ada nilainya
+        if (!empty($filters['kategori'])) {
+            $query->where('kategori', $filters['kategori']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (!empty($filters['keyword'])) {
+            $query->groupStart()
+                  ->like('kode', $filters['keyword'])
+                  ->orLike('merk', $filters['keyword'])
+                  ->orLike('serial_number', $filters['keyword'])
+                  ->orLike('lokasi', $filters['keyword'])
+                  ->groupEnd();
+        }
+        
+        // Ambil daftar kategori unik untuk dropdown filter
+        $kategori_list = $this->asetModel->distinct()->select('kategori')->findAll();
 
-    $data = [
-        'title'         => 'Data Aset',
-        'asets'         => $query->orderBy('updated_at', 'DESC')->findAll(),
-        'kategori_list' => $kategori_list, // Variabel ini yang dibutuhkan view
-        'filters'       => $filters 
-    ];
+        // 4. Siapkan data untuk dikirim ke view
+        $data = [
+            'title'         => 'Data Aset',
+            'asets'         => $query->orderBy('updated_at', 'DESC')->findAll(),
+            'kategori_list' => $kategori_list,
+            'filters'       => $filters
+        ];
 
-    return view('aset/index', $data);
-}
-    
+        return view('aset/index', $data);
+    }    
 
 
 
@@ -242,6 +243,7 @@ class AsetController extends ResourceController
     {
         // Inisialisasi model di constructor
         $this->asetModel = new AsetModel();
+
     }
 
      public function search()
@@ -363,5 +365,79 @@ public function export()
 }
     
     
+public function exportBulanan($bulan)
+    {
+        // Validasi input bulan untuk memastikan nilainya antara 1 dan 12
+        if ($bulan < 1 || $bulan > 12) {
+            return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
+        }
 
+        // Tentukan tahun saat ini
+        $tahunIni = date('Y');
+
+        // Ambil data aset yang diperbarui pada bulan dan tahun yang dipilih dari database
+        $asets = $this->asetModel
+                        ->where('MONTH(updated_at)', $bulan)
+                        ->where('YEAR(updated_at)', $tahunIni)
+                        ->orderBy('updated_at', 'DESC')
+                        ->findAll();
+
+        // Buat objek Spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Tulis header untuk setiap kolom
+        $sheet->setCellValue('A1', 'Kode Aset');
+        $sheet->setCellValue('B1', 'Kategori');
+        $sheet->setCellValue('C1', 'Merk');
+        $sheet->setCellValue('D1', 'Serial Number');
+        $sheet->setCellValue('E1', 'Tahun');
+        $sheet->setCellValue('F1', 'Lokasi');
+        $sheet->setCellValue('G1', 'Status');
+        $sheet->setCellValue('H1', 'Keterangan');
+        $sheet->setCellValue('I1', 'Terakhir Diperbarui');
+        
+        // Berikan style pada baris header (opsional)
+        $styleArray = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
+        ];
+        $sheet->getStyle('A1:I1')->applyFromArray($styleArray);
+
+        // Tulis data dari setiap aset ke dalam baris spreadsheet
+        $row = 2;
+        foreach ($asets as $aset) {
+            $sheet->setCellValue('A' . $row, $aset['kode']);
+            $sheet->setCellValue('B' . $row, $aset['kategori']);
+            $sheet->setCellValue('C' . $row, $aset['merk']);
+            $sheet->setCellValue('D' . $row, $aset['serial_number']);
+            $sheet->setCellValue('E' . $row, $aset['tahun']);
+            $sheet->setCellValue('F' . $row, $aset['lokasi']);
+            $sheet->setCellValue('G' . $row, $aset['status']);
+            $sheet->setCellValue('H' . $row, $aset['keterangan']);
+            $sheet->setCellValue('I' . $row, $aset['updated_at']);
+            $row++;
+        }
+        
+        // Atur lebar setiap kolom agar menyesuaikan dengan kontennya (opsional)
+        foreach (range('A', 'I') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Buat writer untuk file .xlsx
+        $writer = new Xlsx($spreadsheet);
+        
+        // Buat nama file yang dinamis berdasarkan bulan dan tahun
+        $namaBulan = date('F', mktime(0, 0, 0, $bulan, 10)); // Mengubah angka bulan menjadi nama (e.g., 9 -> September)
+        $filename = 'laporan_aset_' . strtolower($namaBulan) . '_' . $tahunIni . '.xlsx';
+
+        // Set header HTTP untuk memulai proses download file
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        
+        // Tulis file ke output PHP, yang akan diunduh oleh browser
+        $writer->save('php://output');
+        exit();
+    }
 }

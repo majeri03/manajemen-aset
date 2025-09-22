@@ -57,3 +57,5 @@ $routes->resource('requests', ['controller' => 'RequestController']);
 
 //  fungsi untuk mengekspor data yang sudah difilter
 $routes->get('aset/laporan/export', 'AsetController::export');
+
+$routes->get('dashboard/export/(:num)', 'AsetController::exportBulanan/$1');
