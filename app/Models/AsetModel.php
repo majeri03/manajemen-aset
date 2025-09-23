@@ -40,6 +40,7 @@ class AsetModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
+
     // Validation
     protected $validationRules      = [];
     protected $validationMessages   = [];

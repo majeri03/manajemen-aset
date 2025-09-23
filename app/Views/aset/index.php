@@ -153,9 +153,15 @@ Data Aset
                             <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
                             <td><?= esc($aset['lokasi']) ?></td>
                             <td>
-                                <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>">
+                                <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
+                                <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Edit Aset">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>" class="btn btn-danger btn-sm" title="Hapus Aset">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -166,8 +172,15 @@ Data Aset
                 <?php endif; ?>
             </tbody>
         </table>
+        <form action="" method="post" id="deleteForm">
+    <?= csrf_field() ?>
+    <input type="hidden" name="_method" value="DELETE">
+</form>
     </div>
 </div>
+
+
+
 
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -385,6 +398,30 @@ Data Aset
         window.print();
         document.body.innerHTML = originalContent;
         window.location.reload(); 
+    }
+
+    // FUNGSI BARU UNTUK KONFIRMASI HAPUS
+    function confirmDelete(el) {
+        const asetId = el.getAttribute('data-id');
+        const asetKode = el.getAttribute('data-kode');
+        const deleteForm = document.getElementById('deleteForm');
+
+        Swal.fire({
+            title: 'Apakah Anda Yakin?',
+            html: `Anda akan menghapus aset dengan kode:<br><b>${asetKode}</b><br><br>Tindakan ini tidak dapat dibatalkan!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus Saja!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Set action form dan submit
+                deleteForm.action = `<?= base_url('aset/') ?>${asetId}`;
+                deleteForm.submit();
+            }
+        });
     }
 
    
