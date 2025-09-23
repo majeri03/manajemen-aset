@@ -58,7 +58,7 @@ class RequestController extends ResourceController
 
         return view('requests/new', $data);
     }
-    public function store()
+    public function create()
     {
         $proposedData = service('request')->getVar('proposed_data');
         $asetId = service('request')->getVar('aset_id');
@@ -100,7 +100,7 @@ class RequestController extends ResourceController
             // 3. Update status permintaan menjadi 'approved'
             $db->table('aset_update_requests')->where('id', $requestId)->update(['status' => 'approved']);
 
-            return redirect()->to('admin/requests')->with('success', 'Permintaan berhasil disetujui.');
+            return redirect()->to('/requests')->with('success', 'Permintaan berhasil disetujui.');
         }
         return redirect()->to('admin/requests')->with('error', 'Permintaan tidak valid.');
     }
@@ -111,7 +111,7 @@ class RequestController extends ResourceController
         // Update status permintaan menjadi 'rejected'
         $db->table('aset_update_requests')->where('id', $requestId)->update(['status' => 'rejected']);
 
-        return redirect()->to('admin/requests')->with('success', 'Permintaan telah ditolak.');
+        return redirect()->to('/requests')->with('success', 'Permintaan berhasil disetujui.');
     }
     /**
      * Return the properties of a resource object.
@@ -140,11 +140,7 @@ class RequestController extends ResourceController
      *
      * @return ResponseInterface
      */
-    public function create()
-    {
-        //
-    }
-
+ 
     /**
      * Return the editable properties of a resource object.
      *

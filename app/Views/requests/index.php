@@ -53,8 +53,8 @@
                                         </ul>
                                     </td>
                                     <td>
-                                        <a href="<?= base_url('admin/requests/approve/' . $req['id']) ?>" class="btn btn-success btn-sm">Setujui</a>
-                                        <a href="<?= base_url('admin/requests/reject/' . $req['id']) ?>" class="btn btn-danger btn-sm">Tolak</a>
+                                        <a href="<?= base_url('requests/approve/' . $req['id']) ?>" class="btn btn-success btn-sm">Setujui</a>
+                                        <a href="<?= base_url('requests/reject/' . $req['id']) ?>" class="btn btn-danger btn-sm">Tolak</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
