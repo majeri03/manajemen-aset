@@ -23,6 +23,8 @@ class AsetController extends ResourceController
      */
     public function index()
     {
+
+        
         // 1. Ambil nilai filter dari URL
         $filters = [
             'kategori' => $this->request->getGet('kategori'),

@@ -18,37 +18,39 @@
                     <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" class="img-fluid">
                 </a>
             </div>
-            <ul class="nav nav-pills flex-column mb-auto">
-                <li class="nav-item">
-                    <a href="/dashboard" class="nav-link active" aria-current="page">
-                        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?= base_url('aset') ?>" class="nav-link">
-                        <i class="bi bi-box-seam"></i> <span>Data Aset</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-geo-alt-fill"></i> <span>Tracking Aset</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?= base_url('admin/requests') ?>" class="nav-link">
-                        <i class="bi bi-person-check-fill"></i> 
-                        <span>Perubahan Aset</span>
-                        <?php if (isset($pending_requests) && $pending_requests > 0): ?>
-                            <span class="badge bg-danger ms-auto"><?= $pending_requests ?></span>
-                        <?php endif; ?>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-file-earmark-bar-graph"></i> <span>Laporan</span>
-                    </a>
-                </li>
-            </ul>
+                <?php 
+                    // Mengambil segmen pertama dari URL untuk menentukan halaman aktif
+                    // Contoh: http://localhost:8080/aset -> 'aset'
+                    $current_page = service('uri')->getSegment(1); 
+                ?>
+
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/dashboard" class="nav-link <?= ($current_page == 'dashboard' || $current_page == '') ? 'active' : '' ?>" aria-current="page">
+                            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('aset') ?>" class="nav-link <?= ($current_page == 'aset') ? 'active' : '' ?>">
+                            <i class="bi bi-box-seam"></i> <span>Data Aset</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('tracking') ?>" class="nav-link <?= ($current_page == 'tracking') ? 'active' : '' ?>">
+                            <i class="bi bi-geo-alt-fill"></i> <span>Tracking Aset</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('requests') ?>" class="nav-link <?= ($current_page == 'requests') ? 'active' : '' ?>">
+                            <i class="bi bi-person-check-fill"></i> <span>Permintaan Perubahan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('laporan') ?>" class="nav-link <?= ($current_page == 'laporan') ? 'active' : '' ?>">
+                            <i class="bi bi-file-earmark-bar-graph"></i> <span>Laporan</span>
+                        </a>
+                    </li>
+                </ul>
             <hr>
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
