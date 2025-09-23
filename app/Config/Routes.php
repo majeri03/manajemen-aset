@@ -30,6 +30,10 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     
     $routes->resource('aset', ['controller' => 'AsetController']);
     // Permintaan Perubahan Aset
+    $routes->get('requests/new/(:num)', 'RequestController::newRequest/$1');
+    $routes->get('requests/approve/(:num)', 'RequestController::approve/$1');
+    $routes->get('requests/reject/(:num)', 'RequestController::reject/$1');  
+    // $routes->post('requests/store', 'RequestController::store');
     $routes->resource('requests', ['controller' => 'RequestController']);
     
     // Pelacakan & Laporan

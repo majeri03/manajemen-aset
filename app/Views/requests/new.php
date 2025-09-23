@@ -22,7 +22,7 @@
         </div>
         <div class="col-lg-6">
             <h5>Ajukan Perubahan (Isi yang perlu diubah)</h5>
-            <form action="<?= base_url('requests/store') ?>" method="post">
+            <form action="<?= base_url('requests') ?>" method="post">
                 <?= csrf_field() ?>
                 <input type="hidden" name="aset_id" value="<?= esc($aset['id']) ?>">
 
