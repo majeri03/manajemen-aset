@@ -255,3 +255,212 @@ body {
         margin-bottom: 0.5rem;
     }
 }
+
+/* ======================================= */
+/* === STYLING "WOW" UNTUK LAPORAN V2 === */
+/* ======================================= */
+
+.report-card-v2 {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.report-card-v2:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+}
+
+.report-card-v2 p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.report-card-v2 h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 5px 0 0 0;
+}
+
+.report-card-v2 .card-v2-icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: 0.1;
+    transition: all 0.3s ease;
+}
+
+.report-card-v2:hover .card-v2-icon {
+    opacity: 0.15;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Warna-warni Kartu */
+.card-v2-total h2 { color: var(--primary-blue); }
+.card-v2-baik h2 { color: #198754; }
+.card-v2-rusak h2 { color: #dc3545; }
+.card-v2-lainnya h2 { color: #6c757d; }
+
+
+/* ======================================= */
+/* === STYLING WOW UNTUK TIMELINE ASET === */
+/* ======================================= */
+
+.timeline-container {
+    padding: 2rem 0;
+}
+
+.timeline {
+    list-style: none;
+    padding: 20px 0 20px;
+    position: relative;
+}
+
+.timeline:before {
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    content: " ";
+    width: 3px;
+    background-color: #dee2e6;
+    left: 50%;
+    margin-left: -1.5px;
+}
+
+.timeline > li {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.timeline > li:before,
+.timeline > li:after {
+    content: " ";
+    display: table;
+}
+
+.timeline > li:after {
+    clear: both;
+}
+
+.timeline > li .timeline-panel {
+    width: 45%;
+    float: left;
+    border: 1px solid #d4d4d4;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    background: #fff;
+}
+
+.timeline > li .timeline-badge {
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 1.5rem;
+    text-align: center;
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    margin-left: -25px;
+    border-radius: 50%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timeline > li:nth-child(even) .timeline-panel {
+    float: right;
+}
+
+.timeline-title {
+    margin-top: 0;
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.timeline-body > p,
+.timeline-body > ul {
+    margin-bottom: 0;
+}
+
+.timeline-body .change-list {
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+
+/* ================================================= */
+/* === STYLING WOW UNTUK TRACKING & LAPORAN === */
+/* ================================================= */
+
+.summary-card-report {
+    display: flex;
+    align-items: center;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #e9ecef;
+}
+
+.summary-card-report:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.summary-card-report .card-icon {
+    border-radius: 12px;
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+}
+
+.summary-card-report .card-text h4 {
+    font-size: 1.5rem;
+}
+
+/* Timeline specific */
+.timeline-item {
+    margin-bottom: 20px;
+    position: relative;
+}
+.timeline-item:before, .timeline-item:after {
+    content: " ";
+    display: table;
+}
+.timeline-item:after {
+    clear: both;
+}
+
+.change-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+.change-item {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+.change-key {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+}
+.change-value {
+    font-weight: 500;
+    color: var(--text-dark);
+}

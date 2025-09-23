@@ -577,7 +577,7 @@ var assetStatusChart = new Chart(ctx2, {
                     });
             });
         }
-    });
+    })
 
 
     // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
