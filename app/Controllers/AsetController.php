@@ -11,59 +11,63 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * @property \CodeIgniter\HTTP\IncomingRequest $request
+ */
 class AsetController extends ResourceController
 {
-    protected $asetModel; // <-- TAMBAHKAN BARIS INI
+    protected $asetModel;
+    public function __construct()
+    {
+        // Inisialisasi model di constructor
+        $this->asetModel = new AsetModel();
 
-
+    }
     /**
      * Return an array of resource objects, themselves in array format.
      *
      * @return ResponseInterface
      */
     public function index()
-    {
+{
+    $filters = [
+        'kategori' => $this->request->getGet('kategori'),
+        'status'   => $this->request->getGet('status'),
+        'keyword'  => $this->request->getGet('keyword'),
+    ];
 
-        
-        // 1. Ambil nilai filter dari URL
-        $filters = [
-            'kategori' => $this->request->getGet('kategori'),
-            'status'   => $this->request->getGet('status'),
-            'keyword'  => $this->request->getGet('keyword'),
-        ];
+    $query = $this->asetModel;
 
-        // 2. Mulai query builder dari model (INI BAGIAN YANG HILANG SEBELUMNYA)
-        $query = $this->asetModel;
+    if (!empty($filters['kategori'])) {
+        $query = $query->where('kategori', $filters['kategori']);
+    }
+    if (!empty($filters['status'])) {
+        $query = $query->where('status', $filters['status']);
+    }
+    if (!empty($filters['keyword'])) {
+        $query = $query->groupStart()
+            ->like('kode', $filters['keyword'])
+            ->orLike('merk', $filters['keyword'])
+            ->orLike('serial_number', $filters['keyword'])
+            ->orLike('lokasi', $filters['keyword'])
+            ->groupEnd();
+    }
+    
+    // PERTAMA: Eksekusi dan simpan hasil query utama yang sudah difilter
+    $asets_data = $query->orderBy('updated_at', 'DESC')->findAll();
 
-        // 3. Terapkan filter jika ada nilainya
-        if (!empty($filters['kategori'])) {
-            $query->where('kategori', $filters['kategori']);
-        }
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-        if (!empty($filters['keyword'])) {
-            $query->groupStart()
-                  ->like('kode', $filters['keyword'])
-                  ->orLike('merk', $filters['keyword'])
-                  ->orLike('serial_number', $filters['keyword'])
-                  ->orLike('lokasi', $filters['keyword'])
-                  ->groupEnd();
-        }
-        
-        // Ambil daftar kategori unik untuk dropdown filter
-        $kategori_list = $this->asetModel->distinct()->select('kategori')->findAll();
+    // KEDUA: Setelah query utama selesai, baru kita ambil data untuk dropdown
+    $kategori_list = $this->asetModel->distinct()->select('kategori')->findAll();
 
-        // 4. Siapkan data untuk dikirim ke view
-        $data = [
-            'title'         => 'Data Aset',
-            'asets'         => $query->orderBy('updated_at', 'DESC')->findAll(),
-            'kategori_list' => $kategori_list,
-            'filters'       => $filters
-        ];
+    $data = [
+        'title'         => 'Data Aset',
+        'asets'         => $asets_data, // Gunakan hasil yang sudah disimpan
+        'kategori_list' => $kategori_list,
+        'filters'       => $filters
+    ];
 
-        return view('aset/index', $data);
-    }    
+    return view('aset/index', $data);
+}        
 
 
 
@@ -230,32 +234,27 @@ class AsetController extends ResourceController
         }
     }
 
-    public function __construct()
-    {
-        // Inisialisasi model di constructor
-        $this->asetModel = new AsetModel();
+    
 
-    }
-
-     public function search()
+   public function search()
     {
-        // Ambil kata kunci dari request GET, Contoh: /aset/search?q=epson
         $keyword = $this->request->getGet('q');
         
+        // Mulai dengan model
+        $query = $this->asetModel;
+
         if ($keyword) {
-            // Gunakan metode 'like' untuk mencari di beberapa kolom
-            $results = $this->asetModel->like('kode', $keyword)
-                                       ->orLike('kategori', $keyword)
-                                       ->orLike('merk', $keyword)
-                                       ->orLike('serial_number', $keyword)
-                                       ->orLike('lokasi', $keyword)
-                                       ->findAll();
-        } else {
-            // Jika tidak ada kata kunci, kembalikan semua data
-            $results = $this->asetModel->findAll();
+            // Terapkan filter pencarian
+            $query = $query->like('kode', $keyword)
+                        ->orLike('kategori', $keyword)
+                        ->orLike('merk', $keyword)
+                        ->orLike('serial_number', $keyword)
+                        ->orLike('lokasi', $keyword);
         }
 
-        // Kembalikan hasil sebagai JSON
+        // Eksekusi findAll() pada query builder yang sudah final
+        $results = $query->findAll();
+
         return $this->response->setJSON($results);
     }
 
@@ -266,8 +265,7 @@ class AsetController extends ResourceController
             'aset'  => $this->asetModel->find($id),
         ];
 
-        // Nonaktifkan Debug Toolbar untuk halaman publik ini
-        \Config\Services::toolbar()->disable();
+
 
         return view('aset/public_detail', $data);
     }

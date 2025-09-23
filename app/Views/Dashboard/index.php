@@ -13,10 +13,12 @@ Dashboard
             <p class="text-muted small">Ringkasan cepat aset perusahaan Anda.</p>
         </div>
         <div class="col-md-6 col-lg-8 mt-3 mt-md-0 d-flex justify-content-end align-items-center flex-wrap">
-            <div class="input-group search-bar me-3">
-                <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
-                <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
-            </div>
+            <form action="<?= base_url('aset') ?>" method="get" class="me-3">
+                <div class="input-group search-bar">
+                    <input type="text" class="form-control" name="keyword" placeholder="Cari aset...">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+            </form>
             <button class="btn btn-custom-icon me-2" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
                 <i class="bi bi-plus-circle me-2"></i> Tambah Aset
             </button>
@@ -312,6 +314,13 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
+    function searchAset() {
+        const keyword = document.getElementById('searchInput').value;
+        if (keyword) {
+            // Arahkan ke halaman data aset dengan parameter pencarian
+            window.location.href = `<?= base_url('aset') ?>?keyword=${encodeURIComponent(keyword)}`;
+        }
+    }
 
     function exportLaporanBulanan(bulan) {
         // Arahkan browser ke URL ekspor dengan bulan yang dipilih
@@ -489,6 +498,25 @@ var assetStatusChart = new Chart(ctx2, {
 
 
     document.addEventListener('DOMContentLoaded', function() {
+        
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.querySelector('.search-bar .btn');
+
+        if (searchInput) {
+            // Cari saat tombol Enter ditekan
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    searchAset();
+                }
+            });
+        }
+        if (searchButton) {
+            // Cari saat ikon search di-klik
+            searchButton.addEventListener('click', function() {
+                searchAset();
+            });
+        }
+
          // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
         const detailAsetModal = document.getElementById('detailAsetModal');
         let currentAsetId = null;
