@@ -17,6 +17,8 @@ use CodeIgniter\RESTful\ResourceController;
 class AsetController extends ResourceController
 {
     protected $asetModel;
+    protected $modelName = 'App\Models\AsetModel';
+    
     public function __construct()
     {
         // Inisialisasi model di constructor
@@ -203,7 +205,17 @@ class AsetController extends ResourceController
      */
     public function edit($id = null)
     {
-        //
+        $aset = $this->model->find($id);
+    if (!$aset) {
+        return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
+    }
+
+    $data = [
+        'title' => 'Edit Aset',
+        'aset'  => $aset
+    ];
+
+    return view('aset/edit', $data);
     }
 
     /**
@@ -215,7 +227,23 @@ class AsetController extends ResourceController
      */
     public function update($id = null)
     {
-        //
+         // Tentukan field mana saja yang boleh diubah oleh admin
+        $allowedFields = [
+            'kategori',
+            'tahun',
+            'lokasi',
+            'status',
+            'keterangan'
+        ];
+
+        // Ambil hanya data yang diizinkan dari input POST
+        $data = $this->request->getPost($allowedFields);
+
+        if ($this->model->update($id, $data)) {
+            return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
+        }
+
+        return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
     }
 
     /**
@@ -232,6 +260,13 @@ class AsetController extends ResourceController
         } else {
             return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
         }
+
+        // Menggunakan fitur soft delete dari model
+        if ($this->model->delete($id)) {
+            return redirect()->to('/aset')->with('success', 'Aset berhasil dihapus.');
+        }
+
+        return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
     }
 
     
