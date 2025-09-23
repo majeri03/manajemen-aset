@@ -312,7 +312,7 @@ Dashboard
 
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/countup.js@2.0.7/dist/countUp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
     function searchAset() {
         const keyword = document.getElementById('searchInput').value;

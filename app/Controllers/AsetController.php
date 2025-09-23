@@ -266,7 +266,6 @@ class AsetController extends ResourceController
         ];
 
 
-
         return view('aset/public_detail', $data);
     }
 
