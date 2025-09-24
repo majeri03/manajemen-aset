@@ -125,9 +125,6 @@ Dashboard
     </div>
 
 
-
-
-
 <div class="container-fluid">
     <div class="table-container shadow-sm mt-5">
         <h5 class="mb-4">Aset Terbaru</h5>
@@ -137,6 +134,7 @@ Dashboard
                     <tr>
                         <th scope="col">KODE</th>
                         <th scope="col">KATEGORI BARANG</th>
+                        <th scope="col">SUB KATEGORI</th>
                         <th scope="col">MERK</th>
                         <th scope="col">SERIAL NUMBER</th>
                         <th scope="col">TAHUN</th>
@@ -150,7 +148,8 @@ Dashboard
                         <?php foreach ($asets as $aset): ?>
                             <tr>
                                 <td><?= esc($aset['kode']) ?></td>
-                                <td><?= esc($aset['kategori']) ?></td>
+                                <td><?= esc($aset['nama_kategori']) ?></td>
+                                <td><?= esc($aset['nama_sub_kategori']) ?></td>
                                 <td><?= esc($aset['merk']) ?></td>
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
@@ -168,7 +167,7 @@ Dashboard
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" class="text-center">Belum ada data aset.</td>
+                            <td colspan="9" class="text-center">Belum ada data aset.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -187,11 +186,16 @@ Dashboard
             <div class="modal-body">
                 <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
                 <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                <p><strong>Sub Kategori:</strong> <span id="detail-sub-kategori"></span></p>
                 <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                <p><strong>Type:</strong> <span id="detail-type"></span></p>
                 <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
                 <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
+                <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
+                <p><strong>Status:</strong> <span id="detail-status"></span></p>
                 <hr>
                 <p>
                     <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
@@ -222,52 +226,66 @@ Dashboard
             <div class="modal-body">
                 <form action="<?= base_url('aset') ?>" method="post">
                     <?= csrf_field() ?>
-                    <input type="hidden" name="redirect_to" value="aset">
                     <input type="hidden" name="redirect_to" value="dashboard">
-
                     <div class="mb-3">
-                        <label for="kategori" class="form-label">Kategori Barang</label>
-                        <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Contoh: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <label for="kategori_id-tambah" class="form-label">Kategori Barang</label>
+                        <select class="form-select" id="kategori_id-tambah" name="kategori_id" required>
+                            <option value="">Pilih Kategori</option>
+                            <?php foreach ($kategori_list as $kategori): ?>
+                                <option value="<?= $kategori['id'] ?>"><?= $kategori['nama_kategori'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-
                     <div class="mb-3">
-                        <label for="merk" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <label for="sub_kategori_id-tambah" class="form-label">Sub Kategori</label>
+                        <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled>
+                            <option value="">Pilih Sub Kategori</option>
+                        </select>
                     </div>
-
                     <div class="mb-3">
-                        <label for="serial_number" class="form-label">Serial Number</label>
-                        <input type="text" class="form-control" id="serial_number" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                        <label for="merk-tambah" class="form-label">Merk</label>
+                        <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
                     </div>
-
                     <div class="mb-3">
-                        <label for="tahun" class="form-label">Tahun</label>
-                        <input type="number" class="form-control" id="tahun" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
+                        <label for="type-tambah" class="form-label">Type</label>
+                        <input type="text" class="form-control" id="type-tambah" name="type" placeholder="Contoh: L3110" oninput="this.value = this.value.toUpperCase();">
                     </div>
-
-
                     <div class="mb-3">
-                        <label for="status" class="form-label">Status Aset</label>
-                        <select class="form-select" id="status" name="status" required>
+                        <label for="serial_number-tambah" class="form-label">Serial Number</label>
+                        <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tahun-tambah" class="form-label">Tahun</label>
+                        <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
+                        <input type="number" class="form-control" id="harga_beli-tambah" name="harga_beli" placeholder="Contoh: 1500000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
+                        <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: PT. JAYA ABADI">
+                    </div>
+                    <div class="mb-3">
+                        <label for="status-tambah" class="form-label">Status Aset</label>
+                        <select class="form-select" id="status-tambah" name="status" required>
                             <option value="Baik" selected>Baik</option>
                             <option value="Rusak">Rusak</option>
                             <option value="Tidak terpakai">Tidak terpakai</option>
                         </select>
                     </div>
-
                     <div class="mb-3">
-                        <label for="lokasi" class="form-label">Lokasi</label>
-                        <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                        <label for="lokasi-tambah" class="form-label">Lokasi</label>
+                        <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
                     </div>
-
                     <div class="mb-3">
-                        <label for="keterangan" class="form-label">Keterangan</label>
-                        <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
+                        <label for="keterangan-tambah" class="form-label">Keterangan</label>
+                        <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="kode" class="form-label">Kode Aset (Otomatis)</label>
-                        <input type="text" class="form-control" id="kode" name="kode" readonly style="background-color: #e9ecef;">
+                        <label for="kode-tambah" class="form-label">Kode Aset (Otomatis)</label>
+                        <input type="text" class="form-control" id="kode-tambah" name="kode" readonly style="background-color: #e9ecef;">
                     </div>
 
                     <div class="modal-footer">
@@ -314,44 +332,62 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
+    const allSubKategoris = <?= json_encode($subkategori_list) ?>;
+    
+    function populateSubKategori(kategoriId, subKategoriSelect, selectedSubKategoriId = null) {
+        subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
+        subKategoriSelect.disabled = true;
+
+        if (kategoriId) {
+            const filteredSubkategoris = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
+            if (filteredSubkategoris.length > 0) {
+                filteredSubkategoris.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = sub.nama_sub_kategori;
+                    if (selectedSubKategoriId && selectedSubKategoriId == sub.id) {
+                        option.selected = true;
+                    }
+                    subKategoriSelect.appendChild(option);
+                });
+                subKategoriSelect.disabled = false;
+            }
+        }
+    }
+
+
     function searchAset() {
         const keyword = document.getElementById('searchInput').value;
         if (keyword) {
-            // Arahkan ke halaman data aset dengan parameter pencarian
             window.location.href = `<?= base_url('aset') ?>?keyword=${encodeURIComponent(keyword)}`;
         }
     }
 
     function exportLaporanBulanan(bulan) {
-        // Arahkan browser ke URL ekspor dengan bulan yang dipilih
         window.location.href = `<?= base_url('dashboard/export/') ?>${bulan}`;
     }
 
-    // GENERATE KODE ASET OTOMATIS
     function generateKodeAset() {
-        const kategori = document.getElementById('kategori').value.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-        const tahun = document.getElementById('tahun').value;
-        const merk = document.getElementById('merk').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
+        const kategoriSelect = document.getElementById('kategori_id-tambah');
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
+        const tahun = document.getElementById('tahun-tambah').value;
+        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
         
-        if (kategori && tahun && merk) {
-            const kodeAset = `BTR/${kategori}/${tahun}/${merk}`;
-            document.getElementById('kode').value = kodeAset;
+        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+
+        if (kategoriNama && subKategoriNama && tahun && merk) {
+            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
         } else {
-            document.getElementById('kode').value = '';
+            document.getElementById('kode-tambah').value = '';
         }
     }
 
-
-
     // Inisialisasi Chart.js
     
-    // --- PIE CHART DINAMIS ---
-    
-    // 1. Ambil data dari controller PHP
     const labels = <?= json_encode($chartLabels) ?>;
     const data = <?= json_encode($chartData) ?>;
 
-    // 2. Fungsi untuk menghasilkan warna acak
     function generateRandomColor() {
         const r = Math.floor(Math.random() * 200);
         const g = Math.floor(Math.random() * 200);
@@ -359,19 +395,17 @@ Dashboard
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    // 3. Buat array warna dinamis sejumlah data yang ada
     const dynamicColors = labels.map(() => generateRandomColor());
 
-    // 4. Inisialisasi Chart.js dengan data dinamis
     var ctx1 = document.getElementById('assetCategoryChart').getContext('2d');
     var assetCategoryChart = new Chart(ctx1, {
         type: 'pie',
         data: {
-            labels: labels, // Gunakan data label dari controller
+            labels: labels,
             datasets: [{
                 label: 'Jumlah Aset',
-                data: data, // Gunakan data jumlah dari controller
-                backgroundColor: dynamicColors, // Gunakan warna yang digenerate otomatis
+                data: data,
+                backgroundColor: dynamicColors,
                 hoverOffset: 4
             }]
         },
@@ -388,49 +422,42 @@ Dashboard
         }
     });
 
-
-    // --- FUNGSI DETAIL ASET (MODAL) ---
 const detailAsetModal = document.getElementById('detailAsetModal');
 if (detailAsetModal) {
     detailAsetModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         const asetId = button.getAttribute('data-id');
         
-        // Sesuaikan URL fetch dengan resource route
         fetch(`/aset/${asetId}`) 
             .then(response => response.json())
             .then(data => {
                 document.getElementById('detail-kode').textContent = data.kode;
-                document.getElementById('detail-kategori').textContent = data.kategori;
+                document.getElementById('detail-kategori').textContent = data.nama_kategori;
+                document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
                 document.getElementById('detail-merk').textContent = data.merk;
+                document.getElementById('detail-type').textContent = data.type || '-';
                 document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                 document.getElementById('detail-tahun').textContent = data.tahun;
+                document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
+                document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                 document.getElementById('detail-lokasi').textContent = data.lokasi;
                 document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                document.getElementById('detail-status').textContent = data.status;
                 document.getElementById('detail-updated_at').textContent = data.updated_at;
             })
             .catch(error => console.error('Error fetching detail:', error));
     });
 }
 
-// Ganti kode JavaScript untuk assetStatusChart dengan ini:
-
-// 1. Ambil data status dari controller
 const statusLabels = <?= json_encode($statusLabels) ?>;
 const statusData = <?= json_encode($statusData) ?>;
-
-// 2. Siapkan warna (Anda bisa menambahkannya jika statusnya lebih banyak)
 const statusColors = {
-    'BAIK': '#065f46', // Hijau
-    'RUSAK': '#991b1b', // Merah
-    'TIDAK TERPAKAI': '#92400e' // Oranye tua
-    // Tambahkan warna lain di sini jika ada status baru, misal: 'DALAM PERBAIKAN': '#...'
+    'BAIK': '#065f46',
+    'RUSAK': '#991b1b',
+    'TIDAK TERPAKAI': '#92400e'
 };
 
-// 3. Buat array warna dinamis berdasarkan label status
-const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d'); // Abu-abu jika status tidak dikenali
-
-// 4. Inisialisasi Chart.js dengan data dinamis
+const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d');
 var ctx2 = document.getElementById('assetStatusChart').getContext('2d');
 var assetStatusChart = new Chart(ctx2, {
     type: 'bar',
@@ -461,155 +488,148 @@ var assetStatusChart = new Chart(ctx2, {
 });
 
 
+window.onload = function() {
+    const countUpElements = document.querySelectorAll('.count-up');
+    countUpElements.forEach(el => {
+        const endValue = el.getAttribute('data-to');
+        const isRupiah = el.innerText.includes('Rp');
+        let instance;
 
-    // Inisialisasi CountUp.js
-    window.onload = function() {
-        const countUpElements = document.querySelectorAll('.count-up');
-        countUpElements.forEach(el => {
-            const endValue = el.getAttribute('data-to');
-            const isRupiah = el.innerText.includes('Rp');
-            let instance;
+        if (isRupiah) {
+            instance = new CountUp(el, endValue, {
+                prefix: 'Rp ',
+                separator: '.',
+                decimal: ',',
+                duration: 2.5
+            });
+        } else {
+            instance = new CountUp(el, endValue, {
+                suffix: ' ' + (el.innerText.split(' ')[1] || ''),
+                duration: 2.5
+            });
+        }
 
-            if (isRupiah) {
-                instance = new CountUp(el, endValue, {
-                    prefix: 'Rp ',
-                    separator: '.',
-                    decimal: ',',
-                    duration: 2.5
-                });
-            } else {
-                instance = new CountUp(el, endValue, {
-                    suffix: ' ' + (el.innerText.split(' ')[1] || ''),
-                    duration: 2.5
-                });
-            }
+        if (!instance.error) {
+            instance.start();
+        } else {
+            console.error(instance.error);
+        }
+    });
+};
 
-            if (!instance.error) {
-                instance.start();
-            } else {
-                console.error(instance.error);
-            }
-        });
-    };
-
+document.addEventListener('DOMContentLoaded', function() {
     
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.querySelector('.search-bar .btn');
 
-
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.querySelector('.search-bar .btn');
-
-        if (searchInput) {
-            // Cari saat tombol Enter ditekan
-            searchInput.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    searchAset();
-                }
-            });
-        }
-        if (searchButton) {
-            // Cari saat ikon search di-klik
-            searchButton.addEventListener('click', function() {
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
                 searchAset();
-            });
-        }
-
-         // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
-        const detailAsetModal = document.getElementById('detailAsetModal');
-        let currentAsetId = null;
-
-        if (detailAsetModal) {
-             const riwayatBtn = detailAsetModal.querySelector('#lihat-riwayat-btn');
-            const timelineContainer = detailAsetModal.querySelector('#timeline-container');
-            const timelineList = detailAsetModal.querySelector('#timeline-list');
-            
-            detailAsetModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                currentAsetId = button.getAttribute('data-id');
-
-                timelineContainer.style.display = 'none';
-                timelineList.innerHTML = '';
-                
-                fetch(`/aset/${currentAsetId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('detail-kode').textContent = data.kode;
-                        document.getElementById('detail-kategori').textContent = data.kategori;
-                        document.getElementById('detail-merk').textContent = data.merk;
-                        document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun').textContent = data.tahun;
-                        document.getElementById('detail-lokasi').textContent = data.lokasi;
-                        document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                        document.getElementById('detail-updated_at').textContent = data.updated_at;
-                    })
-                    .catch(error => console.error('Error fetching detail:', error));
-            });
-
-             riwayatBtn.addEventListener('click', function() {
-                if (!currentAsetId) return;
-                timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
-                timelineContainer.style.display = 'block';
-                fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        timelineList.innerHTML = '';
-                        if (data.length > 0) {
-                            data.forEach(item => {
-                                const proposed = JSON.parse(item.proposed_data);
-                                let changes = '';
-                                for (const key in proposed) {
-                                    changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
-                                }
-                                const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
-                                timelineList.innerHTML += listItem;
-                            });
-                        } else {
-                            timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching history:', error);
-                        timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
-                    });
-            });
-        }
-    })
-
-
-    // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
-    <?php if (session()->getFlashdata('new_aset')): ?>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ambil data aset dari session flash
-            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
-            
-            // Isi konten modal dengan data
-            document.getElementById('qr-kode').textContent = newAset.kode;
-            document.getElementById('qr-detail').textContent = `${newAset.kategori} - ${newAset.merk}`;
-            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
-            
-            // Tampilkan modal
-            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
-            qrModal.show();
+            }
         });
-    <?php endif; ?>
-
-    // --- FUNGSI UNTUK MENCETAK AREA QR CODE ---
-    function printQrCode() {
-        const printContent = document.getElementById('qrCodePrintArea').innerHTML;
-        const originalContent = document.body.innerHTML;
-
-        document.body.innerHTML = printContent;
-        window.print();
-        document.body.innerHTML = originalContent;
-        // Kita perlu me-reload agar event listener dan fungsionalitas lain kembali normal
-        window.location.reload(); 
+    }
+    if (searchButton) {
+        searchButton.addEventListener('click', function() {
+            searchAset();
+        });
     }
 
-    
+    const detailAsetModal = document.getElementById('detailAsetModal');
+    let currentAsetId = null;
+
+    if (detailAsetModal) {
+        const riwayatBtn = detailAsetModal.querySelector('#lihat-riwayat-btn');
+        const timelineContainer = detailAsetModal.querySelector('#timeline-container');
+        const timelineList = detailAsetModal.querySelector('#timeline-list');
+        
+        detailAsetModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            currentAsetId = button.getAttribute('data-id');
+
+            timelineContainer.style.display = 'none';
+            timelineList.innerHTML = '';
+            
+            fetch(`/aset/${currentAsetId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('detail-kode').textContent = data.kode;
+                    document.getElementById('detail-kategori').textContent = data.nama_kategori;
+                    document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
+                    document.getElementById('detail-merk').textContent = data.merk;
+                    document.getElementById('detail-type').textContent = data.type || '-';
+                    document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
+                    document.getElementById('detail-tahun').textContent = data.tahun;
+                    document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
+                    document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
+                    document.getElementById('detail-lokasi').textContent = data.lokasi;
+                    document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                    document.getElementById('detail-status').textContent = data.status;
+                    document.getElementById('detail-updated_at').textContent = data.updated_at;
+                })
+                .catch(error => console.error('Error fetching detail:', error));
+        });
+
+        riwayatBtn.addEventListener('click', function() {
+            if (!currentAsetId) return;
+            timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+            timelineContainer.style.display = 'block';
+            fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
+                .then(response => response.json())
+                .then(data => {
+                    timelineList.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(item => {
+                            const proposed = JSON.parse(item.proposed_data);
+                            let changes = '';
+                            for (const key in proposed) {
+                                changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
+                            }
+                            const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+                            const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
+                            timelineList.innerHTML += listItem;
+                        });
+                    } else {
+                        timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching history:', error);
+                    timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
+                });
+        });
+    }
+
+    const kategoriTambahSelect = document.getElementById('kategori_id-tambah');
+    if (kategoriTambahSelect) {
+        kategoriTambahSelect.addEventListener('change', function() {
+            populateSubKategori(this.value, document.getElementById('sub_kategori_id-tambah'));
+            generateKodeAset();
+        });
+    }
+    const subKategoriTambahSelect = document.getElementById('sub_kategori_id-tambah');
+    if (subKategoriTambahSelect) {
+        subKategoriTambahSelect.addEventListener('change', generateKodeAset);
+    }
+})
+
+
+function formatRupiah(angka) {
+    var reverse = angka.toString().split('').reverse().join(''),
+        ribuan = reverse.match(/\d{1,3}/g);
+    ribuan = ribuan.join('.').split('').reverse().join('');
+    return 'Rp ' + ribuan;
+}
+
+function printQrCode() {
+    const printContent = document.getElementById('qrCodePrintArea').innerHTML;
+    const originalContent = document.body.innerHTML;
+
+    document.body.innerHTML = printContent;
+    window.print();
+    document.body.innerHTML = originalContent;
+    window.location.reload(); 
+}
 
 </script>
 <?= $this->endSection() ?>

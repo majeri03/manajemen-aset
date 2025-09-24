@@ -21,9 +21,9 @@ class AuthController extends BaseController
     public function processRegister()
     {
         $rules = [
-            'employee_id'      => 'required',
+            //'employee_id'      => 'required',
             'full_name' => 'required|min_length[3]',
-            'email' => 'required|valid_email|is_unique[users.email]',
+            'email' => 'required|is_unique[users.email]',
             'password' => 'required|min_length[8]',
             'password_confirm' => 'required|matches[password]',
             'terms' => 'required'
@@ -33,18 +33,18 @@ class AuthController extends BaseController
             return redirect()->to('/register')->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $db = \Config\Database::connect();
-        $employeeId = $this->request->getPost('employee_id');
+        // $db = \Config\Database::connect();
+        // $employeeId = $this->request->getPost('employee_id');
 
-        $employee = $db->table('employee_ids')->where('employee_id', $employeeId)->get()->getRow();
+        // $employee = $db->table('employee_ids')->where('employee_id', $employeeId)->get()->getRow();
 
-        if (!$employee) {
-            return redirect()->to('/register')->withInput()->with('error', 'ID Karyawan tidak valid atau tidak terdaftar.');
-        }
+        // if (!$employee) {
+        //     return redirect()->to('/register')->withInput()->with('error', 'ID Karyawan tidak valid atau tidak terdaftar.');
+        // }
 
-        if ($employee->is_registered) {
-            return redirect()->to('/register')->withInput()->with('error', 'ID Karyawan ini sudah digunakan untuk mendaftar.');
-        }
+        // if ($employee->is_registered) {
+        //     return redirect()->to('/register')->withInput()->with('error', 'ID Karyawan ini sudah digunakan untuk mendaftar.');
+        
         $userModel = new UserModel();
         $userModel->save([
             'full_name' => $this->request->getPost('full_name'),
@@ -53,7 +53,7 @@ class AuthController extends BaseController
             'department' => $this->request->getPost('department'),
             'password' => $this->request->getPost('password'), // akan di-hash oleh Model
         ]);
-        $db->table('employee_ids')->where('employee_id', $employeeId)->update(['is_registered' => true]);
+        //$db->table('employee_ids')->where('employee_id', $employeeId)->update(['is_registered' => true]);
         return redirect()->to('/login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 

@@ -16,13 +16,16 @@ class AsetModel extends Model
 
     protected $allowedFields    = [
         'kode',
-        'kategori',
+        'kategori_id',
+        'sub_kategori_id',
         'merk',
         'serial_number',
         'tahun',
         'lokasi',
         'keterangan',
         'status',
+        'harga_beli',
+        'entitas_pembelian',
         'qrcode',
     ];
    
