@@ -153,7 +153,7 @@ Data Aset
                             <td><?= esc($aset['kode']) ?></td>
                             <td><?= esc($aset['nama_kategori']) ?></td>
                             <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                            <td><?= esc($aset['merk']) ?></td>
+                            <td><?= esc($aset['nama_merk']) ?></td>
                             <td><?= esc($aset['serial_number']) ?></td>
                             <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
                             <td><?= esc($aset['nama_lokasi']) ?></td>
@@ -212,12 +212,19 @@ Data Aset
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="merk-tambah" class="form-label">Merk</label>
-                    <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                    <label for="merk_id-tambah" class="form-label">Merk</label>
+                    <select class="form-select" id="merk_id-tambah" name="merk_id" required>
+                        <option value="">Pilih Merk</option>
+                        <?php foreach ($merk_list as $merk): ?>
+                            <option value="<?= $merk['id'] ?>"><?= esc($merk['nama_merk']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
-                    <label for="type-tambah" class="form-label">Type</label>
-                    <input type="text" class="form-control" id="type-tambah" name="type" placeholder="Contoh: L3110" oninput="this.value = this.value.toUpperCase();">
+                    <label for="tipe_id-tambah" class="form-label">Tipe</label>
+                    <select class="form-select" id="tipe_id-tambah" name="tipe_id" required disabled>
+                        <option value="">Pilih Merk Dahulu</option>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label for="serial_number-tambah" class="form-label">Serial Number</label>
@@ -301,6 +308,95 @@ Data Aset
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+
+    // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
+    <?php if (session()->getFlashdata('new_aset')): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
+            document.getElementById('qr-kode').textContent = newAset.kode;
+            document.getElementById('qr-detail').textContent = `${newAset.kategori} - ${newAset.merk}`;
+            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
+            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+            qrModal.show();
+        });
+    <?php endif; ?>
+
+    // --- FUNGSI UNTUK MENCETAK AREA QR CODE ---
+    function printQrCode() {
+        const printContent = document.getElementById('qrCodePrintArea').innerHTML;
+        const originalContent = document.body.innerHTML;
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload(); 
+    }
+
+    function generateKodeAset() {
+        const kategoriSelect = document.getElementById('kategori_id-tambah');
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
+        const tahun = document.getElementById('tahun-tambah').value;
+        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
+        
+        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+
+        if (kategoriNama && subKategoriNama && tahun && merk) {
+            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
+        } else {
+            document.getElementById('kode-tambah').value = '';
+        }
+    }
+
+
+    // Dropdown Dinamis untuk Merk dan Tipe
+    function setupMerkTipeDropdowns(merkSelectId, tipeSelectId, selectedTipeId = null) {
+        const merkSelect = document.getElementById(merkSelectId);
+        const tipeSelect = document.getElementById(tipeSelectId);
+
+        if (!merkSelect || !tipeSelect) return;
+
+        merkSelect.addEventListener('change', function() {
+            const merkId = this.value;
+            tipeSelect.innerHTML = '<option value="">Memuat...</option>';
+            tipeSelect.disabled = true;
+
+            if (merkId) {
+                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tipeSelect.innerHTML = '<option value="">Pilih Tipe</option>';
+                        if (data.length > 0) {
+                            data.forEach(tipe => {
+                                const option = document.createElement('option');
+                                option.value = tipe.id;
+                                option.textContent = tipe.nama_tipe;
+                                if (selectedTipeId && selectedTipeId == tipe.id) {
+                                    option.selected = true;
+                                }
+                                tipeSelect.appendChild(option);
+                            });
+                            tipeSelect.disabled = false;
+                        } else {
+                            tipeSelect.innerHTML = '<option value="">Tidak ada tipe untuk merk ini</option>';
+                        }
+                    });
+            } else {
+                tipeSelect.innerHTML = '<option value="">Pilih Merk Dahulu</option>';
+                tipeSelect.disabled = true;
+            }
+        });
+    }
+
+    // Inisialisasi di halaman Data Aset & Dashboard (Modal Tambah)
+    document.addEventListener('DOMContentLoaded', function() {
+        setupMerkTipeDropdowns('merk_id-tambah', 'tipe_id-tambah');
+    });
+
+    // Inisialisasi di halaman Edit Aset
+    document.addEventListener('DOMContentLoaded', function() {
+        setupMerkTipeDropdowns('merk_id', 'tipe_id', '<?= $aset['tipe_id'] ?? '' ?>');
+    });
+
     const subKategoris = <?= json_encode($subkategori_list) ?>;
 
     function populateSubKategori(kategoriId, selectedSubKategoriId = null) {
@@ -322,22 +418,6 @@ Data Aset
                 });
                 subKategoriSelect.disabled = false;
             }
-        }
-    }
-
-    function generateKodeAset() {
-        const kategoriSelect = document.getElementById('kategori_id-tambah');
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        const tahun = document.getElementById('tahun-tambah').value;
-        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
-        
-        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-
-        if (kategoriNama && subKategoriNama && tahun && merk) {
-            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
-        } else {
-            document.getElementById('kode-tambah').value = '';
         }
     }
 
@@ -429,8 +509,8 @@ Data Aset
                         document.getElementById('detail-kode').textContent = data.kode;
                         document.getElementById('detail-kategori').textContent = data.nama_kategori;
                         document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
-                        document.getElementById('detail-merk').textContent = data.merk;
-                        document.getElementById('detail-type').textContent = data.type || '-';
+                        document.getElementById('detail-merk').textContent = data.nama_merk || '-';
+                        document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                         document.getElementById('detail-tahun').textContent = data.tahun;
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
@@ -474,27 +554,7 @@ Data Aset
         };
 
     })  
-    // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
-    <?php if (session()->getFlashdata('new_aset')): ?>
-        document.addEventListener('DOMContentLoaded', function() {
-            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
-            document.getElementById('qr-kode').textContent = newAset.kode;
-            document.getElementById('qr-detail').textContent = `${newAset.kategori} - ${newAset.merk}`;
-            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
-            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
-            qrModal.show();
-        });
-    <?php endif; ?>
-
-    // --- FUNGSI UNTUK MENCETAK AREA QR CODE ---
-    function printQrCode() {
-        const printContent = document.getElementById('qrCodePrintArea').innerHTML;
-        const originalContent = document.body.innerHTML;
-        document.body.innerHTML = printContent;
-        window.print();
-        document.body.innerHTML = originalContent;
-        window.location.reload(); 
-    }
+    
 
     // FUNGSI BARU UNTUK KONFIRMASI HAPUS
     function confirmDelete(el) {
@@ -526,5 +586,8 @@ Data Aset
         ribuan = ribuan.join('.').split('').reverse().join('');
         return 'Rp ' + ribuan;
     }
+
+    
+    
 </script>
 <?= $this->endSection() ?>

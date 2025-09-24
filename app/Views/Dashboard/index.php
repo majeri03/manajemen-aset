@@ -136,10 +136,9 @@ Dashboard
                         <th scope="col">KATEGORI BARANG</th>
                         <th scope="col">SUB KATEGORI</th>
                         <th scope="col">MERK</th>
-                        <th scope="col">SERIAL NUMBER</th>
+                        <th scope="col">TIPE</th> <th scope="col">SERIAL NUMBER</th>
                         <th scope="col">TAHUN</th>
                         <th scope="col">LOKASI</th>
-                        <th scope="col">KETERANGAN</th>
                         <th scope="col">AKSI</th>
                     </tr>
                 </thead>
@@ -150,11 +149,11 @@ Dashboard
                                 <td><?= esc($aset['kode']) ?></td>
                                 <td><?= esc($aset['nama_kategori']) ?></td>
                                 <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                                <td><?= esc($aset['merk']) ?></td>
+                                <td><?= esc($aset['nama_merk']) ?></td> 
+                                <td><?= esc($aset['nama_tipe']) ?></td> 
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
                                 <td><?= esc($aset['nama_lokasi']) ?></td>
-                                <td><?= esc($aset['keterangan']) ?></td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm view-detail" 
                                             data-bs-toggle="modal" 
@@ -243,12 +242,19 @@ Dashboard
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="merk-tambah" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                        <label for="merk_id-tambah" class="form-label">Merk</label>
+                        <select class="form-select" id="merk_id-tambah" name="merk_id" required>
+                            <option value="">Pilih Merk</option>
+                            <?php foreach ($merk_list as $merk): ?>
+                                <option value="<?= $merk['id'] ?>"><?= esc($merk['nama_merk']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="type-tambah" class="form-label">Type</label>
-                        <input type="text" class="form-control" id="type-tambah" name="type" placeholder="Contoh: L3110" oninput="this.value = this.value.toUpperCase();">
+                        <label for="tipe_id-tambah" class="form-label">Tipe</label>
+                        <select class="form-select" id="tipe_id-tambah" name="tipe_id" required disabled>
+                            <option value="">Pilih Merk Dahulu</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="serial_number-tambah" class="form-label">Serial Number</label>
@@ -337,6 +343,35 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
+
+        function generateKodeAset() {
+        const kategoriSelect = document.getElementById('kategori_id-tambah');
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
+        const tahun = document.getElementById('tahun-tambah').value;
+        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
+        
+        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+
+        if (kategoriNama && subKategoriNama && tahun && merk) {
+            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
+        } else {
+            document.getElementById('kode-tambah').value = '';
+        }
+    }
+
+    function printQrCode() {
+        const printContent = document.getElementById('qrCodePrintArea').innerHTML;
+        const originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload(); 
+    }
+
+
+
     const allSubKategoris = <?= json_encode($subkategori_list) ?>;
     
     function populateSubKategori(kategoriId, subKategoriSelect, selectedSubKategoriId = null) {
@@ -370,22 +405,6 @@ Dashboard
 
     function exportLaporanBulanan(bulan) {
         window.location.href = `<?= base_url('dashboard/export/') ?>${bulan}`;
-    }
-
-    function generateKodeAset() {
-        const kategoriSelect = document.getElementById('kategori_id-tambah');
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        const tahun = document.getElementById('tahun-tambah').value;
-        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
-        
-        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-
-        if (kategoriNama && subKategoriNama && tahun && merk) {
-            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
-        } else {
-            document.getElementById('kode-tambah').value = '';
-        }
     }
 
     // Inisialisasi Chart.js
@@ -536,8 +555,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('detail-kode').textContent = data.kode;
                     document.getElementById('detail-kategori').textContent = data.nama_kategori;
                     document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
-                    document.getElementById('detail-merk').textContent = data.merk;
-                    document.getElementById('detail-type').textContent = data.type || '-';
+                    document.getElementById('detail-merk').textContent = data.nama_merk || '-';
+                    document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                     document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                     document.getElementById('detail-tahun').textContent = data.tahun;
                     document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
@@ -602,15 +621,51 @@ function formatRupiah(angka) {
     return 'Rp ' + ribuan;
 }
 
-function printQrCode() {
-    const printContent = document.getElementById('qrCodePrintArea').innerHTML;
-    const originalContent = document.body.innerHTML;
+    // Fungsi untuk dropdown dinamis Merk -> Tipe
+    function setupMerkTipeDropdowns(merkSelectId, tipeSelectId) {
+        const merkSelect = document.getElementById(merkSelectId);
+        const tipeSelect = document.getElementById(tipeSelectId);
 
-    document.body.innerHTML = printContent;
-    window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload(); 
-}
+        if (!merkSelect || !tipeSelect) return;
+
+        merkSelect.addEventListener('change', function() {
+            const merkId = this.value;
+            tipeSelect.innerHTML = '<option value="">Memuat...</option>';
+            tipeSelect.disabled = true;
+
+            if (merkId) {
+                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tipeSelect.innerHTML = '<option value="">Pilih Tipe</option>';
+                        if (data.length > 0) {
+                            data.forEach(tipe => {
+                                const option = document.createElement('option');
+                                option.value = tipe.id;
+                                option.textContent = tipe.nama_tipe;
+                                tipeSelect.appendChild(option);
+                            });
+                            tipeSelect.disabled = false;
+                        } else {
+                            tipeSelect.innerHTML = '<option value="">Tidak ada tipe untuk merk ini</option>';
+                        }
+                    });
+            } else {
+                tipeSelect.innerHTML = '<option value="">Pilih Merk Dahulu</option>';
+                tipeSelect.disabled = true;
+            }
+        });
+    }
+
+// Inisialisasi di halaman Data Aset & Dashboard (Modal Tambah)
+document.addEventListener('DOMContentLoaded', function() {
+    setupMerkTipeDropdowns('merk_id-tambah', 'tipe_id-tambah');
+});
+
+// Inisialisasi di halaman Edit Aset
+document.addEventListener('DOMContentLoaded', function() {
+    setupMerkTipeDropdowns('merk_id-tambah', 'tipe_id-tambah');
+});
 
 </script>
 <?= $this->endSection() ?>

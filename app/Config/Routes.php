@@ -58,4 +58,15 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('master-data/lokasi/create', 'MasterDataController::createLokasi');
     $routes->get('master-data/lokasi/delete/(:num)', 'MasterDataController::deleteLokasi/$1');
 
+    // Rute untuk mengelola Merk
+    $routes->post('master-data/merk/create', 'MasterDataController::createMerk');
+    $routes->get('master-data/merk/delete/(:num)', 'MasterDataController::deleteMerk/$1');
+
+    // Rute untuk mengelola Tipe
+    $routes->post('master-data/tipe/create', 'MasterDataController::createTipe');
+    $routes->get('master-data/tipe/delete/(:num)', 'MasterDataController::deleteTipe/$1');
+
+    // Rute API untuk dropdown dinamis
+    $routes->get('api/tipe/(:num)', 'AsetController::getTipesByMerk/$1');
+
 });

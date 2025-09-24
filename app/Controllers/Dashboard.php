@@ -7,6 +7,7 @@ use App\Models\AsetModel;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel; // 1. Tambahkan LokasiModel
+use App\Models\MerkModel; // <-- TAMBAHKAN INI
 
 class Dashboard extends BaseController
 {
@@ -16,6 +17,7 @@ class Dashboard extends BaseController
         $kategoriModel = new KategoriModel();
         $subKategoriModel = new SubKategoriModel();
         $lokasiModel = new LokasiModel(); // 2. Buat instance dari LokasiModel
+        $merkModel = new MerkModel(); // <-- TAMBAHKAN INI
 
         $totalAset = $asetModel->countAllResults();
         $asetRusak = (new AsetModel())->where('status', 'Rusak')->countAllResults();
@@ -52,13 +54,15 @@ class Dashboard extends BaseController
         $data = [
             'title'              => 'Dashboard',
             'user'               => session()->get('full_name') ?: 'Guest',
-            // 3. Perbarui query untuk mengambil nama lokasi
-            'asets'              => $asetModel->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
-                                             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-                                             ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-                                             ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
-                                             ->orderBy('aset.updated_at', 'DESC')
-                                             ->findAll(),
+            'asets'              => $asetModel->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
+                                 ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                                 ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                                 ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+                                 ->join('merk m', 'm.id = aset.merk_id', 'left') // <-- JOIN ke tabel merk
+                                 ->join('tipe t', 't.id = aset.tipe_id', 'left') // <-- JOIN ke tabel tipe
+                                 ->orderBy('aset.created_at', 'DESC') // Urutkan berdasarkan data terbaru
+                                 ->limit(5) // Batasi hanya 5 aset terbaru
+                                 ->findAll(),
             'total_aset'         => $totalAset,
             'aset_rusak'         => $asetRusak,
             'chartLabels'        => $labelsKategori,
@@ -68,10 +72,13 @@ class Dashboard extends BaseController
             'pending_requests'   => $pendingRequests,
             'kategori_list'      => $kategoriModel->findAll(),
             'subkategori_list'   => $subKategoriModel->findAll(),
-            'lokasi_list'        => $lokasiModel->findAll(), // 4. Kirim daftar lokasi ke view
+            'lokasi_list'        => $lokasiModel->findAll(),
+            'merk_list'          => $merkModel->orderBy('nama_merk', 'ASC')->findAll(), // <-- TAMBAHKAN INI
         ];
 
         return view('Dashboard/index', $data);
     }
+
+    
 }
 
