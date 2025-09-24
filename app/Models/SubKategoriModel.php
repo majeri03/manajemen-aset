@@ -15,15 +15,11 @@ class SubKategoriModel extends Model
 
     protected $allowedFields = ['kategori_id', 'nama_sub_kategori'];
 
-    protected bool $allowEmptyInserts = false;
-    protected bool $updateOnlyChanged = true;
-
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
-    protected $deletedField = '';
 
     // Validation
     protected $validationRules = [

@@ -15,19 +15,15 @@ class KategoriModel extends Model
 
     protected $allowedFields = ['nama_kategori'];
 
-    protected bool $allowEmptyInserts = false;
-    protected bool $updateOnlyChanged = true;
-
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat = 'datetime';
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
-    protected $deletedField = '';
 
     // Validation
     protected $validationRules = [
-        'nama_kategori' => 'required|is_unique[kategori.nama_kategori]',
+        'nama_kategori' => 'required|is_unique[kategori.nama_kategori,id,{id}]',
     ];
     protected $validationMessages = [
         'nama_kategori' => [

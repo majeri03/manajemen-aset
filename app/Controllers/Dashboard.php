@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\AsetModel;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
+use App\Models\LokasiModel; // 1. Tambahkan LokasiModel
 
 class Dashboard extends BaseController
 {
@@ -14,9 +15,9 @@ class Dashboard extends BaseController
         $asetModel = new AsetModel();
         $kategoriModel = new KategoriModel();
         $subKategoriModel = new SubKategoriModel();
+        $lokasiModel = new LokasiModel(); // 2. Buat instance dari LokasiModel
 
         $totalAset = $asetModel->countAllResults();
-        // Cloning the model to reset the query builder for the next query
         $asetRusak = (new AsetModel())->where('status', 'Rusak')->countAllResults();
 
         // --- Data untuk Pie Chart Kategori ---
@@ -28,7 +29,7 @@ class Dashboard extends BaseController
         $dataKategori = array_column($distribusiAset, 'jumlah');
 
         // --- Logika untuk Bar Chart Status ---
-        $semuaStatus = ['Baik', 'Rusak', 'Tidak terpakai'];
+        $semuaStatus = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak'];
         $hasilStatus = array_fill_keys($semuaStatus, 0);
         $statusDariDB = (new AsetModel())->select('status, COUNT(id) as jumlah')
                                      ->groupBy('status')
@@ -51,10 +52,11 @@ class Dashboard extends BaseController
         $data = [
             'title'              => 'Dashboard',
             'user'               => session()->get('full_name') ?: 'Guest',
-            // [FIXED] Added JOIN to fetch category and sub-category names for the table
-            'asets'              => $asetModel->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            // 3. Perbarui query untuk mengambil nama lokasi
+            'asets'              => $asetModel->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
                                              ->join('kategori k', 'k.id = aset.kategori_id', 'left')
                                              ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                                             ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
                                              ->orderBy('aset.updated_at', 'DESC')
                                              ->findAll(),
             'total_aset'         => $totalAset,
@@ -66,8 +68,10 @@ class Dashboard extends BaseController
             'pending_requests'   => $pendingRequests,
             'kategori_list'      => $kategoriModel->findAll(),
             'subkategori_list'   => $subKategoriModel->findAll(),
+            'lokasi_list'        => $lokasiModel->findAll(), // 4. Kirim daftar lokasi ke view
         ];
 
-        return view('dashboard/index', $data);
+        return view('Dashboard/index', $data);
     }
 }
+

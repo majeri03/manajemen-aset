@@ -41,7 +41,7 @@ Dashboard
                     <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
                 </ul>
             </div>
-            <button class="btn btn-custom-icon"><i class="bi bi-geo-alt me-2"></i> Tracking Aset</button>
+            <a href="<?= base_url('tracking') ?>" class="btn btn-custom-icon"><i class="bi bi-geo-alt me-2"></i> Tracking Aset</a>
         </div>
     </div>
 </div>
@@ -153,7 +153,7 @@ Dashboard
                                 <td><?= esc($aset['merk']) ?></td>
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
-                                <td><?= esc($aset['lokasi']) ?></td>
+                                <td><?= esc($aset['lokasi_id']) ?></td>
                                 <td><?= esc($aset['keterangan']) ?></td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm view-detail" 
@@ -269,9 +269,9 @@ Dashboard
                     <div class="mb-3">
                         <label for="status-tambah" class="form-label">Status Aset</label>
                         <select class="form-select" id="status-tambah" name="status" required>
-                            <option value="Baik" selected>Baik</option>
+                            <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
+                            <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                             <option value="Rusak">Rusak</option>
-                            <option value="Tidak terpakai">Tidak terpakai</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -451,10 +451,11 @@ if (detailAsetModal) {
 
 const statusLabels = <?= json_encode($statusLabels) ?>;
 const statusData = <?= json_encode($statusData) ?>;
+// [MODIFIED] Status colors for chart
 const statusColors = {
-    'BAIK': '#065f46',
+    'BAIK TERPAKAI': '#065f46',
+    'BAIK TIDAK TERPAKAI': '#0694a2',
     'RUSAK': '#991b1b',
-    'TIDAK TERPAKAI': '#92400e'
 };
 
 const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d');
@@ -615,6 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 function formatRupiah(angka) {
+    if(!angka) return 'Rp 0';
     var reverse = angka.toString().split('').reverse().join(''),
         ribuan = reverse.match(/\d{1,3}/g);
     ribuan = ribuan.join('.').split('').reverse().join('');
@@ -633,3 +635,4 @@ function printQrCode() {
 
 </script>
 <?= $this->endSection() ?>
+

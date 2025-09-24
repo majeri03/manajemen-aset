@@ -75,10 +75,11 @@ Edit Aset
             </div>
             <div class="col-md-6">
                 <label for="status" class="form-label">Status Aset</label>
+                <!-- [MODIFIED] Status dropdown options -->
                 <select class="form-select" id="status" name="status" required>
-                    <option value="Baik" <?= $aset['status'] == 'Baik' ? 'selected' : '' ?>>Baik</option>
+                    <option value="Baik Terpakai" <?= $aset['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
+                    <option value="Baik Tidak Terpakai" <?= $aset['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
                     <option value="Rusak" <?= $aset['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
-                    <option value="Tidak terpakai" <?= $aset['status'] == 'Tidak terpakai' ? 'selected' : '' ?>>Tidak terpakai</option>
                 </select>
             </div>
             <div class="col-12">
@@ -98,41 +99,42 @@ Edit Aset
 <?= $this->section('script') ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Data sub kategori yang sudah ada di PHP
         const allSubKategoris = <?= json_encode($subkategori_list) ?>;
-
         const kategoriSelect = document.getElementById('kategori_id');
         const subKategoriSelect = document.getElementById('sub_kategori_id');
-        const currentKategoriId = "<?= esc($aset['kategori_id']) ?>";
-        const currentSubKategoriId = "<?= esc($aset['sub_kategori_id']) ?>";
 
-        function populateSubKategori(kategoriId, selectedId) {
-            subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
-            subKategoriSelect.disabled = true;
-
-            const filteredSubkategoris = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
-            
-            if (filteredSubkategoris.length > 0) {
-                filteredSubkategoris.forEach(sub => {
-                    const option = document.createElement('option');
-                    option.value = sub.id;
-                    option.textContent = sub.nama_sub_kategori;
-                    if (selectedId && selectedId == sub.id) {
-                        option.selected = true;
+        // This function populates sub-categories based on the main category selection.
+        function populateSubKategori(kategoriId, selectedId = null) {
+            // Fetch all sub-categories for the selected main category
+            fetch('<?= base_url('api/subkategori/') ?>' + kategoriId)
+                .then(response => response.json())
+                .then(data => {
+                    subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
+                    subKategoriSelect.disabled = true;
+                    if (data.length > 0) {
+                        data.forEach(sub => {
+                            const option = document.createElement('option');
+                            option.value = sub.id;
+                            option.textContent = sub.nama_sub_kategori;
+                            if (selectedId && selectedId == sub.id) {
+                                option.selected = true;
+                            }
+                            subKategoriSelect.appendChild(option);
+                        });
+                        subKategoriSelect.disabled = false;
                     }
-                    subKategoriSelect.appendChild(option);
                 });
-                subKategoriSelect.disabled = false;
-            }
         }
 
-        // Jalankan saat halaman pertama kali dimuat
-        populateSubKategori(currentKategoriId, currentSubKategoriId);
-
-        // Tambahkan event listener untuk perubahan kategori
+        // Add event listener for category changes
         kategoriSelect.addEventListener('change', function() {
             populateSubKategori(this.value);
         });
+        
+        // Initial population on page load
+        if (kategoriSelect.value) {
+            populateSubKategori(kategoriSelect.value, "<?= esc($aset['sub_kategori_id']) ?>");
+        }
     });
 </script>
 <?= $this->endSection() ?>

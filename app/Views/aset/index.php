@@ -79,11 +79,12 @@ Data Aset
             </div>
             <div class="col-md-3">
                 <label for="filter-status" class="form-label">Status</label>
+                <!-- [MODIFIED] Filter options -->
                 <select name="status" id="filter-status" class="form-select">
                     <option value="">Semua</option>
-                    <option value="Baik" <?= ($filters['status'] ?? '') == 'Baik' ? 'selected' : '' ?>>Baik</option>
+                    <option value="Baik Terpakai" <?= ($filters['status'] ?? '') == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
+                    <option value="Baik Tidak Terpakai" <?= ($filters['status'] ?? '') == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
                     <option value="Rusak" <?= ($filters['status'] ?? '') == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
-                    <option value="Tidak terpakai" <?= ($filters['status'] ?? '') == 'Tidak terpakai' ? 'selected' : '' ?>>Tidak terpakai</option>
                 </select>
             </div>
             <div class="col-md-4">
@@ -236,10 +237,11 @@ Data Aset
                 </div>
                 <div class="mb-3">
                     <label for="status-tambah" class="form-label">Status Aset</label>
+                    <!-- [MODIFIED] Status dropdown options -->
                     <select class="form-select" id="status-tambah" name="status" required>
-                        <option value="Baik" selected>Baik</option>
+                        <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
+                        <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                         <option value="Rusak">Rusak</option>
-                        <option value="Tidak terpakai">Tidak terpakai</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -513,6 +515,7 @@ Data Aset
     }
 
     function formatRupiah(angka) {
+        if(!angka) return 'Rp 0';
         var reverse = angka.toString().split('').reverse().join(''),
             ribuan = reverse.match(/\d{1,3}/g);
         ribuan = ribuan.join('.').split('').reverse().join('');
