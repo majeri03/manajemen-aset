@@ -34,15 +34,19 @@ Data Aset
             <div class="modal-body">
                 <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
                 <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                <p><strong>Sub Kategori:</strong> <span id="detail-sub-kategori"></span></p>
                 <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                <p><strong>Type:</strong> <span id="detail-type"></span></p>
                 <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
                 <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
+                <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
+                <p><strong>Status:</strong> <span id="detail-status"></span></p>
                 <hr>
                 <p>
                     <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
-                    
                     <button id="lihat-riwayat-btn" class="btn btn-sm btn-outline-primary ms-2">Lihat Riwayat Lengkap</button>
                 </p>
 
@@ -64,15 +68,13 @@ Data Aset
         <form action="<?= base_url('aset') ?>" method="get" class="row g-3">
             <div class="col-md-3">
                 <label for="filter-kategori" class="form-label">Kategori</label>
-                <select name="kategori" id="filter-kategori" class="form-select">
+                <select name="kategori_id" id="filter-kategori" class="form-select">
                     <option value="">Semua</option>
-                    <?php if (!empty($kategori_list)) : ?>
-                        <?php foreach ($kategori_list as $kategori) : ?>
-                            <option value="<?= esc($kategori['kategori']) ?>" <?= ($filters['kategori'] ?? '') == $kategori['kategori'] ? 'selected' : '' ?>>
-                                <?= esc($kategori['kategori']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php foreach ($kategori_list as $kategori) : ?>
+                        <option value="<?= esc($kategori['id']) ?>" <?= ($filters['kategori_id'] ?? '') == $kategori['id'] ? 'selected' : '' ?>>
+                            <?= esc($kategori['nama_kategori']) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3">
@@ -135,6 +137,7 @@ Data Aset
                 <tr>
                     <th scope="col">KODE</th>
                     <th scope="col">KATEGORI</th>
+                    <th scope="col">SUB KATEGORI</th>
                     <th scope="col">MERK</th>
                     <th scope="col">SERIAL NUMBER</th>
                     <th scope="col">STATUS</th>
@@ -147,7 +150,8 @@ Data Aset
                     <?php foreach ($asets as $aset): ?>
                         <tr>
                             <td><?= esc($aset['kode']) ?></td>
-                            <td><?= esc($aset['kategori']) ?></td>
+                            <td><?= esc($aset['nama_kategori']) ?></td>
+                            <td><?= esc($aset['nama_sub_kategori']) ?></td>
                             <td><?= esc($aset['merk']) ?></td>
                             <td><?= esc($aset['serial_number']) ?></td>
                             <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
@@ -167,19 +171,17 @@ Data Aset
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="text-center">Belum ada data aset.</td>
+                        <td colspan="8" class="text-center">Belum ada data aset.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
         <form action="" method="post" id="deleteForm">
-    <?= csrf_field() ?>
-    <input type="hidden" name="_method" value="DELETE">
-</form>
+            <?= csrf_field() ?>
+            <input type="hidden" name="_method" value="DELETE">
+        </form>
     </div>
 </div>
-
-
 
 
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
@@ -193,48 +195,70 @@ Data Aset
             <form action="<?= base_url('aset') ?>" method="post">
                 <?= csrf_field() ?>
                 <input type="hidden" name="redirect_to" value="aset">
-                    <input type="hidden" name="redirect_to" value="aset">
-                    <div class="mb-3">
-                        <label for="kategori-tambah" class="form-label">Kategori Barang</label>
-                        <input type="text" class="form-control" id="kategori-tambah" name="kategori" placeholder="Contoh: PRINTER" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="merk-tambah" class="form-label">Merk</label>
-                        <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="serial_number-tambah" class="form-label">Serial Number</label>
-                        <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
-                    </div>
-                    <div class="mb-3">
-                        <label for="tahun-tambah" class="form-label">Tahun</label>
-                        <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="status-tambah" class="form-label">Status Aset</label>
-                        <select class="form-select" id="status-tambah" name="status" required>
-                            <option value="Baik" selected>Baik</option>
-                            <option value="Rusak">Rusak</option>
-                            <option value="Tidak terpakai">Tidak terpakai</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="lokasi-tambah" class="form-label">Lokasi</label>
-                        <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
-                    </div>
-                    <div class="mb-3">
-                        <label for="keterangan-tambah" class="form-label">Keterangan</label>
-                        <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="kode-tambah" class="form-label">Kode Aset (Otomatis)</label>
-                        <input type="text" class="form-control" id="kode-tambah" name="kode" readonly style="background-color: #e9ecef;">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Aset</button>
-                    </div>
-                </form>
+                <div class="mb-3">
+                    <label for="kategori_id-tambah" class="form-label">Kategori Barang</label>
+                    <select class="form-select" id="kategori_id-tambah" name="kategori_id" required>
+                        <option value="">Pilih Kategori</option>
+                        <?php foreach ($kategori_list as $kategori): ?>
+                            <option value="<?= $kategori['id'] ?>"><?= $kategori['nama_kategori'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="sub_kategori_id-tambah" class="form-label">Sub Kategori</label>
+                    <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled>
+                        <option value="">Pilih Sub Kategori</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="merk-tambah" class="form-label">Merk</label>
+                    <input type="text" class="form-control" id="merk-tambah" name="merk" placeholder="Contoh: EPSON" oninput="this.value = this.value.toUpperCase(); generateKodeAset();" required>
+                </div>
+                <div class="mb-3">
+                    <label for="type-tambah" class="form-label">Type</label>
+                    <input type="text" class="form-control" id="type-tambah" name="type" placeholder="Contoh: L3110" oninput="this.value = this.value.toUpperCase();">
+                </div>
+                <div class="mb-3">
+                    <label for="serial_number-tambah" class="form-label">Serial Number</label>
+                    <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                </div>
+                <div class="mb-3">
+                    <label for="tahun-tambah" class="form-label">Tahun</label>
+                    <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
+                </div>
+                <div class="mb-3">
+                    <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
+                    <input type="number" class="form-control" id="harga_beli-tambah" name="harga_beli" placeholder="Contoh: 1500000">
+                </div>
+                <div class="mb-3">
+                    <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
+                    <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: PT. JAYA ABADI">
+                </div>
+                <div class="mb-3">
+                    <label for="status-tambah" class="form-label">Status Aset</label>
+                    <select class="form-select" id="status-tambah" name="status" required>
+                        <option value="Baik" selected>Baik</option>
+                        <option value="Rusak">Rusak</option>
+                        <option value="Tidak terpakai">Tidak terpakai</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="lokasi-tambah" class="form-label">Lokasi</label>
+                    <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                </div>
+                <div class="mb-3">
+                    <label for="keterangan-tambah" class="form-label">Keterangan</label>
+                    <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="kode-tambah" class="form-label">Kode Aset (Otomatis)</label>
+                    <input type="text" class="form-control" id="kode-tambah" name="kode" readonly style="background-color: #e9ecef;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Aset</button>
+                </div>
+            </form>
             </div>
         </div>
     </div>
@@ -264,25 +288,81 @@ Data Aset
         </div>
     </div>
 </div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // FUNGSI GLOBAL UNTUK GENERATE KODE ASET
+    const subKategoris = <?= json_encode($subkategori_list) ?>;
+
+    function populateSubKategori(kategoriId, selectedSubKategoriId = null) {
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
+        subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
+        subKategoriSelect.disabled = true;
+
+        if (kategoriId) {
+            const filteredSubkategoris = subKategoris.filter(sub => sub.kategori_id == kategoriId);
+            if (filteredSubkategoris.length > 0) {
+                filteredSubkategoris.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = sub.nama_sub_kategori;
+                    if (selectedSubKategoriId && selectedSubKategoriId == sub.id) {
+                        option.selected = true;
+                    }
+                    subKategoriSelect.appendChild(option);
+                });
+                subKategoriSelect.disabled = false;
+            }
+        }
+    }
+
     function generateKodeAset() {
-        const kategori = document.getElementById('kategori-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const kategoriSelect = document.getElementById('kategori_id-tambah');
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
         const tahun = document.getElementById('tahun-tambah').value;
         const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
         
-        if (kategori && tahun && merk) {
-            document.getElementById('kode-tambah').value = `BTR/${kategori}/${tahun}/${merk}`;
+        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+
+        if (kategoriNama && subKategoriNama && tahun && merk) {
+            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
         } else {
             document.getElementById('kode-tambah').value = '';
         }
     }
 
-    // SEMUA EVENT LISTENER DIJALANKAN SETELAH HALAMAN SIAP
+
     document.addEventListener('DOMContentLoaded', function() {
+        // Event listener untuk filter kategori
+        const filterKategori = document.getElementById('filter-kategori');
+        if (filterKategori) {
+            filterKategori.addEventListener('change', function() {
+                const url = new URL(window.location.href);
+                if (this.value) {
+                    url.searchParams.set('kategori_id', this.value);
+                } else {
+                    url.searchParams.delete('kategori_id');
+                }
+                window.location.href = url.toString();
+            });
+        }
+
+        // Event listener untuk dropdown di modal tambah aset
+        const kategoriTambahSelect = document.getElementById('kategori_id-tambah');
+        if (kategoriTambahSelect) {
+            kategoriTambahSelect.addEventListener('change', function() {
+                populateSubKategori(this.value);
+                generateKodeAset();
+            });
+        }
+        const subKategoriTambahSelect = document.getElementById('sub_kategori_id-tambah');
+        if (subKategoriTambahSelect) {
+            subKategoriTambahSelect.addEventListener('change', generateKodeAset);
+        }
+
         // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
         const searchInput = document.getElementById('searchInput');
         const tableBody = document.getElementById('asetTableBody');
@@ -290,26 +370,30 @@ Data Aset
         if (searchInput && tableBody) {
             searchInput.addEventListener('keyup', function() {
                 const keyword = this.value;
-                // Gunakan URL yang benar dari route Anda
                 fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
                     .then(response => response.json())
                     .then(data => {
-                        tableBody.innerHTML = ''; // Kosongkan tabel
+                        tableBody.innerHTML = '';
                         if (data.length > 0) {
                             data.forEach(aset => {
                                 const row = `<tr>
                                     <td>${aset.kode}</td>
-                                    <td>${aset.kategori}</td>
+                                    <td>${aset.nama_kategori}</td>
+                                    <td>${aset.nama_sub_kategori}</td>
                                     <td>${aset.merk}</td>
                                     <td>${aset.serial_number || '-'}</td>
                                     <td><span class="badge bg-light text-dark">${aset.status}</span></td>
                                     <td>${aset.lokasi}</td>
-                                    <td><button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button></td>
+                                    <td>
+                                        <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button>
+                                        <a href="<?= base_url('aset/') ?>${aset.id}/edit" class="btn btn-warning btn-sm" title="Edit Aset"><i class="bi bi-pencil-fill"></i></a>
+                                        <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="${aset.id}" data-kode="${aset.kode}" class="btn btn-danger btn-sm" title="Hapus Aset"><i class="bi bi-trash-fill"></i></a>
+                                    </td>
                                 </tr>`;
                                 tableBody.innerHTML += row;
                             });
                         } else {
-                            tableBody.innerHTML = `<tr><td colspan="7" class="text-center">Aset tidak ditemukan.</td></tr>`;
+                            tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
                         }
                     })
                     .catch(error => console.error('Error searching:', error));
@@ -336,12 +420,17 @@ Data Aset
                     .then(response => response.json())
                     .then(data => {
                         document.getElementById('detail-kode').textContent = data.kode;
-                        document.getElementById('detail-kategori').textContent = data.kategori;
+                        document.getElementById('detail-kategori').textContent = data.nama_kategori;
+                        document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
                         document.getElementById('detail-merk').textContent = data.merk;
+                        document.getElementById('detail-type').textContent = data.type || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
                         document.getElementById('detail-tahun').textContent = data.tahun;
+                        document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
+                        document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                         document.getElementById('detail-lokasi').textContent = data.lokasi;
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                        document.getElementById('detail-status').textContent = data.status;
                         document.getElementById('detail-updated_at').textContent = data.updated_at;
                     })
                     .catch(error => console.error('Error fetching detail:', error));
@@ -417,14 +506,17 @@ Data Aset
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Set action form dan submit
                 deleteForm.action = `<?= base_url('aset/') ?>${asetId}`;
                 deleteForm.submit();
             }
         });
     }
 
-   
-
+    function formatRupiah(angka) {
+        var reverse = angka.toString().split('').reverse().join(''),
+            ribuan = reverse.match(/\d{1,3}/g);
+        ribuan = ribuan.join('.').split('').reverse().join('');
+        return 'Rp ' + ribuan;
+    }
 </script>
 <?= $this->endSection() ?>

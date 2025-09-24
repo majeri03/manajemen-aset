@@ -19,10 +19,14 @@
             <div class="card-body p-4">
                 <?php if ($aset): ?>
                     <p><strong>Kode:</strong> <?= esc($aset['kode']) ?></p>
-                    <p><strong>Kategori Barang:</strong> <?= esc($aset['kategori']) ?></p>
+                    <p><strong>Kategori Barang:</strong> <?= esc($aset['nama_kategori']) ?></p>
+                    <p><strong>Sub Kategori:</strong> <?= esc($aset['nama_sub_kategori']) ?></p>
                     <p><strong>Merk:</strong> <?= esc($aset['merk']) ?></p>
+                    <p><strong>Type:</strong> <?= esc($aset['type']) ?></p>
                     <p><strong>Serial Number:</strong> <?= esc($aset['serial_number']) ?></p>
                     <p><strong>Tahun:</strong> <?= esc($aset['tahun']) ?></p>
+                    <p><strong>Harga Beli:</strong> <?= esc($aset['harga_beli']) ?></p>
+                    <p><strong>Entitas Pembelian:</strong> <?= esc($aset['entitas_pembelian']) ?></p>
                     <p><strong>Lokasi Terdaftar:</strong> <?= esc($aset['lokasi']) ?></p>
                     <p><strong>Kondisi:</strong> <?= esc($aset['status']) ?></p>
                     <p><strong>Keterangan:</strong> <?= esc($aset['keterangan']) ?></p>

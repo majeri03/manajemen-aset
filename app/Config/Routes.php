@@ -41,4 +41,14 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('laporan', 'LaporanController::index');
     $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
 
+    // Rute untuk Manajemen Kategori
+    $routes->get('category', 'CategoryController::index');
+    $routes->post('category/createKategori', 'CategoryController::createKategori');
+    $routes->post('category/updateKategori/(:num)', 'CategoryController::updateKategori/$1');
+    $routes->get('category/deleteKategori/(:num)', 'CategoryController::deleteKategori/$1');
+
+    $routes->post('category/createSubKategori', 'CategoryController::createSubKategori');
+    $routes->post('category/updateSubKategori/(:num)', 'CategoryController::updateSubKategori/$1');
+    $routes->get('category/deleteSubKategori/(:num)', 'CategoryController::deleteSubKategori/$1');
+
 });

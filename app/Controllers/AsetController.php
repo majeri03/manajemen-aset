@@ -3,11 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\AsetModel;
+use App\Models\KategoriModel;
+use App\Models\SubKategoriModel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -17,61 +18,65 @@ use CodeIgniter\RESTful\ResourceController;
 class AsetController extends ResourceController
 {
     protected $asetModel;
+    protected $kategoriModel;
+    protected $subKategoriModel;
     protected $modelName = 'App\Models\AsetModel';
     
     public function __construct()
     {
-        // Inisialisasi model di constructor
         $this->asetModel = new AsetModel();
-
+        $this->kategoriModel = new KategoriModel();
+        $this->subKategoriModel = new SubKategoriModel();
     }
+
     /**
      * Return an array of resource objects, themselves in array format.
      *
      * @return ResponseInterface
      */
     public function index()
-{
-    $filters = [
-        'kategori' => $this->request->getGet('kategori'),
-        'status'   => $this->request->getGet('status'),
-        'keyword'  => $this->request->getGet('keyword'),
-    ];
-
-    $query = $this->asetModel;
-
-    if (!empty($filters['kategori'])) {
-        $query = $query->where('kategori', $filters['kategori']);
-    }
-    if (!empty($filters['status'])) {
-        $query = $query->where('status', $filters['status']);
-    }
-    if (!empty($filters['keyword'])) {
-        $query = $query->groupStart()
-            ->like('kode', $filters['keyword'])
-            ->orLike('merk', $filters['keyword'])
-            ->orLike('serial_number', $filters['keyword'])
-            ->orLike('lokasi', $filters['keyword'])
-            ->groupEnd();
-    }
+    {
+        $filters = [
+            'kategori_id' => $this->request->getGet('kategori_id'),
+            'status'      => $this->request->getGet('status'),
+            'keyword'     => $this->request->getGet('keyword'),
+        ];
     
-    // PERTAMA: Eksekusi dan simpan hasil query utama yang sudah difilter
-    $asets_data = $query->orderBy('updated_at', 'DESC')->findAll();
-
-    // KEDUA: Setelah query utama selesai, baru kita ambil data untuk dropdown
-    $kategori_list = $this->asetModel->distinct()->select('kategori')->findAll();
-
-    $data = [
-        'title'         => 'Data Aset',
-        'asets'         => $asets_data, // Gunakan hasil yang sudah disimpan
-        'kategori_list' => $kategori_list,
-        'filters'       => $filters
-    ];
-
-    return view('aset/index', $data);
-}        
-
-
+        $query = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+    
+        if (!empty($filters['kategori_id'])) {
+            $query = $query->where('aset.kategori_id', $filters['kategori_id']);
+        }
+        if (!empty($filters['status'])) {
+            $query = $query->where('aset.status', $filters['status']);
+        }
+        if (!empty($filters['keyword'])) {
+            $query = $query->groupStart()
+                ->like('aset.kode', $filters['keyword'])
+                ->orLike('aset.merk', $filters['keyword'])
+                ->orLike('aset.serial_number', $filters['keyword'])
+                ->orLike('aset.lokasi', $filters['keyword'])
+                ->groupEnd();
+        }
+        
+        $asets_data = $query->orderBy('aset.updated_at', 'DESC')->findAll();
+    
+        $kategori_list = $this->kategoriModel->findAll();
+        $subkategori_list = $this->subKategoriModel->findAll();
+    
+        $data = [
+            'title'            => 'Data Aset',
+            'asets'            => $asets_data,
+            'kategori_list'    => $kategori_list,
+            'subkategori_list' => $subkategori_list,
+            'filters'          => $filters
+        ];
+    
+        return view('aset/index', $data);
+    }
 
     /**
      * Return the properties of a resource object.
@@ -81,21 +86,20 @@ class AsetController extends ResourceController
      * @return ResponseInterface
      */
     public function show($id = null)
-{
-    $aset = $this->asetModel->find($id);
+    {
+        $aset = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->find($id);
 
-    if ($aset) {
-        // Format tanggal agar lebih mudah dibaca
-        $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
-        return $this->response->setJSON($aset);
+        if ($aset) {
+            $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
+            return $this->response->setJSON($aset);
+        }
+        
+        return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
     }
-    
-    // Jika aset tidak ditemukan, kirim response error
-    return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
-}
-
-
-
 
     /**
      * Return a new resource object, with default properties.
@@ -107,94 +111,84 @@ class AsetController extends ResourceController
         //
     }
 
-
-
-
-
     /**
      * Create a new resource object, from "posted" parameters.
      *
      * @return ResponseInterface
      */
     public function create()
-{
+    {
+        $serialNumber = $this->request->getPost('serial_number');
 
-    // Ambil serial number dari form
-    $serialNumber = $this->request->getPost('serial_number');
+        if (!empty($serialNumber)) {
+            $existingAset = $this->asetModel->where('serial_number', $serialNumber)->first();
+            if ($existingAset) {
+                $redirectPage = $this->request->getPost('redirect_to');
+                $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
 
-    // Cek ke database HANYA jika serial number diisi
-    if (!empty($serialNumber)) {
-        $existingAset = $this->asetModel->where('serial_number', $serialNumber)->first();
+                return redirect()->to($redirectTo)
+                                 ->with('error', 'Gagal! Serial Number sudah terdaftar pada aset lain.')
+                                 ->with('conflicting_asset_id', $existingAset['id']);
+            }
+        }
 
-        // Jika aset dengan serial number yang sama ditemukan
-        if ($existingAset) {
+        $data = [
+            'kode'            => $this->request->getPost('kode'),
+            'kategori_id'     => $this->request->getPost('kategori_id'),
+            'sub_kategori_id' => $this->request->getPost('sub_kategori_id'),
+            'merk'            => $this->request->getPost('merk'),
+            'type'            => $this->request->getPost('type'),
+            'serial_number'   => $this->request->getPost('serial_number'),
+            'tahun'           => $this->request->getPost('tahun'),
+            'lokasi'          => $this->request->getPost('lokasi'),
+            'status'          => $this->request->getPost('status'),
+            'keterangan'      => $this->request->getPost('keterangan'),
+            'harga_beli'      => $this->request->getPost('harga_beli'),
+            'entitas_pembelian' => $this->request->getPost('entitas_pembelian'),
+        ];
+
+        if ($this->asetModel->save($data)) {
+            $newAsetId = $this->asetModel->getInsertID();
+
+            $url = base_url('tracking/aset/' . $newAsetId);
+            if (!is_dir(FCPATH . 'qrcodes')) {
+                mkdir(FCPATH . 'qrcodes', 0777, true);
+            }
+            $qrCode = QrCode::create($url);
+            $writer = new PngWriter();
+            $result = $writer->write($qrCode);
+            $qrCodePath = 'qrcodes/aset-' . $newAsetId . '.png';
+            $result->saveToFile(FCPATH . $qrCodePath);
+            $this->asetModel->update($newAsetId, ['qrcode' => $qrCodePath]);
+
             $redirectPage = $this->request->getPost('redirect_to');
             $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
+            
+            $newAset = $this->asetModel->find($newAsetId);
 
-            // Redirect kembali dengan pesan error dan ID aset yang konflik
             return redirect()->to($redirectTo)
-                             ->with('error', 'Gagal! Serial Number sudah terdaftar pada aset lain.')
-                             ->with('conflicting_asset_id', $existingAset['id']);
+                             ->with('success', 'Aset baru berhasil ditambahkan!')
+                             ->with('new_aset', $newAset);
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
         }
     }
-
-    $data = [
-        'kode'          => $this->request->getPost('kode'),
-        'kategori'      => $this->request->getPost('kategori'),
-        'merk'          => $this->request->getPost('merk'),
-        'serial_number' => $this->request->getPost('serial_number'),
-        'tahun'         => $this->request->getPost('tahun'),
-        'lokasi'        => $this->request->getPost('lokasi'),
-        'status'        => $this->request->getPost('status'),
-        'keterangan'    => $this->request->getPost('keterangan'),
-    ];
-
-    if ($this->asetModel->save($data)) {
-        $newAsetId = $this->asetModel->getInsertID();
-
-        // Logika generate QR Code
-        $url = base_url('tracking/aset/' . $newAsetId);
-        if (!is_dir(FCPATH . 'qrcodes')) {
-            mkdir(FCPATH . 'qrcodes', 0777, true);
-        }
-        $qrCode = QrCode::create($url);
-        $writer = new PngWriter();
-        $result = $writer->write($qrCode);
-        $qrCodePath = 'qrcodes/aset-' . $newAsetId . '.png';
-        $result->saveToFile(FCPATH . $qrCodePath);
-        $this->asetModel->update($newAsetId, ['qrcode' => $qrCodePath]);
-
-        // Tentukan halaman tujuan redirect berdasarkan input tersembunyi
-        $redirectPage = $this->request->getPost('redirect_to');
-        $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
-        
-        // Ambil data aset baru untuk dikirim ke session (untuk popup QR code)
-        $newAset = $this->asetModel->find($newAsetId);
-
-        // Redirect ke halaman yang benar DAN selalu kirim data 'new_aset'
-        return redirect()->to($redirectTo)
-                         ->with('success', 'Aset baru berhasil ditambahkan!')
-                         ->with('new_aset', $newAset);
-
-    } else {
-        return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
-    }
-}
 
     public function getDetail($id = null)
     {
-        $aset = $this->asetModel->find($id);
+        $aset = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->find($id);
 
         if ($aset) {
-            // Format tanggal agar lebih mudah dibaca
             $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
             return $this->response->setJSON($aset);
         }
         
-        // Jika aset tidak ditemukan, kirim response error
         return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
     }
-
 
     /**
      * Return the editable properties of a resource object.
@@ -205,17 +199,19 @@ class AsetController extends ResourceController
      */
     public function edit($id = null)
     {
-        $aset = $this->model->find($id);
-    if (!$aset) {
-        return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
-    }
+        $aset = $this->asetModel->find($id);
+        if (!$aset) {
+            return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
+        }
 
-    $data = [
-        'title' => 'Edit Aset',
-        'aset'  => $aset
-    ];
+        $data = [
+            'title'            => 'Edit Aset',
+            'aset'             => $aset,
+            'kategori_list'    => $this->kategoriModel->findAll(),
+            'subkategori_list' => $this->subKategoriModel->where('kategori_id', $aset['kategori_id'])->findAll(),
+        ];
 
-    return view('aset/edit', $data);
+        return view('aset/edit', $data);
     }
 
     /**
@@ -227,19 +223,21 @@ class AsetController extends ResourceController
      */
     public function update($id = null)
     {
-         // Tentukan field mana saja yang boleh diubah oleh admin
         $allowedFields = [
-            'kategori',
+            'kategori_id',
+            'sub_kategori_id',
+            'type',
             'tahun',
             'lokasi',
             'status',
-            'keterangan'
+            'keterangan',
+            'harga_beli',
+            'entitas_pembelian',
         ];
 
-        // Ambil hanya data yang diizinkan dari input POST
         $data = $this->request->getPost($allowedFields);
 
-        if ($this->model->update($id, $data)) {
+        if ($this->asetModel->update($id, $data)) {
             return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
         }
 
@@ -260,34 +258,28 @@ class AsetController extends ResourceController
         } else {
             return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
         }
-
-        // Menggunakan fitur soft delete dari model
-        if ($this->model->delete($id)) {
-            return redirect()->to('/aset')->with('success', 'Aset berhasil dihapus.');
-        }
-
-        return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
     }
 
-    
-
-   public function search()
+    public function search()
     {
         $keyword = $this->request->getGet('q');
         
-        // Mulai dengan model
-        $query = $this->asetModel;
+        $query = $this->asetModel
+                        ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+                        ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
 
         if ($keyword) {
-            // Terapkan filter pencarian
-            $query = $query->like('kode', $keyword)
-                        ->orLike('kategori', $keyword)
-                        ->orLike('merk', $keyword)
-                        ->orLike('serial_number', $keyword)
-                        ->orLike('lokasi', $keyword);
+            $query = $query->groupStart()
+                        ->like('aset.kode', $keyword)
+                        ->orLike('k.nama_kategori', $keyword)
+                        ->orLike('sk.nama_sub_kategori', $keyword)
+                        ->orLike('aset.merk', $keyword)
+                        ->orLike('aset.serial_number', $keyword)
+                        ->orLike('aset.lokasi', $keyword)
+                        ->groupEnd();
         }
 
-        // Eksekusi findAll() pada query builder yang sudah final
         $results = $query->findAll();
 
         return $this->response->setJSON($results);
@@ -297,185 +289,188 @@ class AsetController extends ResourceController
     {
         $data = [
             'title' => 'Detail Aset',
-            'aset'  => $this->asetModel->find($id),
+            'aset'  => $this->asetModel
+                                ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+                                ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                                ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                                ->find($id),
         ];
-
 
         return view('aset/public_detail', $data);
     }
 
-public function export()
-{
-    // Logika filter tetap sama
-    $filters = [
-        'kategori' => $this->request->getGet('kategori'),
-        'status'   => $this->request->getGet('status'),
-        'keyword'  => $this->request->getGet('keyword'),
-    ];
-    
-    $query = $this->asetModel;
-
-    if (!empty($filters['kategori'])) {
-        $query->where('kategori', $filters['kategori']);
-    }
-    if (!empty($filters['status'])) {
-        $query->where('status', $filters['status']);
-    }
-    if (!empty($filters['keyword'])) {
-        $query->groupStart()
-              ->like('kode', $filters['keyword'])
-              ->orLike('merk', $filters['keyword'])
-              ->orLike('lokasi', $filters['keyword'])
-              ->groupEnd();
-    }
-
-    $asets = $query->orderBy('updated_at', 'DESC')->findAll();
-
-    // Buat objek Spreadsheet baru
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-
-    // Tulis header kolom
-    $sheet->setCellValue('A1', 'Kode Aset');
-    $sheet->setCellValue('B1', 'Kategori');
-    $sheet->setCellValue('C1', 'Merk');
-    $sheet->setCellValue('D1', 'Serial Number');
-    $sheet->setCellValue('E1', 'Tahun');
-    $sheet->setCellValue('F1', 'Lokasi');
-    $sheet->setCellValue('G1', 'Status');
-    $sheet->setCellValue('H1', 'Keterangan');
-    $sheet->setCellValue('I1', 'Terakhir Diperbarui');
-    
-    // Styling untuk header (opsional)
-    $styleArray = [
-        'font' => ['bold' => true],
-        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
-    ];
-    $sheet->getStyle('A1:I1')->applyFromArray($styleArray);
-
-    // Tulis data aset ke dalam baris
-    $row = 2;
-    foreach ($asets as $aset) {
-        $sheet->setCellValue('A' . $row, $aset['kode']);
-        $sheet->setCellValue('B' . $row, $aset['kategori']);
-        $sheet->setCellValue('C' . $row, $aset['merk']);
-        $sheet->setCellValue('D' . $row, $aset['serial_number']);
-        $sheet->setCellValue('E' . $row, $aset['tahun']);
-        $sheet->setCellValue('F' . $row, $aset['lokasi']);
-        $sheet->setCellValue('G' . $row, $aset['status']);
-        $sheet->setCellValue('H' . $row, $aset['keterangan']);
-        $sheet->setCellValue('I' . $row, $aset['updated_at']);
-        $row++;
-    }
-    
-    // Atur lebar kolom agar otomatis (opsional)
-    foreach (range('A', 'I') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    // Buat writer untuk file .xlsx
-    $writer = new Xlsx($spreadsheet);
-    $filename = 'laporan_aset_' . date('Y-m-d') . '.xlsx';
-
-    // Set header untuk download file
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="' . $filename . '"');
-    header('Cache-Control: max-age=0');
-    
-    // Tulis file ke output
-    $writer->save('php://output');
-    exit();
-}
-    
-
-public function getHistory($asetId)
-{
-    $db = \Config\Database::connect();
-    $history = $db->table('aset_update_requests as aur')
-                  ->select('aur.created_at, aur.proposed_data, u.full_name')
-                  ->join('users as u', 'u.id = aur.user_id')
-                  ->where('aur.aset_id', $asetId)
-                  ->where('aur.status', 'approved') // Hanya tampilkan perubahan yang disetujui
-                  ->orderBy('aur.created_at', 'DESC') // Tampilkan yang terbaru di atas
-                  ->get()->getResultArray();
-
-    return $this->response->setJSON($history);
-}
-
-    
-public function exportBulanan($bulan)
+    public function export()
     {
-        // Validasi input bulan untuk memastikan nilainya antara 1 dan 12
-        if ($bulan < 1 || $bulan > 12) {
-            return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
+        $filters = [
+            'kategori_id' => $this->request->getGet('kategori_id'),
+            'status'      => $this->request->getGet('status'),
+            'keyword'     => $this->request->getGet('keyword'),
+        ];
+        
+        $query = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+
+        if (!empty($filters['kategori_id'])) {
+            $query->where('aset.kategori_id', $filters['kategori_id']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('aset.status', $filters['status']);
+        }
+        if (!empty($filters['keyword'])) {
+            $query->groupStart()
+                  ->like('aset.kode', $filters['keyword'])
+                  ->orLike('aset.merk', $filters['keyword'])
+                  ->orLike('aset.lokasi', $filters['keyword'])
+                  ->orLike('k.nama_kategori', $filters['keyword'])
+                  ->orLike('sk.nama_sub_kategori', $filters['keyword'])
+                  ->groupEnd();
         }
 
+        $asets = $query->orderBy('aset.updated_at', 'DESC')->findAll();
 
-        // Tentukan tahun saat ini
-        $tahunIni = date('Y');
-
-        // Ambil data aset yang diperbarui pada bulan dan tahun yang dipilih dari database
-        $asets = $this->asetModel
-                        ->where('MONTH(updated_at)', $bulan)
-                        ->where('YEAR(updated_at)', $tahunIni)
-                        ->orderBy('updated_at', 'DESC')
-                        ->findAll();
-
-        // Buat objek Spreadsheet baru
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Tulis header untuk setiap kolom
         $sheet->setCellValue('A1', 'Kode Aset');
         $sheet->setCellValue('B1', 'Kategori');
-        $sheet->setCellValue('C1', 'Merk');
-        $sheet->setCellValue('D1', 'Serial Number');
-        $sheet->setCellValue('E1', 'Tahun');
-        $sheet->setCellValue('F1', 'Lokasi');
-        $sheet->setCellValue('G1', 'Status');
-        $sheet->setCellValue('H1', 'Keterangan');
-        $sheet->setCellValue('I1', 'Terakhir Diperbarui');
+        $sheet->setCellValue('C1', 'Sub Kategori');
+        $sheet->setCellValue('D1', 'Merk');
+        $sheet->setCellValue('E1', 'Type');
+        $sheet->setCellValue('F1', 'Serial Number');
+        $sheet->setCellValue('G1', 'Tahun');
+        $sheet->setCellValue('H1', 'Lokasi');
+        $sheet->setCellValue('I1', 'Status');
+        $sheet->setCellValue('J1', 'Keterangan');
+        $sheet->setCellValue('K1', 'Harga Beli');
+        $sheet->setCellValue('L1', 'Entitas Pembelian');
+        $sheet->setCellValue('M1', 'Terakhir Diperbarui');
         
-        // Berikan style pada baris header (opsional)
         $styleArray = [
             'font' => ['bold' => true],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
         ];
-        $sheet->getStyle('A1:I1')->applyFromArray($styleArray);
+        $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
 
-        // Tulis data dari setiap aset ke dalam baris spreadsheet
         $row = 2;
         foreach ($asets as $aset) {
             $sheet->setCellValue('A' . $row, $aset['kode']);
-            $sheet->setCellValue('B' . $row, $aset['kategori']);
-            $sheet->setCellValue('C' . $row, $aset['merk']);
-            $sheet->setCellValue('D' . $row, $aset['serial_number']);
-            $sheet->setCellValue('E' . $row, $aset['tahun']);
-            $sheet->setCellValue('F' . $row, $aset['lokasi']);
-            $sheet->setCellValue('G' . $row, $aset['status']);
-            $sheet->setCellValue('H' . $row, $aset['keterangan']);
-            $sheet->setCellValue('I' . $row, $aset['updated_at']);
+            $sheet->setCellValue('B' . $row, $aset['nama_kategori']);
+            $sheet->setCellValue('C' . $row, $aset['nama_sub_kategori']);
+            $sheet->setCellValue('D' . $row, $aset['merk']);
+            $sheet->setCellValue('E' . $row, $aset['type']);
+            $sheet->setCellValue('F' . $row, $aset['serial_number']);
+            $sheet->setCellValue('G' . $row, $aset['tahun']);
+            $sheet->setCellValue('H' . $row, $aset['lokasi']);
+            $sheet->setCellValue('I' . $row, $aset['status']);
+            $sheet->setCellValue('J' . $row, $aset['keterangan']);
+            $sheet->setCellValue('K' . $row, $aset['harga_beli']);
+            $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
+            $sheet->setCellValue('M' . $row, $aset['updated_at']);
             $row++;
         }
         
-        // Atur lebar setiap kolom agar menyesuaikan dengan kontennya (opsional)
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'M') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Buat writer untuk file .xlsx
         $writer = new Xlsx($spreadsheet);
-        
-        // Buat nama file yang dinamis berdasarkan bulan dan tahun
-        $namaBulan = date('F', mktime(0, 0, 0, $bulan, 10)); // Mengubah angka bulan menjadi nama (e.g., 9 -> September)
-        $filename = 'laporan_aset_' . strtolower($namaBulan) . '_' . $tahunIni . '.xlsx';
+        $filename = 'laporan_aset_' . date('Y-m-d') . '.xlsx';
 
-        // Set header HTTP untuk memulai proses download file
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
         
-        // Tulis file ke output PHP, yang akan diunduh oleh browser
+        $writer->save('php://output');
+        exit();
+    }
+    
+    public function getHistory($asetId)
+    {
+        $db = \Config\Database::connect();
+        $history = $db->table('aset_update_requests as aur')
+                        ->select('aur.created_at, aur.proposed_data, u.full_name')
+                        ->join('users as u', 'u.id = aur.user_id')
+                        ->where('aur.aset_id', $asetId)
+                        ->where('aur.status', 'approved')
+                        ->orderBy('aur.created_at', 'DESC')
+                        ->get()->getResultArray();
+
+        return $this->response->setJSON($history);
+    }
+    
+    public function exportBulanan($bulan)
+    {
+        if ($bulan < 1 || $bulan > 12) {
+            return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
+        }
+
+        $tahunIni = date('Y');
+
+        $asets = $this->asetModel
+                        ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+                        ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                        ->where('MONTH(aset.updated_at)', $bulan)
+                        ->where('YEAR(aset.updated_at)', $tahunIni)
+                        ->orderBy('aset.updated_at', 'DESC')
+                        ->findAll();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'Kode Aset');
+        $sheet->setCellValue('B1', 'Kategori');
+        $sheet->setCellValue('C1', 'Sub Kategori');
+        $sheet->setCellValue('D1', 'Merk');
+        $sheet->setCellValue('E1', 'Type');
+        $sheet->setCellValue('F1', 'Serial Number');
+        $sheet->setCellValue('G1', 'Tahun');
+        $sheet->setCellValue('H1', 'Lokasi');
+        $sheet->setCellValue('I1', 'Status');
+        $sheet->setCellValue('J1', 'Keterangan');
+        $sheet->setCellValue('K1', 'Harga Beli');
+        $sheet->setCellValue('L1', 'Entitas Pembelian');
+        $sheet->setCellValue('M1', 'Terakhir Diperbarui');
+        
+        $styleArray = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
+        ];
+        $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
+
+        $row = 2;
+        foreach ($asets as $aset) {
+            $sheet->setCellValue('A' . $row, $aset['kode']);
+            $sheet->setCellValue('B' . $row, $aset['nama_kategori']);
+            $sheet->setCellValue('C' . $row, $aset['nama_sub_kategori']);
+            $sheet->setCellValue('D' . $row, $aset['merk']);
+            $sheet->setCellValue('E' . $row, $aset['type']);
+            $sheet->setCellValue('F' . $row, $aset['serial_number']);
+            $sheet->setCellValue('G' . $row, $aset['tahun']);
+            $sheet->setCellValue('H' . $row, $aset['lokasi']);
+            $sheet->setCellValue('I' . $row, $aset['status']);
+            $sheet->setCellValue('J' . $row, $aset['keterangan']);
+            $sheet->setCellValue('K' . $row, $aset['harga_beli']);
+            $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
+            $sheet->setCellValue('M' . $row, $aset['updated_at']);
+            $row++;
+        }
+        
+        foreach (range('A', 'M') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        
+        $namaBulan = date('F', mktime(0, 0, 0, $bulan, 10));
+        $filename = 'laporan_aset_' . strtolower($namaBulan) . '_' . $tahunIni . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        
         $writer->save('php://output');
         exit();
     }
