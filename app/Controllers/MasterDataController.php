@@ -6,12 +6,17 @@ use App\Controllers\BaseController;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
+use App\Models\MerkModel; // <-- TAMBAHKAN
+use App\Models\TipeModel; // <-- TAMBAHKAN
+
 
 class MasterDataController extends BaseController
 {
     protected $kategoriModel;
     protected $subKategoriModel;
     protected $lokasiModel;
+    protected $merkModel; // <-- TAMBAHKAN
+    protected $tipeModel; // <-- TAMBAHKAN
     protected $helpers = ['form', 'url'];
 
     public function __construct()
@@ -19,6 +24,8 @@ class MasterDataController extends BaseController
         $this->kategoriModel = new KategoriModel();
         $this->subKategoriModel = new SubKategoriModel();
         $this->lokasiModel = new LokasiModel();
+        $this->merkModel = new MerkModel(); // <-- TAMBAHKAN
+        $this->tipeModel = new TipeModel(); // <-- TAMBAHKAN
     }
 
     /**
@@ -30,6 +37,7 @@ class MasterDataController extends BaseController
             'title'      => 'Manajemen Data Master',
             'kategoris'  => $this->kategoriModel->findAll(),
             'lokasis'    => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'merks'      => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(), // <-- TAMBAHKAN
             'validation' => \Config\Services::validation(),
         ];
         
@@ -121,6 +129,65 @@ class MasterDataController extends BaseController
         ]);
 
         return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi baru berhasil ditambahkan.');
+    }
+    
+    //--------------------------------------------------------------------
+    // [BARU] Metode untuk CRUD Merk
+    //--------------------------------------------------------------------
+
+    public function createMerk()
+    {
+        if (!$this->validate(['nama_merk' => 'required|is_unique[merk.nama_merk]'])) {
+            return redirect()->to('/master-data?tab=merk')->withInput()->with('errors_merk', $this->validator->getErrors());
+        }
+
+        $this->merkModel->save([
+            'nama_merk' => $this->request->getPost('nama_merk'),
+        ]);
+
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Merk baru berhasil ditambahkan.');
+    }
+
+    public function deleteMerk($id)
+    {
+        // Cek relasi dengan tipe
+        $relatedTipes = $this->tipeModel->where('merk_id', $id)->first();
+        if ($relatedTipes) {
+            return redirect()->to('/master-data?tab=merk')->with('error', 'Gagal menghapus! Merk ini masih memiliki tipe terkait.');
+        }
+
+        $this->merkModel->delete($id);
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Merk berhasil dihapus.');
+    }
+
+    //--------------------------------------------------------------------
+    // [BARU] Metode untuk CRUD Tipe
+    //--------------------------------------------------------------------
+
+    public function createTipe()
+    {
+        $rules = [
+            'merk_id' => 'required|is_natural_no_zero',
+            'nama_tipe.*' => 'required',
+        ];
+
+        if (!$this->validate($rules)) {
+             return redirect()->to('/master-data?tab=merk')->withInput()->with('errors_merk', $this->validator->getErrors());
+        }
+        
+        $merkId = $this->request->getPost('merk_id');
+        $tipeNames = $this->request->getPost('nama_tipe');
+        
+        foreach ($tipeNames as $name) {
+            if (!empty($name)) {
+                $this->tipeModel->save([
+                    'merk_id' => $merkId,
+                    'nama_tipe' => $name,
+                ]);
+            }
+        }
+    
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil ditambahkan.');
     }
     
     public function deleteLokasi($id)

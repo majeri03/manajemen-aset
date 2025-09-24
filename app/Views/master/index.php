@@ -7,10 +7,9 @@
 <?= $this->section('content') ?>
 <div class="main-header mb-4">
     <h4 class="mb-0">Manajemen Data Master</h4>
-    <p class="text-muted small">Kelola data referensi seperti kategori dan lokasi aset.</p>
+    <p class="text-muted small">Kelola data referensi seperti kategori, lokasi, merk, dan tipe aset.</p>
 </div>
 
-<!-- Notifikasi -->
 <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <?= session()->getFlashdata('success') ?>
@@ -24,7 +23,6 @@
     </div>
 <?php endif; ?>
 
-<!-- Navigasi Tab -->
 <ul class="nav nav-tabs" id="masterDataTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="kategori-tab" data-bs-toggle="tab" data-bs-target="#kategori-content" type="button" role="tab" aria-controls="kategori-content" aria-selected="true">
@@ -36,9 +34,13 @@
             Manajemen Lokasi
         </button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="merk-tab" data-bs-toggle="tab" data-bs-target="#merk-content" type="button" role="tab" aria-controls="merk-content" aria-selected="false">
+            Manajemen Merk & Tipe
+        </button>
+    </li>
 </ul>
 
-<!-- Konten Tab -->
 <div class="tab-content table-container shadow-sm" id="masterDataTabsContent" style="border-top-left-radius: 0;">
     <div class="tab-pane fade show active" id="kategori-content" role="tabpanel" aria-labelledby="kategori-tab">
         <?= $this->include('master/_kategori_content') ?>
@@ -46,24 +48,51 @@
     <div class="tab-pane fade" id="lokasi-content" role="tabpanel" aria-labelledby="lokasi-tab">
         <?= $this->include('master/_lokasi_content') ?>
     </div>
+    <div class="tab-pane fade" id="merk-content" role="tabpanel" aria-labelledby="merk-tab">
+        <?= $this->include('master/_merk_tipe_content') ?>
+    </div>
 </div>
 
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
 <script>
-    // Script untuk menjaga tab tetap aktif setelah halaman dimuat ulang (misalnya setelah submit form)
+    // Script untuk menjaga tab tetap aktif setelah halaman dimuat ulang
     document.addEventListener('DOMContentLoaded', function() {
         let urlParams = new URLSearchParams(window.location.search);
         let activeTab = urlParams.get('tab');
 
-        if (activeTab) {
-            let tabElement = document.querySelector('#' + activeTab + '-tab');
-            if(tabElement) {
-                new bootstrap.Tab(tabElement).show();
+        // Set default tab jika tidak ada parameter
+        if (!activeTab) {
+            activeTab = 'kategori';
+        }
+        
+        let tabElement = document.querySelector('#' + activeTab + '-tab');
+        if(tabElement) {
+            new bootstrap.Tab(tabElement).show();
+        }
+
+        // Simpan tab terakhir yang aktif di localStorage
+        var tabTriggerList = [].slice.call(document.querySelectorAll('#masterDataTabs button'));
+        tabTriggerList.forEach(function (tabTriggerEl) {
+            var tab = new bootstrap.Tab(tabTriggerEl);
+
+            tabTriggerEl.addEventListener('click', function (event) {
+                localStorage.setItem('activeMasterTab', this.id);
+            });
+        });
+
+        // Buka tab terakhir yang aktif dari localStorage
+        var lastTab = localStorage.getItem('activeMasterTab');
+        if (lastTab) {
+            var lastTabElement = document.getElementById(lastTab);
+            if(lastTabElement) {
+                var tab = new bootstrap.Tab(lastTabElement);
+                tab.show();
             }
         }
     });
+    
+    
 </script>
 <?= $this->endSection() ?>
-

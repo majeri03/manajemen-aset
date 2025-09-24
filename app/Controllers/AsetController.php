@@ -6,6 +6,8 @@ use App\Models\AsetModel;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
+use App\Models\MerkModel; // TAMBAHKAN
+use App\Models\TipeModel; // TAMBAHKAN
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -21,6 +23,9 @@ class AsetController extends ResourceController
     protected $asetModel;
     protected $kategoriModel;
     protected $subKategoriModel;
+    protected $lokasiModel; // Deklarasikan
+    protected $merkModel; // TAMBAHKAN
+    protected $tipeModel; // TAMBAHKAN
     protected $modelName = 'App\Models\AsetModel';
     
     public function __construct()
@@ -29,6 +34,8 @@ class AsetController extends ResourceController
         $this->kategoriModel = new KategoriModel();
         $this->subKategoriModel = new SubKategoriModel();
         $this->lokasiModel = new LokasiModel();
+        $this->merkModel = new MerkModel(); // TAMBAHKAN
+        $this->tipeModel = new TipeModel(); // TAMBAHKAN
     }
 
     /**
@@ -45,10 +52,12 @@ class AsetController extends ResourceController
         ];
     
         $query = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
             ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left'); 
+            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left')
+            ->join('tipe t', 't.id = aset.tipe_id', 'left');
     
         if (!empty($filters['kategori_id'])) {
             $query = $query->where('aset.kategori_id', $filters['kategori_id']);
@@ -72,7 +81,8 @@ class AsetController extends ResourceController
             'asets'            => $asets_data,
             'kategori_list'    => $this->kategoriModel->findAll(),
             'subkategori_list' => $this->subKategoriModel->findAll(),
-            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(), // Mengambil daftar lokasi
+            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(), // TAMBAHKAN
             'filters'          => $filters
         ];
     
@@ -86,13 +96,15 @@ class AsetController extends ResourceController
      *
      * @return ResponseInterface
      */
-    public function show($id = null)
-    {
-        $aset = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
+public function show($id = null)
+{
+    $aset = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
             ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
             ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left') // PASTIKAN JOIN INI ADA
+            ->join('tipe t', 't.id = aset.tipe_id', 'left') // PASTIKAN JOIN INI ADA
             ->find($id);
 
         if ($aset) {
@@ -101,7 +113,7 @@ class AsetController extends ResourceController
         }
         
         return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
-    }
+}
 
     /**
      * Return a new resource object, with default properties.
@@ -138,8 +150,8 @@ class AsetController extends ResourceController
             'kode'            => $this->request->getPost('kode'),
             'kategori_id'     => $this->request->getPost('kategori_id'),
             'sub_kategori_id' => $this->request->getPost('sub_kategori_id'),
-            'merk'            => $this->request->getPost('merk'),
-            'type'            => $this->request->getPost('type'),
+            'merk_id'         => $this->request->getPost('merk_id'),
+            'tipe_id'         => $this->request->getPost('tipe_id'),
             'serial_number'   => $this->request->getPost('serial_number'),
             'tahun'           => $this->request->getPost('tahun'),
             'lokasi_id'       => $this->request->getPost('lokasi_id'), 
@@ -211,7 +223,9 @@ class AsetController extends ResourceController
             'aset'             => $aset,
             'kategori_list'    => $this->kategoriModel->findAll(),
             'subkategori_list' => $this->subKategoriModel->where('kategori_id', $aset['kategori_id'])->findAll(),
-            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(), // Mengirim daftar lokasi
+            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
+            'tipe_list'        => $this->tipeModel->where('merk_id', $aset['merk_id'])->findAll(),
         ];
 
         return view('aset/edit', $data);
@@ -229,7 +243,8 @@ class AsetController extends ResourceController
         $allowedFields = [
             'kategori_id',
             'sub_kategori_id',
-            'type',
+            'merk_id',
+            'tipe_id',
             'tahun',
             'lokasi_id', 
             'status',
@@ -481,5 +496,11 @@ class AsetController extends ResourceController
         
         $writer->save('php://output');
         exit();
+    }
+
+    public function getTipesByMerk($merkId)
+    {
+        $tipes = $this->tipeModel->where('merk_id', $merkId)->orderBy('nama_tipe', 'ASC')->findAll();
+        return $this->response->setJSON($tipes);
     }
 }

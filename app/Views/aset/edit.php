@@ -24,13 +24,31 @@ Edit Aset
                 <label for="merk" class="form-label">Merk</label>
                 <input type="text" class="form-control" id="merk" value="<?= esc($aset['merk']) ?>" readonly style="background-color: #e9ecef;">
             </div>
-             <div class="col-md-6">
-                <label for="serial_number" class="form-label">Serial Number</label>
-                <input type="text" class="form-control" id="serial_number" value="<?= esc($aset['serial_number']) ?>" readonly style="background-color: #e9ecef;">
+            <div class="col-md-6">
+                <label for="merk_id" class="form-label">Merk</label>
+                <select class="form-select" id="merk_id" name="merk_id" required>
+                    <option value="">Pilih Merk</option>
+                    <?php foreach ($merk_list as $merk): ?>
+                        <option value="<?= $merk['id'] ?>" <?= ($aset['merk_id'] == $merk['id']) ? 'selected' : '' ?>>
+                            <?= esc($merk['nama_merk']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="col-md-6">
-                <label for="type" class="form-label">Type</label>
-                <input type="text" class="form-control" id="type" name="type" value="<?= esc($aset['type']) ?>" oninput="this.value = this.value.toUpperCase()">
+                <label for="tipe_id" class="form-label">Tipe</label>
+                <select class="form-select" id="tipe_id" name="tipe_id" required>
+                    <option value="">Pilih Merk Dahulu</option>
+                    <?php foreach ($tipe_list as $tipe): ?>
+                        <option value="<?= $tipe['id'] ?>" <?= ($aset['tipe_id'] == $tipe['id']) ? 'selected' : '' ?>>
+                            <?= esc($tipe['nama_tipe']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="serial_number" class="form-label">Serial Number</label>
+                <input type="text" class="form-control" id="serial_number" value="<?= esc($aset['serial_number']) ?>" readonly style="background-color: #e9ecef;">
             </div>
 
             <hr class="my-4">
