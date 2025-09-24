@@ -70,8 +70,15 @@ Edit Aset
                 <input type="text" class="form-control" id="entitas_pembelian" name="entitas_pembelian" value="<?= esc($aset['entitas_pembelian']) ?>">
             </div>
             <div class="col-md-6">
-                <label for="lokasi" class="form-label">Lokasi</label>
-                <input type="text" class="form-control" id="lokasi" name="lokasi" value="<?= esc($aset['lokasi']) ?>" oninput="this.value = this.value.toUpperCase()">
+                <label for="lokasi_id" class="form-label">Lokasi</label>
+                <select class="form-select" id="lokasi_id" name="lokasi_id" required>
+                    <option value="">Pilih Lokasi</option>
+                    <?php foreach ($lokasi_list as $lokasi): ?>
+                        <option value="<?= $lokasi['id'] ?>" <?= ($aset['lokasi_id'] == $lokasi['id']) ? 'selected' : '' ?>>
+                            <?= esc($lokasi['nama_lokasi']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="col-md-6">
                 <label for="status" class="form-label">Status Aset</label>
