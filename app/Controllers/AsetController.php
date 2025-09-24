@@ -27,6 +27,7 @@ class AsetController extends ResourceController
         $this->asetModel = new AsetModel();
         $this->kategoriModel = new KategoriModel();
         $this->subKategoriModel = new SubKategoriModel();
+        $this->lokasiModel = new LokasiModel();
     }
 
     /**
@@ -43,9 +44,10 @@ class AsetController extends ResourceController
         ];
     
         $query = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left'); 
     
         if (!empty($filters['kategori_id'])) {
             $query = $query->where('aset.kategori_id', $filters['kategori_id']);
@@ -58,20 +60,18 @@ class AsetController extends ResourceController
                 ->like('aset.kode', $filters['keyword'])
                 ->orLike('aset.merk', $filters['keyword'])
                 ->orLike('aset.serial_number', $filters['keyword'])
-                ->orLike('aset.lokasi', $filters['keyword'])
+                ->orLike('l.nama_lokasi', $filters['keyword']) // Pencarian berdasarkan nama lokasi
                 ->groupEnd();
         }
         
         $asets_data = $query->orderBy('aset.updated_at', 'DESC')->findAll();
     
-        $kategori_list = $this->kategoriModel->findAll();
-        $subkategori_list = $this->subKategoriModel->findAll();
-    
         $data = [
             'title'            => 'Data Aset',
             'asets'            => $asets_data,
-            'kategori_list'    => $kategori_list,
-            'subkategori_list' => $subkategori_list,
+            'kategori_list'    => $this->kategoriModel->findAll(),
+            'subkategori_list' => $this->subKategoriModel->findAll(),
+            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(), // Mengambil daftar lokasi
             'filters'          => $filters
         ];
     
@@ -88,9 +88,10 @@ class AsetController extends ResourceController
     public function show($id = null)
     {
         $aset = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
             ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
             ->find($id);
 
         if ($aset) {
@@ -140,11 +141,11 @@ class AsetController extends ResourceController
             'type'            => $this->request->getPost('type'),
             'serial_number'   => $this->request->getPost('serial_number'),
             'tahun'           => $this->request->getPost('tahun'),
-            'lokasi'          => $this->request->getPost('lokasi'),
+            'lokasi_id'       => $this->request->getPost('lokasi_id'), 
             'status'          => $this->request->getPost('status'),
             'keterangan'      => $this->request->getPost('keterangan'),
             'harga_beli'      => $this->request->getPost('harga_beli'),
-            'entitas_pembelian' => $this->request->getPost('entitas_pembelian'),
+            'entitas_pembelian' => strtoupper($this->request->getPost('entitas_pembelian')),
         ];
 
         if ($this->asetModel->save($data)) {
@@ -209,10 +210,11 @@ class AsetController extends ResourceController
             'aset'             => $aset,
             'kategori_list'    => $this->kategoriModel->findAll(),
             'subkategori_list' => $this->subKategoriModel->where('kategori_id', $aset['kategori_id'])->findAll(),
+            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(), // Mengirim daftar lokasi
         ];
 
         return view('aset/edit', $data);
-    }
+    }    
 
     /**
      * Add or update a model resource, from "posted" properties.
@@ -228,7 +230,7 @@ class AsetController extends ResourceController
             'sub_kategori_id',
             'type',
             'tahun',
-            'lokasi',
+            'lokasi_id', 
             'status',
             'keterangan',
             'harga_beli',
@@ -237,11 +239,16 @@ class AsetController extends ResourceController
 
         $data = $this->request->getPost($allowedFields);
 
+        if (!empty($data['entitas_pembelian'])) {
+            $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
+        }
+
         if ($this->asetModel->update($id, $data)) {
             return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
         }
 
         return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
+
     }
 
     /**

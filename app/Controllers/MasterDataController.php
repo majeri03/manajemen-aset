@@ -1,0 +1,138 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Controllers\BaseController;
+use App\Models\KategoriModel;
+use App\Models\SubKategoriModel;
+use App\Models\LokasiModel;
+
+class MasterDataController extends BaseController
+{
+    protected $kategoriModel;
+    protected $subKategoriModel;
+    protected $lokasiModel;
+    protected $helpers = ['form', 'url'];
+
+    public function __construct()
+    {
+        $this->kategoriModel = new KategoriModel();
+        $this->subKategoriModel = new SubKategoriModel();
+        $this->lokasiModel = new LokasiModel();
+    }
+
+    /**
+     * Menampilkan halaman utama Data Master dengan tab Kategori dan Lokasi.
+     */
+    public function index()
+    {
+        $data = [
+            'title'      => 'Manajemen Data Master',
+            'kategoris'  => $this->kategoriModel->findAll(),
+            'lokasis'    => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'validation' => \Config\Services::validation(),
+        ];
+        
+        return view('master/index', $data);
+    }
+    
+    //--------------------------------------------------------------------
+    // Metode untuk CRUD Kategori
+    //--------------------------------------------------------------------
+
+    public function createKategori()
+    {
+        if (!$this->validate(['nama_kategori' => 'required|is_unique[kategori.nama_kategori]'])) {
+            return redirect()->to('/master-data')->withInput()->with('errors_kategori', $this->validator->getErrors());
+        }
+
+        $this->kategoriModel->save([
+            'nama_kategori' => $this->request->getPost('nama_kategori'),
+        ]);
+
+        return redirect()->to('/master-data')->with('success', 'Kategori baru berhasil ditambahkan.');
+    }
+
+    public function deleteKategori($id)
+    {
+        $relatedSubKategoris = $this->subKategoriModel->where('kategori_id', $id)->first();
+        if ($relatedSubKategoris) {
+            return redirect()->to('/master-data')->with('error', 'Gagal menghapus! Kategori ini masih memiliki sub-kategori terkait.');
+        }
+
+        $this->kategoriModel->delete($id);
+        return redirect()->to('/master-data')->with('success', 'Kategori berhasil dihapus.');
+    }
+
+    //--------------------------------------------------------------------
+    // Metode untuk CRUD Sub Kategori
+    //--------------------------------------------------------------------
+
+    public function createSubKategori()
+    {
+        $kategoriId = $this->request->getPost('kategori_id');
+        $subKategoriNames = $this->request->getPost('nama_sub_kategori');
+        
+        $rules = [
+            'kategori_id' => 'required|is_natural_no_zero',
+            'nama_sub_kategori.*' => 'required',
+        ];
+
+        if (!$this->validate($rules)) {
+             return redirect()->to('/master-data')->withInput()->with('errors_kategori', $this->validator->getErrors());
+        }
+        
+        foreach ($subKategoriNames as $name) {
+            if (!empty($name)) {
+                $this->subKategoriModel->save([
+                    'kategori_id' => $kategoriId,
+                    'nama_sub_kategori' => $name,
+                ]);
+            }
+        }
+    
+        return redirect()->to('/master-data')->with('success', 'Sub-kategori berhasil ditambahkan.');
+    }
+
+    public function deleteSubKategori($id)
+    {
+        $db = \Config\Database::connect();
+        $relatedAset = $db->table('aset')->where('sub_kategori_id', $id)->get()->getRow();
+        if ($relatedAset) {
+            return redirect()->to('/master-data')->with('error', 'Gagal menghapus! Sub-kategori ini masih digunakan oleh data aset.');
+        }
+
+        $this->subKategoriModel->delete($id);
+        return redirect()->to('/master-data')->with('success', 'Sub-kategori berhasil dihapus.');
+    }
+    
+    //--------------------------------------------------------------------
+    // Metode untuk CRUD Lokasi
+    //--------------------------------------------------------------------
+
+    public function createLokasi()
+    {
+        if (!$this->validate(['nama_lokasi' => 'required|is_unique[lokasi.nama_lokasi]'])) {
+            return redirect()->to('/master-data?tab=lokasi')->withInput()->with('errors_lokasi', $this->validator->getErrors());
+        }
+
+        $this->lokasiModel->save([
+            'nama_lokasi' => $this->request->getPost('nama_lokasi'),
+        ]);
+
+        return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi baru berhasil ditambahkan.');
+    }
+    
+    public function deleteLokasi($id)
+    {
+        $db = \Config\Database::connect();
+        $relatedAset = $db->table('aset')->where('lokasi_id', $id)->get()->getRow();
+        if ($relatedAset) {
+            return redirect()->to('/master-data?tab=lokasi')->with('error', 'Gagal menghapus! Lokasi ini masih digunakan oleh data aset.');
+        }
+
+        $this->lokasiModel->delete($id);
+        return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi berhasil dihapus.');
+    }
+}
+

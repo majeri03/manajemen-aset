@@ -41,14 +41,21 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('laporan', 'LaporanController::index');
     $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
 
-    // Rute untuk Manajemen Kategori
-    $routes->get('category', 'CategoryController::index');
-    $routes->post('category/createKategori', 'CategoryController::createKategori');
-    $routes->post('category/updateKategori/(:num)', 'CategoryController::updateKategori/$1');
-    $routes->get('category/deleteKategori/(:num)', 'CategoryController::deleteKategori/$1');
 
-    $routes->post('category/createSubKategori', 'CategoryController::createSubKategori');
-    $routes->post('category/updateSubKategori/(:num)', 'CategoryController::updateSubKategori/$1');
-    $routes->get('category/deleteSubKategori/(:num)', 'CategoryController::deleteSubKategori/$1');
+    // --- [MULAI] Rute Baru untuk Data Master ---
+    // Baris ini akan menampilkan halaman utama Data Master
+    $routes->get('master-data', 'MasterDataController::index');
+    
+    // Rute untuk mengelola Kategori
+    $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
+    $routes->get('master-data/kategori/delete/(:num)', 'MasterDataController::deleteKategori/$1');
+    
+    // Rute untuk mengelola Sub-Kategori
+    $routes->post('master-data/subkategori/create', 'MasterDataController::createSubKategori');
+    $routes->get('master-data/subkategori/delete/(:num)', 'MasterDataController::deleteSubKategori/$1');
+    
+    // Rute untuk mengelola Lokasi
+    $routes->post('master-data/lokasi/create', 'MasterDataController::createLokasi');
+    $routes->get('master-data/lokasi/delete/(:num)', 'MasterDataController::deleteLokasi/$1');
 
 });
