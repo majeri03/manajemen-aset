@@ -153,7 +153,7 @@ Dashboard
                                 <td><?= esc($aset['merk']) ?></td>
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
-                                <td><?= esc($aset['lokasi_id']) ?></td>
+                                <td><?= esc($aset['nama_lokasi']) ?></td>
                                 <td><?= esc($aset['keterangan']) ?></td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm view-detail" 
@@ -276,7 +276,12 @@ Dashboard
                     </div>
                     <div class="mb-3">
                         <label for="lokasi-tambah" class="form-label">Lokasi</label>
-                        <input type="text" class="form-control" id="lokasi-tambah" name="lokasi" placeholder="Contoh: HEAD OFFICE - RG. HCGA" oninput="this.value = this.value.toUpperCase();">
+                        <select class="form-select" id="lokasi-tambah" name="lokasi_id" required>
+                            <option value="">Pilih Lokasi</option>
+                            <?php foreach ($lokasi_list as $lokasi): ?>
+                                <option value="<?= $lokasi['id'] ?>"><?= esc($lokasi['nama_lokasi']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="keterangan-tambah" class="form-label">Keterangan</label>
@@ -422,32 +427,6 @@ Dashboard
         }
     });
 
-const detailAsetModal = document.getElementById('detailAsetModal');
-if (detailAsetModal) {
-    detailAsetModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const asetId = button.getAttribute('data-id');
-        
-        fetch(`/aset/${asetId}`) 
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('detail-kode').textContent = data.kode;
-                document.getElementById('detail-kategori').textContent = data.nama_kategori;
-                document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
-                document.getElementById('detail-merk').textContent = data.merk;
-                document.getElementById('detail-type').textContent = data.type || '-';
-                document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                document.getElementById('detail-tahun').textContent = data.tahun;
-                document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
-                document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
-                document.getElementById('detail-lokasi').textContent = data.lokasi;
-                document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                document.getElementById('detail-status').textContent = data.status;
-                document.getElementById('detail-updated_at').textContent = data.updated_at;
-            })
-            .catch(error => console.error('Error fetching detail:', error));
-    });
-}
 
 const statusLabels = <?= json_encode($statusLabels) ?>;
 const statusData = <?= json_encode($statusData) ?>;
@@ -563,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('detail-tahun').textContent = data.tahun;
                     document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                     document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
-                    document.getElementById('detail-lokasi').textContent = data.lokasi;
+                    document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                     document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                     document.getElementById('detail-status').textContent = data.status;
                     document.getElementById('detail-updated_at').textContent = data.updated_at;
