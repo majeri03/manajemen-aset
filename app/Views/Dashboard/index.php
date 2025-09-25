@@ -237,13 +237,13 @@ Dashboard
                     </div>
                     <div class="mb-3">
                         <label for="sub_kategori_id-tambah" class="form-label">Sub Kategori</label>
-                        <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled>
+                        <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled onchange="generateKodeAset();">
                             <option value="">Pilih Sub Kategori</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="merk_id-tambah" class="form-label">Merk</label>
-                        <select class="form-select" id="merk_id-tambah" name="merk_id" required>
+                        <select class="form-select" id="merk_id-tambah" name="merk_id" required onchange="generateKodeAset();">
                             <option value="">Pilih Merk</option>
                             <?php foreach ($merk_list as $merk): ?>
                                 <option value="<?= $merk['id'] ?>"><?= esc($merk['nama_merk']) ?></option>
@@ -270,7 +270,7 @@ Dashboard
                     </div>
                     <div class="mb-3">
                         <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
-                        <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: PT. JAYA ABADI">
+                        <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: PT. JAYA ABADI" oninput="generateKodeAset();">
                     </div>
                     <div class="mb-3">
                         <label for="status-tambah" class="form-label">Status Aset</label>
@@ -344,21 +344,18 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
 <script>
 
-        function generateKodeAset() {
-        const kategoriSelect = document.getElementById('kategori_id-tambah');
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        const tahun = document.getElementById('tahun-tambah').value;
-        const merk = document.getElementById('merk-tambah').value.toUpperCase().replace(/\s+/g, '').substring(0, 3);
-        
-        const kategoriNama = kategoriSelect.options[kategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
-        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/\s+/g, '').substring(0, 5);
+        // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
+    <?php if (session()->getFlashdata('new_aset')): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
+            document.getElementById('qr-kode').textContent = newAset.kode;
+            document.getElementById('qr-detail').textContent = `${newAset.entitas_pembelian} - ${newAset.nama_sub_kategori}`;
+            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
+            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+            qrModal.show();
+        });
+    <?php endif; ?>
 
-        if (kategoriNama && subKategoriNama && tahun && merk) {
-            document.getElementById('kode-tambah').value = `BTR/${kategoriNama}/${subKategoriNama}/${tahun}/${merk}`;
-        } else {
-            document.getElementById('kode-tambah').value = '';
-        }
-    }
 
     function printQrCode() {
         const printContent = document.getElementById('qrCodePrintArea').innerHTML;
@@ -371,6 +368,29 @@ Dashboard
     }
 
 
+    function generateKodeAset() {
+        // Ambil elemen dari form
+        const entitasInput = document.getElementById('entitas_pembelian-tambah');
+        const tahunInput = document.getElementById('tahun-tambah');
+        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
+        const merkSelect = document.getElementById('merk_id-tambah');
+        const kodeInput = document.getElementById('kode-tambah');
+
+        // Ambil nilai dan format
+        const entitas = entitasInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+        const tahun = tahunInput.value;
+        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'SUB';
+        const merkNama = merkSelect.options[merkSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'MRK';
+
+        // Tampilkan preview jika semua data kunci sudah diisi
+        if (entitas && tahun && subKategoriSelect.value && merkSelect.value) {
+            // "XX" adalah placeholder untuk nomor unik yang akan dibuat di server
+            kodeInput.value = `BTR/${entitas}/${tahun}/${subKategoriNama}/${merkNama}/XX`;
+        } else {
+            kodeInput.value = '';
+        }
+    }
+    
 
     const allSubKategoris = <?= json_encode($subkategori_list) ?>;
     

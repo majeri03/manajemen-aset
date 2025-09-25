@@ -38,6 +38,42 @@ class AsetController extends ResourceController
         $this->tipeModel = new TipeModel(); // TAMBAHKAN
     }
 
+    private function generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId)
+    {
+        // 1. Ambil data terakhir berdasarkan kata kunci
+        $lastAsset = $this->asetModel
+            ->where('entitas_pembelian', $entitas)
+            ->where('sub_kategori_id', $subKategoriId)
+            ->where('tahun', $tahun)
+            ->orderBy('kode', 'DESC')
+            ->first();
+    
+        $nextUniqueNumber = 1;
+    
+        // 2. Jika data ada, ambil nomor terakhir dan increment
+        if ($lastAsset) {
+            $parts = explode('/', $lastAsset['kode']);
+            $lastUniqueNumber = (int)end($parts);
+            $nextUniqueNumber = $lastUniqueNumber + 1;
+        }
+    
+        // 3. Format nomor unik menjadi dua digit (e.g., 01, 02)
+        $formattedUniqueNumber = str_pad($nextUniqueNumber, 2, '0', STR_PAD_LEFT);
+    
+        // Ambil singkatan dari master data
+        $subKategoriInfo = $this->subKategoriModel->find($subKategoriId);
+        $merkInfo = $this->merkModel->find($merkId);
+        $subKategoriCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $subKategoriInfo['nama_sub_kategori']), 0, 5));
+        $merkCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $merkInfo['nama_merk']), 0, 3));
+        $entitasCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entitas), 0, 5));
+    
+    
+        // 4. Gabungkan menjadi kode aset final
+        $newCode = "BTR/{$entitasCode}/{$tahun}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
+    
+        return $newCode;
+    }
+
     /**
      * Return an array of resource objects, themselves in array format.
      *
@@ -145,20 +181,28 @@ public function show($id = null)
                                  ->with('conflicting_asset_id', $existingAset['id']);
             }
         }
+        
+        $entitas = $this->request->getPost('entitas_pembelian');
+        $tahun = $this->request->getPost('tahun');
+        $subKategoriId = $this->request->getPost('sub_kategori_id');
+        $merkId = $this->request->getPost('merk_id');
+    
+        // Hasilkan kode aset baru di sisi server
+        $newAssetCode = $this->generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId);
 
         $data = [
-            'kode'            => $this->request->getPost('kode'),
+            'kode'            => $newAssetCode,
             'kategori_id'     => $this->request->getPost('kategori_id'),
-            'sub_kategori_id' => $this->request->getPost('sub_kategori_id'),
-            'merk_id'         => $this->request->getPost('merk_id'),
+            'sub_kategori_id' => $subKategoriId,
+            'merk_id'         => $merkId,
             'tipe_id'         => $this->request->getPost('tipe_id'),
             'serial_number'   => $this->request->getPost('serial_number'),
-            'tahun'           => $this->request->getPost('tahun'),
+            'tahun'           => $tahun,
             'lokasi_id'       => $this->request->getPost('lokasi_id'), 
             'status'          => $this->request->getPost('status'),
             'keterangan'      => $this->request->getPost('keterangan'),
             'harga_beli'      => $this->request->getPost('harga_beli'),
-            'entitas_pembelian' => strtoupper($this->request->getPost('entitas_pembelian')),
+            'entitas_pembelian' => strtoupper($entitas),
         ];
 
         if ($this->asetModel->save($data)) {
@@ -178,7 +222,11 @@ public function show($id = null)
             $redirectPage = $this->request->getPost('redirect_to');
             $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
             
-            $newAset = $this->asetModel->find($newAsetId);
+            // AMBIL DETAIL ASET YANG LENGKAP DENGAN JOIN
+            $newAset = $this->asetModel
+                ->select('aset.*, sk.nama_sub_kategori')
+                ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                ->find($newAsetId);
 
             return redirect()->to($redirectTo)
                              ->with('success', 'Aset baru berhasil ditambahkan!')
