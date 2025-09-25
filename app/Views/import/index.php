@@ -9,20 +9,41 @@
 <style>
     .select2-container--default .select2-selection--single { height: 38px; padding: 6px 12px; border: 1px solid #ced4da; }
     .select2-container { min-width: 180px; }
-    
-    .table-wrapper {
-        overflow-x: auto;
-        padding-bottom: 15px;
-    }
-    .table-wrapper table {
-        width: 100%;
-        min-width: 2500px;
-    }
-    .table-wrapper th, .table-wrapper td {
-        white-space: nowrap;
-        vertical-align: middle;
-    }
+    .table-wrapper { overflow-x: auto; padding-bottom: 15px; }
+    .table-wrapper table { width: 100%; min-width: 1800px; }
+    .table-wrapper th, .table-wrapper td { white-space: nowrap; vertical-align: middle; }
     .select2-container--open { z-index: 9999; }
+
+    /* [BARU] CSS untuk tampilan lebih menarik */
+    .upload-box {
+        border: 2px dashed #3da2ff;
+        border-radius: 16px;
+        padding: 2rem;
+        background-color: #f0f8ff;
+        transition: all 0.3s ease;
+    }
+    .upload-box:hover {
+        background-color: #e6f3ff;
+        border-color: #003481;
+    }
+    .step-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        border-left: 5px solid var(--primary-blue);
+    }
+    .step-card .step-number {
+        background-color: var(--primary-blue);
+        color: white;
+        font-weight: bold;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <div class="main-header mb-4">
@@ -43,24 +64,57 @@
     </div>
 <?php endif; ?>
 
-<div class="table-container shadow-sm mb-4">
-    <form action="<?= base_url('import/upload') ?>" method="post" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <div class="row g-3 align-items-center">
-            <div class="col-md-5">
-                <label for="excel_file" class="form-label fw-bold">Pilih File Excel (.xlsx)</label>
-                 <input type="file" class="form-control" name="excel_file" id="excel_file" accept=".xlsx" required>
+<?php if (!$import_data): ?>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="upload-box text-center">
+            <i class="bi bi-file-earmark-arrow-up-fill" style="font-size: 4rem; color: var(--primary-blue);"></i>
+            <h5 class="mt-3">Unggah File Anda Di Sini</h5>
+            <p class="text-muted">Gunakan file template untuk memastikan format data sudah benar.</p>
+            <form action="<?= base_url('import/upload') ?>" method="post" enctype="multipart/form-data" class="mt-4">
+                <?= csrf_field() ?>
+                <div class="input-group">
+                    <input type="file" class="form-control" name="excel_file" id="excel_file" accept=".xlsx" required>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Unggah & Tampilkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="d-flex flex-column gap-3">
+            <div class="step-card">
+                <div class="d-flex align-items-center">
+                    <div class="step-number me-3">1</div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">Unduh Template</h6>
+                        <p class="mb-0 text-muted small">Mulai dengan mengunduh file template Excel.</p>
+                    </div>
+                    <a href="<?= base_url('assets/template/template_import.xlsx') ?>" class="btn btn-outline-success ms-auto" download><i class="bi bi-download"></i></a>
+                </div>
             </div>
-            <div class="col-md-7 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-upload me-2"></i>Unggah & Tampilkan Data</button>
-                <a href="<?= base_url('assets/template/template_import.xlsx') ?>" class="btn btn-outline-success" download><i class="bi bi-file-earmark-excel me-2"></i>Unduh Template</a>
+            <div class="step-card">
+                <div class="d-flex align-items-center">
+                    <div class="step-number me-3">2</div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">Isi Data</h6>
+                        <p class="mb-0 text-muted small">Masukkan semua data aset Anda ke dalam template.</p>
+                    </div>
+                </div>
+            </div>
+             <div class="step-card">
+                <div class="d-flex align-items-center">
+                    <div class="step-number me-3">3</div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">Unggah & Validasi</h6>
+                        <p class="mb-0 text-muted small">Unggah file yang sudah diisi untuk divalidasi sistem.</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="form-text mt-2">
-            <strong>Penting:</strong> Pastikan file Excel Anda memiliki urutan kolom yang sesuai dengan template.
-        </div>
-    </form>
+    </div>
 </div>
+<?php endif; ?>
+
 
 <?php if ($import_data): ?>
 <div class="table-container shadow-sm">
