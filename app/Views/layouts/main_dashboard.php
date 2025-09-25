@@ -39,7 +39,12 @@
         <a href="<?= base_url('master-data') ?>" class="nav-link <?= ($current_page == 'master-data') ? 'active' : '' ?>">
             <i class="bi bi-hdd-stack-fill"></i> <span>Data Master</span>
         </a>
-     </li>
+    </li>
+        <li>
+        <a href="<?= base_url('import') ?>" class="nav-link <?= ($current_page == 'import') ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-excel"></i> <span>Import Data</span>
+        </a>
+    </li>
     <li>
         <a href="<?= base_url('tracking') ?>" class="nav-link <?= ($current_page == 'tracking') ? 'active' : '' ?>">
             <i class="bi bi-geo-alt-fill"></i> <span>Tracking Aset</span>

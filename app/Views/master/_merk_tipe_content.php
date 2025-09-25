@@ -14,9 +14,12 @@
                     <?php foreach ($merks as $merk): ?>
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="heading-merk-<?= $merk['id'] ?>">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-merk-<?= $merk['id'] ?>" aria-expanded="false" aria-controls="collapse-merk-<?= $merk['id'] ?>">
-                                    <?= esc($merk['nama_merk']) ?>
-                                    <a href="<?= base_url('master-data/merk/delete/' . $merk['id']) ?>" class="btn btn-sm btn-outline-danger ms-auto" onclick="return confirm('Yakin ingin menghapus merk ini? Semua tipe terkait akan ikut terhapus.')" style="margin-right: 15px;">
+                                <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-merk-<?= $merk['id'] ?>" aria-expanded="false" aria-controls="collapse-merk-<?= $merk['id'] ?>">
+                                    <span class="flex-grow-1"><?= esc($merk['nama_merk']) ?></span>
+                                    <a href="<?= base_url('master-data/merk/delete/' . $merk['id']) ?>" 
+                                       class="btn btn-sm btn-outline-danger me-3" 
+                                       onclick="event.stopPropagation(); return confirm('Anda yakin ingin menghapus merk ini? Semua tipe yang terkait akan ikut terhapus.')" 
+                                       title="Hapus Merk <?= esc($merk['nama_merk']) ?>">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </button>
@@ -32,7 +35,7 @@
                                             <?php foreach ($tipes as $tipe): ?>
                                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                                     <?= esc($tipe['nama_tipe']) ?>
-                                                    <a href="<?= base_url('master-data/tipe/delete/' . $tipe['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Apakah Anda yakin?')"><i class="bi bi-trash"></i></a>
+                                                    <a href="<?= base_url('master-data/tipe/delete/' . $tipe['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus tipe ini?')"><i class="bi bi-trash"></i></a>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
