@@ -27,17 +27,42 @@ class ImportController extends BaseController
         return view('import/index', $data);
     }
 
-    public function upload()
+public function upload()
     {
         $file = $this->request->getFile('excel_file');
 
         if ($file->isValid() && !$file->hasMoved()) {
+            $asetModel = new AsetModel();
             $reader = new Xlsx();
             $spreadsheet = $reader->load($file->getTempName());
             $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
+            // 1. Ambil semua serial number dari database (yang tidak kosong/null dan sudah kapital)
+            $existingSerialsDB = array_map('strtoupper', array_filter(array_column($asetModel->select('serial_number')->findAll(), 'serial_number')));
+            
             $dataToImport = [];
+            $serialsInFile = [];
+
+            // 2. Loop pertama: Kumpulkan semua serial number dari file Excel
             for ($i = 2; $i <= count($sheet); $i++) {
+                $sn = strtoupper(trim($sheet[$i]['E']));
+                if (!empty($sn)) {
+                    $serialsInFile[] = $sn;
+                }
+            }
+            
+            // 3. Cari duplikat di dalam file Excel itu sendiri
+            $duplicatesInFile = array_keys(array_filter(array_count_values($serialsInFile), fn($count) => $count > 1));
+            
+            // 4. Loop kedua: Proses setiap baris, buat data lengkap, dan tandai duplikat
+            for ($i = 2; $i <= count($sheet); $i++) {
+                $serialNumber = strtoupper(trim($sheet[$i]['E']));
+                $isDuplicate = false;
+
+                if (!empty($serialNumber) && (in_array($serialNumber, $existingSerialsDB) || in_array($serialNumber, $duplicatesInFile))) {
+                    $isDuplicate = true;
+                }
+                
                 $statusExcel = strtolower(trim($sheet[$i]['J']));
                 $statusFinal = 'Baik Terpakai';
                 if (str_contains($statusExcel, 'tidak terpakai')) {
@@ -47,17 +72,18 @@ class ImportController extends BaseController
                 }
 
                 $rowData = [
-                    'kategori'          => strtoupper($sheet[$i]['A']),
-                    'sub_kategori'      => strtoupper($sheet[$i]['B']),
-                    'merk'              => strtoupper($sheet[$i]['C']),
-                    'tipe'              => strtoupper($sheet[$i]['D']),
-                    'serial_number'     => strtoupper($sheet[$i]['E']),
-                    'tahun'             => $sheet[$i]['F'],
-                    'harga_beli'        => $sheet[$i]['G'],
-                    'entitas_pembelian' => strtoupper($sheet[$i]['H']),
-                    'lokasi'            => strtoupper($sheet[$i]['I']),
+                    'kategori'          => strtoupper(trim($sheet[$i]['A'])),
+                    'sub_kategori'      => strtoupper(trim($sheet[$i]['B'])),
+                    'merk'              => strtoupper(trim($sheet[$i]['C'])),
+                    'tipe'              => strtoupper(trim($sheet[$i]['D'])),
+                    'serial_number'     => $serialNumber,
+                    'tahun'             => trim($sheet[$i]['F']),
+                    'harga_beli'        => trim($sheet[$i]['G']),
+                    'entitas_pembelian' => strtoupper(trim($sheet[$i]['H'])),
+                    'lokasi'            => strtoupper(trim($sheet[$i]['I'])),
                     'status'            => $statusFinal,
-                    'keterangan'        => strtoupper($sheet[$i]['K']),
+                    'keterangan'        => strtoupper(trim($sheet[$i]['K'])),
+                    'is_duplicate'      => $isDuplicate,
                 ];
 
                 if (implode('', array_slice($rowData, 0, 5)) !== '') {
@@ -118,7 +144,6 @@ class ImportController extends BaseController
         }
 
         foreach ($importedData as $data) {
-             // Cek apakah baris ini berisi data atau sepenuhnya kosong
             $isRowEmpty = true;
             foreach ($data as $key => $value) {
                 if (!empty($value)) {
@@ -126,9 +151,8 @@ class ImportController extends BaseController
                     break;
                 }
             }
-            if ($isRowEmpty) continue; // Lewati baris yang sepenuhnya kosong
+            if ($isRowEmpty) continue;
 
-            // Jika baris tidak kosong, validasi field wajib
             $requiredFields = [
                 'kategori_id', 'sub_kategori_id', 'merk_id', 'tipe_id', 
                 'tahun', 'entitas_pembelian', 'lokasi_id', 'status'
@@ -140,7 +164,7 @@ class ImportController extends BaseController
                     break;
                 }
             }
-            if (!$isValid) continue; // Lewati baris yang tidak lengkap
+            if (!$isValid) continue;
 
             $kode = $this->generateUniqueAssetCode(
                  $data['entitas_pembelian'], $data['tahun'],
