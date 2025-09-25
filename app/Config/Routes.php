@@ -69,4 +69,13 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     // Rute API untuk dropdown dinamis
     $routes->get('api/tipe/(:num)', 'AsetController::getTipesByMerk/$1');
 
+    //Rute Untuk Fitur Import
+    $routes->get('import', 'ImportController::index');
+    $routes->post('import/upload', 'ImportController::upload');
+    $routes->post('import/save', 'ImportController::save');
+    $routes->get('import/cancel', 'ImportController::cancel');
+    $routes->post('import/add-master', 'ImportController::addMasterData'); // Untuk AJAX
+    // [BARU] Tambahkan rute ini untuk auto-save
+    $routes->post('import/update-session', 'ImportController::updateSessionData');
+
 });

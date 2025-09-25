@@ -132,7 +132,7 @@ class MasterDataController extends BaseController
     }
     
     //--------------------------------------------------------------------
-    // [BARU] Metode untuk CRUD Merk
+    // Merk & Tipe
     //--------------------------------------------------------------------
 
     public function createMerk()
@@ -140,29 +140,18 @@ class MasterDataController extends BaseController
         if (!$this->validate(['nama_merk' => 'required|is_unique[merk.nama_merk]'])) {
             return redirect()->to('/master-data?tab=merk')->withInput()->with('errors_merk', $this->validator->getErrors());
         }
-
-        $this->merkModel->save([
-            'nama_merk' => $this->request->getPost('nama_merk'),
-        ]);
-
+        $this->merkModel->save(['nama_merk' => $this->request->getPost('nama_merk')]);
         return redirect()->to('/master-data?tab=merk')->with('success', 'Merk baru berhasil ditambahkan.');
     }
 
     public function deleteMerk($id)
     {
-        // Cek relasi dengan tipe
-        $relatedTipes = $this->tipeModel->where('merk_id', $id)->first();
-        if ($relatedTipes) {
+        if ($this->tipeModel->where('merk_id', $id)->first()) {
             return redirect()->to('/master-data?tab=merk')->with('error', 'Gagal menghapus! Merk ini masih memiliki tipe terkait.');
         }
-
         $this->merkModel->delete($id);
         return redirect()->to('/master-data?tab=merk')->with('success', 'Merk berhasil dihapus.');
     }
-
-    //--------------------------------------------------------------------
-    // [BARU] Metode untuk CRUD Tipe
-    //--------------------------------------------------------------------
 
     public function createTipe()
     {
@@ -170,36 +159,29 @@ class MasterDataController extends BaseController
             'merk_id' => 'required|is_natural_no_zero',
             'nama_tipe.*' => 'required',
         ];
-
         if (!$this->validate($rules)) {
              return redirect()->to('/master-data?tab=merk')->withInput()->with('errors_merk', $this->validator->getErrors());
         }
         
         $merkId = $this->request->getPost('merk_id');
         $tipeNames = $this->request->getPost('nama_tipe');
-        
         foreach ($tipeNames as $name) {
             if (!empty($name)) {
-                $this->tipeModel->save([
-                    'merk_id' => $merkId,
-                    'nama_tipe' => $name,
-                ]);
+                $this->tipeModel->save(['merk_id' => $merkId, 'nama_tipe' => $name]);
             }
         }
-    
         return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil ditambahkan.');
     }
     
-    public function deleteLokasi($id)
+    // [BARU] Fungsi untuk menghapus Tipe
+    public function deleteTipe($id)
     {
         $db = \Config\Database::connect();
-        $relatedAset = $db->table('aset')->where('lokasi_id', $id)->get()->getRow();
-        if ($relatedAset) {
-            return redirect()->to('/master-data?tab=lokasi')->with('error', 'Gagal menghapus! Lokasi ini masih digunakan oleh data aset.');
+        if ($db->table('aset')->where('tipe_id', $id)->get()->getRow()) {
+            return redirect()->to('/master-data?tab=merk')->with('error', 'Gagal menghapus! Tipe ini masih digunakan oleh data aset.');
         }
-
-        $this->lokasiModel->delete($id);
-        return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi berhasil dihapus.');
+        $this->tipeModel->delete($id);
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil dihapus.');
     }
 }
 

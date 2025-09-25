@@ -1,24 +1,27 @@
 <div class="row g-4">
-    <!-- Kolom Kiri: Daftar Kategori & Form Tambah Kategori Utama -->
     <div class="col-lg-6">
         <div class="table-container shadow-sm h-100">
             <h5 class="mb-3">Daftar Kategori & Sub-Kategori</h5>
             
-            <!-- Form Tambah Kategori Utama -->
             <form action="<?= base_url('master-data/kategori/create') ?>" method="post" class="d-flex gap-2 mb-4">
                 <?= csrf_field() ?>
                 <input type="text" class="form-control" name="nama_kategori" placeholder="Tambah Kategori Utama Baru..." required oninput="this.value = this.value.toUpperCase()">
                 <button type="submit" class="btn btn-primary">Simpan</button>
             </form>
 
-            <!-- Accordion untuk Daftar Kategori -->
             <div class="accordion" id="kategoriAccordion">
                 <?php if (!empty($kategoris)): ?>
                     <?php foreach ($kategoris as $kategori): ?>
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="heading-<?= $kategori['id'] ?>">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<?= $kategori['id'] ?>" aria-expanded="false" aria-controls="collapse-<?= $kategori['id'] ?>">
-                                    <?= esc($kategori['nama_kategori']) ?>
+                                <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<?= $kategori['id'] ?>" aria-expanded="false" aria-controls="collapse-<?= $kategori['id'] ?>">
+                                    <span class="flex-grow-1"><?= esc($kategori['nama_kategori']) ?></span>
+                                    <a href="<?= base_url('master-data/kategori/delete/' . $kategori['id']) ?>" 
+                                       class="btn btn-sm btn-outline-danger me-3" 
+                                       onclick="event.stopPropagation(); return confirm('Anda yakin ingin menghapus kategori ini? Semua sub-kategori yang terkait akan ikut terhapus.')"
+                                       title="Hapus Kategori <?= esc($kategori['nama_kategori']) ?>">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
                                 </button>
                             </h2>
                             <div id="collapse-<?= $kategori['id'] ?>" class="accordion-collapse collapse" aria-labelledby="heading-<?= $kategori['id'] ?>" data-bs-parent="#kategoriAccordion">
@@ -50,7 +53,6 @@
         </div>
     </div>
 
-    <!-- Kolom Kanan: Form Tambah Sub-Kategori -->
     <div class="col-lg-6">
         <div class="table-container shadow-sm h-100">
             <h5 class="mb-3">Tambah Sub-Kategori</h5>
@@ -105,4 +107,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
