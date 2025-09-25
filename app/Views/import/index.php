@@ -92,30 +92,38 @@
                         <th>Keterangan</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($import_data as $index => $row): ?>
-                        <tr data-row-index="<?= $index ?>">
-                            <td><?= $index + 1 ?></td>
-                            <td><select class="form-select select2-master" name="aset[<?= $index ?>][kategori_id]" data-type="kategori" data-value="<?= esc($row['kategori']) ?>" required></select></td>
-                            <td><select class="form-select select2-master" name="aset[<?= $index ?>][sub_kategori_id]" data-type="subkategori" data-value="<?= esc($row['sub_kategori']) ?>" required></select></td>
-                            <td><select class="form-select select2-master" name="aset[<?= $index ?>][merk_id]" data-type="merk" data-value="<?= esc($row['merk']) ?>" required></select></td>
-                            <td><select class="form-select select2-master" name="aset[<?= $index ?>][tipe_id]" data-type="tipe" data-value="<?= esc($row['tipe']) ?>" required></select></td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][serial_number]" value="<?= esc($row['serial_number']) ?>"></td>
-                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun]" value="<?= esc($row['tahun']) ?>" required></td>
-                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" required></td>
-                            <td><select class="form-select select2-master" name="aset[<?= $index ?>][lokasi_id]" data-type="lokasi" data-value="<?= esc($row['lokasi']) ?>" required></select></td>
-                            <td>
-                                <select class="form-select" name="aset[<?= $index ?>][status]">
-                                    <option value="Baik Terpakai" <?= $row['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik Terpakai</option>
-                                    <option value="Baik Tidak Terpakai" <?= $row['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik Tidak Terpakai</option>
-                                    <option value="Rusak" <?= $row['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>"></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
+                    <tbody>
+                        <?php foreach ($import_data as $index => $row): ?>
+                            <?php
+                                $rowClass = ($row['is_duplicate'] ?? false) ? 'table-danger' : '';
+                            ?>
+                            <tr data-row-index="<?= $index ?>" class="<?= $rowClass ?>">
+                                <td><?= $index + 1 ?></td>
+                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][kategori_id]" data-type="kategori" data-value="<?= esc($row['kategori']) ?>" required></select></td>
+                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][sub_kategori_id]" data-type="subkategori" data-value="<?= esc($row['sub_kategori']) ?>" required></select></td>
+                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][merk_id]" data-type="merk" data-value="<?= esc($row['merk']) ?>" required></select></td>
+                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][tipe_id]" data-type="tipe" data-value="<?= esc($row['tipe']) ?>" required></select></td>
+                                <td>
+                                    <input type="text" class="form-control" name="aset[<?= $index ?>][serial_number]" value="<?= esc($row['serial_number']) ?>" oninput="this.value = this.value.toUpperCase()">
+                                    <?php if ($row['is_duplicate'] ?? false): ?>
+                                        <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun]" value="<?= esc($row['tahun']) ?>" required></td>
+                                <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
+                                <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" oninput="this.value = this.value.toUpperCase()" required></td>
+                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][lokasi_id]" data-type="lokasi" data-value="<?= esc($row['lokasi']) ?>" required></select></td>
+                                <td>
+                                    <select class="form-select" name="aset[<?= $index ?>][status]">
+                                        <option value="Baik Terpakai" <?= $row['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik Terpakai</option>
+                                        <option value="Baik Tidak Terpakai" <?= $row['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik Tidak Terpakai</option>
+                                        <option value="Rusak" <?= $row['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>" oninput="this.value = this.value.toUpperCase()"></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
             </table>
         </div>
     </form>
@@ -128,6 +136,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+// Simpan data master dari PHP ke JS
 const masterData = {
     kategori: <?= json_encode($kategori) ?>,
     subkategori: <?= json_encode($subkategori) ?>,
@@ -135,39 +144,46 @@ const masterData = {
     lokasi: <?= json_encode($lokasi) ?>,
 };
 
-
 $(document).ready(function() {
     
     function updateSubKategoriOptions($row) {
         const kategoriId = $row.find('select[data-type="kategori"]').val();
         const $subSelect = $row.find('select[data-type="subkategori"]');
-        const currentValue = $subSelect.val();
+        const valueFromSession = $subSelect.data('value');
 
         $subSelect.empty().append(new Option('', '', false, false));
-        masterData.subkategori.forEach(item => {
-            if (item.kategori_id == kategoriId) {
-                $subSelect.append(new Option(item.nama_sub_kategori, item.id, false, false));
-            }
-        });
-        $subSelect.val(currentValue).trigger('change.select2');
+        if (kategoriId && masterData.subkategori) {
+            masterData.subkategori.forEach(item => {
+                if (item.kategori_id == kategoriId) {
+                    $subSelect.append(new Option(item.nama_sub_kategori, item.id, false, false));
+                }
+            });
+        }
+        
+        const exists = $subSelect.find('option').filter(function() { return $(this).html().toUpperCase() === valueFromSession.toString().toUpperCase(); }).val();
+        if (exists) { $subSelect.val(exists).trigger('change.select2'); } 
+        else if (valueFromSession) { $subSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
     }
 
     function updateTipeOptions($row) {
         const merkId = $row.find('select[data-type="merk"]').val();
         const $tipeSelect = $row.find('select[data-type="tipe"]');
-        const currentValue = $tipeSelect.val();
+        const valueFromSession = $tipeSelect.data('value');
 
         $tipeSelect.empty().append(new Option('', '', false, false)).prop('disabled', true);
 
-        if(merkId && !isNaN(merkId)) {
+        if (merkId && !isNaN(merkId)) {
             $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, function(data) {
-                if(data.length > 0) {
-                    data.forEach(item => {
-                        $tipeSelect.append(new Option(item.nama_tipe, item.id, false, false));
-                    });
+                if (data.length > 0) {
+                    data.forEach(item => { $tipeSelect.append(new Option(item.nama_tipe, item.id, false, false)); });
                 }
-                $tipeSelect.val(currentValue).trigger('change.select2').prop('disabled', false);
+                const exists = $tipeSelect.find('option').filter(function() { return $(this).html().toUpperCase() === valueFromSession.toString().toUpperCase(); }).val();
+                if (exists) { $tipeSelect.val(exists).trigger('change.select2'); } 
+                else if (valueFromSession) { $tipeSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
+                $tipeSelect.prop('disabled', false);
             });
+        } else {
+            if (valueFromSession) { $tipeSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
         }
     }
 
@@ -193,7 +209,7 @@ $(document).ready(function() {
                 createTag: function(params) {
                     const term = $.trim(params.term);
                     if (term === '') return null;
-                    return { id: term, text: `(Baru) ${term}`, newTag: true };
+                    return { id: term, text: `(Tambah Baru) ${term}`, newTag: true };
                 }
             }).on('select2:select', function(e) {
                 const data = e.params.data;
@@ -213,13 +229,8 @@ $(document).ready(function() {
             } else if (valueFromExcel) {
                 const newOption = new Option(valueFromExcel, valueFromExcel, true, true);
                 $select.append(newOption).trigger('change');
-                $select.trigger({
-                    type: 'select2:select',
-                    params: { data: { id: valueFromExcel, text: valueFromExcel.replace('(Baru) ',''), newTag: true } }
-                });
             }
         });
-        
         updateSubKategoriOptions($row);
         updateTipeOptions($row);
     }
@@ -233,15 +244,14 @@ $(document).ready(function() {
         $.ajax({
             url: "<?= base_url('import/add-master') ?>", method: 'POST',
             data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: data.text.replace('(Baru) ',''), parent_id: parentId
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: data.text.replace('(Tambah Baru) ',''), parent_id: parentId
             },
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    $select.find('[value="' + data.id + '"]').val(response.id).text(response.text);
-                    $select.val(response.id).trigger('change');
-                    
-                    if (masterType !== 'tipe') {
+                    $select.find('[value="' + data.id + '"]').val(response.id).text(response.text.replace('(Tambah Baru) ',''));
+                    $select.trigger('change');
+                    if (masterData[masterType]) {
                         const optionName = `nama_${masterType}`.replace('kategori', '_kategori');
                         masterData[masterType].push({id: response.id, [optionName]: response.text, 'kategori_id': parentId, 'merk_id': parentId});
                     }
@@ -253,37 +263,14 @@ $(document).ready(function() {
     function createAndAppendEmptyRow() {
         const tableBody = $('#import-table tbody');
         const newIndex = tableBody.find('tr').length;
-        const newRowHtml = `
-            <tr data-row-index="${newIndex}">
-                <td>${newIndex + 1}</td>
-                <td><select class="form-select select2-master" name="aset[${newIndex}][kategori_id]" data-type="kategori"></select></td>
-                <td><select class="form-select select2-master" name="aset[${newIndex}][sub_kategori_id]" data-type="subkategori"></select></td>
-                <td><select class="form-select select2-master" name="aset[${newIndex}][merk_id]" data-type="merk"></select></td>
-                <td><select class="form-select select2-master" name="aset[${newIndex}][tipe_id]" data-type="tipe"></select></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td>
-                <td><input type="number" class="form-control" name="aset[${newIndex}][tahun]"></td>
-                <td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]"></td>
-                <td><select class="form-select select2-master" name="aset[${newIndex}][lokasi_id]" data-type="lokasi"></select></td>
-                <td>
-                    <select class="form-select" name="aset[${newIndex}][status]">
-                        <option value="" selected disabled>Pilih Status</option>
-                        <option value="Baik Terpakai">Baik Terpakai</option>
-                        <option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option>
-                        <option value="Rusak">Rusak</option>
-                    </select>
-                </td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td>
-            </tr>`;
+        const newRowHtml = `<tr data-row-index="${newIndex}"><td>${newIndex + 1}</td><td><select class="form-select select2-master" name="aset[${newIndex}][kategori_id]" data-type="kategori"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][sub_kategori_id]" data-type="subkategori"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][merk_id]" data-type="merk"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][tipe_id]" data-type="tipe"></select></td><td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td><td><input type="number" class="form-control" name="aset[${newIndex}][tahun]"></td><td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td><td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]"></td><td><select class="form-select select2-master" name="aset[${newIndex}][lokasi_id]" data-type="lokasi"></select></td><td><select class="form-select" name="aset[${newIndex}][status]"><option value="" selected disabled>Pilih Status</option><option value="Baik Terpakai">Baik Terpakai</option><option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option><option value="Rusak">Rusak</option></select></td><td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td></tr>`;
         const $newRow = $(newRowHtml);
         tableBody.append($newRow);
         initializeSelect2ForRow($newRow);
         attachListenerToLastRow();
     }
 
-
     function attachListenerToLastRow() {
-        $('#import-table tbody').off('input change', 'tr:last-child input, tr:last-child select');
         $('#import-table tbody').one('input change', 'tr:last-child input, tr:last-child select', function() {
             if ($(this).val()) {
                 createAndAppendEmptyRow();
@@ -293,9 +280,7 @@ $(document).ready(function() {
     
     $('#import-table').on('keydown', 'input, .select2-container', function(e) {
         const $this = $(this).is('input') ? $(this) : $(this).prev('select');
-        const $cell = $this.closest('td');
-        const $row = $this.closest('tr');
-        let $next;
+        const $cell = $this.closest('td'); const $row = $this.closest('tr'); let $next;
         switch (e.key) {
             case 'ArrowUp': $next = $row.prev().find('td:eq(' + $cell.index() + ')').find('input, select'); break;
             case 'ArrowDown': $next = $row.next().find('td:eq(' + $cell.index() + ')').find('input, select'); break;
@@ -305,75 +290,47 @@ $(document).ready(function() {
         }
         if ($next && $next.length) {
             e.preventDefault();
-            if ($next.hasClass('select2-master')) {
-                $next.select2('open');
-            } else {
-                $next.focus();
-            }
+            if ($next.hasClass('select2-master')) { $next.select2('open'); } else { $next.focus(); }
         }
     });
 
-    $('tbody tr').each(function() {
-        initializeSelect2ForRow($(this));
-    });
+    $('tbody tr').each(function() { initializeSelect2ForRow($(this)); });
     
     <?php if ($import_data): ?>
         createAndAppendEmptyRow();
     <?php endif; ?>
 
     $('#import-table tbody').on('change', 'input, select', function() {
-        const $el = $(this);
-        const $row = $el.closest('tr');
-        const rowIndex = $row.data('row-index');
-        const nameAttr = $el.attr('name');
-        
+        const $el = $(this); const $row = $el.closest('tr');
+        const rowIndex = $row.data('row-index'); const nameAttr = $el.attr('name');
         if (typeof rowIndex === 'undefined') return;
-
         const fieldName = nameAttr.match(/\[(\w+)\]$/)[1]; 
         
         let valueToSend = $el.val();
-        if ($el.is('select') && !$el.hasClass('select2-master')) {
+        // Untuk dropdown, kirim Teks-nya, bukan ID-nya
+        if ($el.is('select')) {
              valueToSend = $el.find('option:selected').text();
-        } else if ($el.hasClass('select2-master')) {
-             if (isNaN($el.val())) {
-                 valueToSend = $el.val();
-             } else {
-                 valueToSend = $el.find('option:selected').text();
-             }
         }
 
         $.ajax({
-            url: "<?= base_url('import/update-session') ?>",
-            method: 'POST',
+            url: "<?= base_url('import/update-session') ?>", method: 'POST',
             data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
-                rowIndex: rowIndex,
-                fieldName: fieldName,
-                value: valueToSend
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', rowIndex: rowIndex, fieldName: fieldName, value: valueToSend
             },
             dataType: 'json',
             success: function(response) {
-                if(response.status === 'success') {
-                    console.log(`Auto-saved: Row ${rowIndex}, Field ${fieldName} updated.`);
-                }
+                if(response.status === 'success') { console.log(`Auto-saved`); }
             }
         });
     });
 
     $('#save-form').on('submit', function(e) {
         const $lastRow = $('#import-table tbody tr:last');
-        
         let isLastRowEmpty = true;
         $lastRow.find('input, select').each(function() {
-            if ($(this).val() && $(this).val().trim() !== '') {
-                isLastRowEmpty = false;
-                return false; // Hentikan loop
-            }
+            if ($(this).val() && $(this).val().trim() !== '') { isLastRowEmpty = false; return false; }
         });
-
-        if (isLastRowEmpty) {
-            $lastRow.remove();
-        }
+        if (isLastRowEmpty) { $lastRow.remove(); }
     });
 });
 </script>
