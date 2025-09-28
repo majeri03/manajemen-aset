@@ -77,5 +77,6 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('import/add-master', 'ImportController::addMasterData'); // Untuk AJAX
     // [BARU] Tambahkan rute ini untuk auto-save
     $routes->post('import/update-session', 'ImportController::updateSessionData');
+    $routes->post('import/delete-master', 'ImportController::deleteMasterData');
 
 });

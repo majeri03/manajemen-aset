@@ -5,16 +5,11 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <style>
-    .select2-container--default .select2-selection--single { height: 38px; padding: 6px 12px; border: 1px solid #ced4da; }
-    .select2-container { min-width: 180px; }
     .table-wrapper { overflow-x: auto; padding-bottom: 15px; }
     .table-wrapper table { width: 100%; min-width: 1800px; }
     .table-wrapper th, .table-wrapper td { white-space: nowrap; vertical-align: middle; }
-    .select2-container--open { z-index: 9999; }
-
-    /* [BARU] CSS untuk tampilan lebih menarik */
     .upload-box {
         border: 2px dashed #3da2ff;
         border-radius: 16px;
@@ -43,6 +38,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+    /* CSS untuk tombol hapus dan container item autocomplete */
+    .delete-master-item {
+        line-height: 1;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    .ui-autocomplete-item-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    .ui-autocomplete {
+        z-index: 9999 !important; /* Memastikan daftar autocomplete muncul di atas elemen lain */
     }
 </style>
 
@@ -93,7 +103,7 @@
                 </div>
             </div>
             <div class="step-card">
-                <div class="d-flex align-items-center">
+                 <div class="d-flex align-items-center">
                     <div class="step-number me-3">2</div>
                     <div>
                         <h6 class="mb-0 fw-bold">Isi Data</h6>
@@ -130,7 +140,7 @@
         
         <div class="table-wrapper">
             <table class="table table-bordered table-hover" id="import-table">
-                <thead>
+                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Kategori</th>
@@ -138,46 +148,60 @@
                         <th>Merk</th>
                         <th>Tipe</th>
                         <th>Serial Number</th>
+                        <th>Entitas Pembelian</th>
                         <th>Tahun</th>
                         <th>Harga Beli</th>
-                        <th>Entitas Pembelian</th>
+                        <th>Penanggung Jawab</th>
                         <th>Lokasi</th>
                         <th>Status</th>
                         <th>Keterangan</th>
                     </tr>
                 </thead>
-                    <tbody>
-                        <?php foreach ($import_data as $index => $row): ?>
-                            <?php
-                                $rowClass = ($row['is_duplicate'] ?? false) ? 'table-danger' : '';
-                            ?>
-                            <tr data-row-index="<?= $index ?>" class="<?= $rowClass ?>">
-                                <td><?= $index + 1 ?></td>
-                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][kategori_id]" data-type="kategori" data-value="<?= esc($row['kategori']) ?>" required></select></td>
-                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][sub_kategori_id]" data-type="subkategori" data-value="<?= esc($row['sub_kategori']) ?>" required></select></td>
-                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][merk_id]" data-type="merk" data-value="<?= esc($row['merk']) ?>" required></select></td>
-                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][tipe_id]" data-type="tipe" data-value="<?= esc($row['tipe']) ?>" required></select></td>
-                                <td>
-                                    <input type="text" class="form-control" name="aset[<?= $index ?>][serial_number]" value="<?= esc($row['serial_number']) ?>" oninput="this.value = this.value.toUpperCase()">
-                                    <?php if ($row['is_duplicate'] ?? false): ?>
-                                        <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun]" value="<?= esc($row['tahun']) ?>" required></td>
-                                <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
-                                <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" oninput="this.value = this.value.toUpperCase()" required></td>
-                                <td><select class="form-select select2-master" name="aset[<?= $index ?>][lokasi_id]" data-type="lokasi" data-value="<?= esc($row['lokasi']) ?>" required></select></td>
-                                <td>
-                                    <select class="form-select" name="aset[<?= $index ?>][status]">
-                                        <option value="Baik Terpakai" <?= $row['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik Terpakai</option>
-                                        <option value="Baik Tidak Terpakai" <?= $row['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik Tidak Terpakai</option>
-                                        <option value="Rusak" <?= $row['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
-                                    </select>
-                                </td>
-                                <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>" oninput="this.value = this.value.toUpperCase()"></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
+                <tbody>
+                    <?php foreach ($import_data as $index => $row): ?>
+                        <tr data-row-index="<?= $index ?>" class="<?= ($row['is_duplicate'] ?? false) ? 'table-danger' : ''; ?>">
+                            <td><?= $index + 1 ?></td>
+                            <td>
+                                <input type="text" class="form-control autocomplete-master" data-type="kategori" value="<?= esc($row['kategori']) ?>" required>
+                                <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][kategori_id]">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control autocomplete-master" data-type="subkategori" value="<?= esc($row['sub_kategori']) ?>" required>
+                                <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][sub_kategori_id]">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control autocomplete-master" data-type="merk" value="<?= esc($row['merk']) ?>" required>
+                                <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][merk_id]">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control autocomplete-master" data-type="tipe" value="<?= esc($row['tipe']) ?>" required>
+                                <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][tipe_id]">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="aset[<?= $index ?>][serial_number]" value="<?= esc($row['serial_number']) ?>">
+                                <?php if ($row['is_duplicate'] ?? false): ?>
+                                    <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
+                                <?php endif; ?>
+                            </td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" required></td>
+                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun]" value="<?= esc($row['tahun']) ?>" required></td>
+                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][penanggung_jawab]" value="<?= esc($row['penanggung_jawab']) ?>"></td>
+                            <td>
+                                <input type="text" class="form-control autocomplete-master" data-type="lokasi" value="<?= esc($row['lokasi']) ?>" required>
+                                <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][lokasi_id]">
+                            </td>
+                            <td>
+                                <select class="form-select" name="aset[<?= $index ?>][status]">
+                                    <option value="Baik Terpakai" <?= $row['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik Terpakai</option>
+                                    <option value="Baik Tidak Terpakai" <?= $row['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik Tidak Terpakai</option>
+                                    <option value="Rusak" <?= $row['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>"></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
             </table>
         </div>
     </form>
@@ -188,203 +212,275 @@
 
 <?= $this->section('script') ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
+
 <script>
-// Simpan data master dari PHP ke JS
-const masterData = {
-    kategori: <?= json_encode($kategori) ?>,
-    subkategori: <?= json_encode($subkategori) ?>,
-    merk: <?= json_encode($merk) ?>,
-    lokasi: <?= json_encode($lokasi) ?>,
-};
-
 $(document).ready(function() {
-    
-    function updateSubKategoriOptions($row) {
-        const kategoriId = $row.find('select[data-type="kategori"]').val();
-        const $subSelect = $row.find('select[data-type="subkategori"]');
-        const valueFromSession = $subSelect.data('value');
+    // Data master dari PHP, diformat untuk autocomplete
+    const masterData = {
+        kategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_kategori']], $kategori)) ?>,
+        subkategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_sub_kategori'], 'parent_id' => $item['kategori_id']], $subkategori)) ?>,
+        merk: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_merk']], $merk)) ?>,
+        lokasi: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_lokasi']], $lokasi)) ?>,
+        tipe: [] // Data tipe akan diisi via AJAX
+    };
 
-        $subSelect.empty().append(new Option('', '', false, false));
-        if (kategoriId && masterData.subkategori) {
-            masterData.subkategori.forEach(item => {
-                if (item.kategori_id == kategoriId) {
-                    $subSelect.append(new Option(item.nama_sub_kategori, item.id, false, false));
-                }
-            });
-        }
-        
-        const exists = $subSelect.find('option').filter(function() { return $(this).html().toUpperCase() === valueFromSession.toString().toUpperCase(); }).val();
-        if (exists) { $subSelect.val(exists).trigger('change.select2'); } 
-        else if (valueFromSession) { $subSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
-    }
+    // Objek untuk melacak item yang baru ditambahkan
+    let newlyAddedItems = {
+        kategori: [], subkategori: [], merk: [], tipe: [], lokasi: []
+    };
 
-    function updateTipeOptions($row) {
-        const merkId = $row.find('select[data-type="merk"]').val();
-        const $tipeSelect = $row.find('select[data-type="tipe"]');
-        const valueFromSession = $tipeSelect.data('value');
+    // Fungsi inisialisasi autocomplete untuk sebuah baris
+    function initializeAutocompleteForRow($row) {
+        $row.find('.autocomplete-master').each(function() {
+            const $input = $(this);
+            const $hiddenInput = $input.next('.autocomplete-id');
+            const masterType = $input.data('type');
 
-        $tipeSelect.empty().append(new Option('', '', false, false)).prop('disabled', true);
+            // Set nilai awal dari data Excel/session
+            setInitialValue($input, $hiddenInput, masterType, $row);
 
-        if (merkId && !isNaN(merkId)) {
-            $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, function(data) {
-                if (data.length > 0) {
-                    data.forEach(item => { $tipeSelect.append(new Option(item.nama_tipe, item.id, false, false)); });
-                }
-                const exists = $tipeSelect.find('option').filter(function() { return $(this).html().toUpperCase() === valueFromSession.toString().toUpperCase(); }).val();
-                if (exists) { $tipeSelect.val(exists).trigger('change.select2'); } 
-                else if (valueFromSession) { $tipeSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
-                $tipeSelect.prop('disabled', false);
-            });
-        } else {
-            if (valueFromSession) { $tipeSelect.append(new Option(valueFromSession, valueFromSession, true, true)).trigger('change.select2'); }
-        }
-    }
-
-    function initializeSelect2ForRow($row) {
-        $row.find('.select2-master').each(function() {
-            const $select = $(this);
-            if ($select.data('select2')) { $select.select2('destroy'); }
-            
-            const masterType = $select.data('type');
-            const valueFromExcel = $select.data('value') || '';
-
-            $select.empty().append(new Option('', '', false, false));
-            
-            if (masterType !== 'tipe' && masterData[masterType]) {
-                masterData[masterType].forEach(item => {
-                    const optionName = item[`nama_${masterType}`] || item[`nama_${masterType.replace('kategori', '_kategori')}`];
-                    $select.append(new Option(optionName, item.id, false, false));
-                });
-            }
-            
-            $select.select2({
-                tags: true, width: '100%',
-                createTag: function(params) {
-                    const term = $.trim(params.term);
-                    if (term === '') return null;
-                    return { id: term, text: `(Tambah Baru) ${term}`, newTag: true };
-                }
-            }).on('select2:select', function(e) {
-                const data = e.params.data;
-                if (data.newTag) handleNewMasterData($(this), data);
-            }).on('change', function(){
-                const $currentRow = $(this).closest('tr');
-                if ($(this).data('type') === 'kategori') updateSubKategoriOptions($currentRow);
-                if ($(this).data('type') === 'merk') updateTipeOptions($currentRow);
-            });
-
-            const exists = $select.find('option').filter(function() {
-                return $(this).html().toUpperCase() === valueFromExcel.toString().toUpperCase();
-            }).val();
-
-            if (exists) {
-                $select.val(exists).trigger('change');
-            } else if (valueFromExcel) {
-                const newOption = new Option(valueFromExcel, valueFromExcel, true, true);
-                $select.append(newOption).trigger('change');
-            }
-        });
-        updateSubKategoriOptions($row);
-        updateTipeOptions($row);
-    }
-
-    function handleNewMasterData($select, data) {
-        const masterType = $select.data('type');
-        let parentId = null;
-        if (masterType === 'subkategori') parentId = $select.closest('tr').find('select[data-type="kategori"]').val();
-        if (masterType === 'tipe') parentId = $select.closest('tr').find('select[data-type="merk"]').val();
-
-        $.ajax({
-            url: "<?= base_url('import/add-master') ?>", method: 'POST',
-            data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: data.text.replace('(Tambah Baru) ',''), parent_id: parentId
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $select.find('[value="' + data.id + '"]').val(response.id).text(response.text.replace('(Tambah Baru) ',''));
-                    $select.trigger('change');
-                    if (masterData[masterType]) {
-                        const optionName = `nama_${masterType}`.replace('kategori', '_kategori');
-                        masterData[masterType].push({id: response.id, [optionName]: response.text, 'kategori_id': parentId, 'merk_id': parentId});
+            $input.autocomplete({
+                source: (request, response) => getSourceDataForInput($input, request, response),
+                minLength: 0,
+                select: function(event, ui) {
+                    if (ui.item.isNew) {
+                        handleNewMasterData($input, ui.item.value);
+                    } else {
+                        $input.val(ui.item.label);
+                        $hiddenInput.val(ui.item.id).trigger('change');
+                    }
+                    return false;
+                },
+                change: function(event, ui) {
+                    if (!ui.item) {
+                        validateInputOnBlur($input, $hiddenInput);
                     }
                 }
-            }
+            }).focus(function() {
+                $(this).autocomplete("search", "");
+            });
+
+            // Kustomisasi render item untuk menambahkan tombol hapus
+            $input.autocomplete("instance")._renderItem = function(ul, item) {
+                let itemContent = `<div>${item.label}</div>`;
+
+                if (item.id && newlyAddedItems[masterType]?.includes(item.id)) {
+                    itemContent = `
+                        <div class="ui-autocomplete-item-container">
+                            <span>${item.label}</span>
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-master-item"
+                                    data-id="${item.id}" data-type="${masterType}" title="Hapus Permanen">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>`;
+                }
+
+                return $("<li>").append(itemContent).appendTo(ul);
+            };
         });
     }
+
 
     function createAndAppendEmptyRow() {
         const tableBody = $('#import-table tbody');
         const newIndex = tableBody.find('tr').length;
-        const newRowHtml = `<tr data-row-index="${newIndex}"><td>${newIndex + 1}</td><td><select class="form-select select2-master" name="aset[${newIndex}][kategori_id]" data-type="kategori"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][sub_kategori_id]" data-type="subkategori"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][merk_id]" data-type="merk"></select></td><td><select class="form-select select2-master" name="aset[${newIndex}][tipe_id]" data-type="tipe"></select></td><td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td><td><input type="number" class="form-control" name="aset[${newIndex}][tahun]"></td><td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td><td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]"></td><td><select class="form-select select2-master" name="aset[${newIndex}][lokasi_id]" data-type="lokasi"></select></td><td><select class="form-select" name="aset[${newIndex}][status]"><option value="" selected disabled>Pilih Status</option><option value="Baik Terpakai">Baik Terpakai</option><option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option><option value="Rusak">Rusak</option></select></td><td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td></tr>`;
+        const newRowHtml = `
+            <tr data-row-index="${newIndex}">
+                <td>${newIndex + 1}</td>
+                <td><input type="text" class="form-control autocomplete-master" data-type="kategori" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][kategori_id]"></td>
+                <td><input type="text" class="form-control autocomplete-master" data-type="subkategori" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][sub_kategori_id]"></td>
+                <td><input type="text" class="form-control autocomplete-master" data-type="merk" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][merk_id]"></td>
+                <td><input type="text" class="form-control autocomplete-master" data-type="tipe" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][tipe_id]"></td>
+                <td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td>
+                <td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]" required></td>
+                <td><input type="number" class="form-control" name="aset[${newIndex}][tahun]" required></td>
+                <td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td>
+                <td><input type="text" class="form-control" name="aset[${newIndex}][penanggung_jawab]"></td>
+                <td><input type="text" class="form-control autocomplete-master" data-type="lokasi" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][lokasi_id]"></td>
+                <td><select class="form-select" name="aset[${newIndex}][status]"><option value="Baik Terpakai">Baik Terpakai</option><option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option><option value="Rusak">Rusak</option></select></td>
+                <td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td>
+            </tr>`;
         const $newRow = $(newRowHtml);
         tableBody.append($newRow);
-        initializeSelect2ForRow($newRow);
+        initializeAutocompleteForRow($newRow);
         attachListenerToLastRow();
     }
+    
+    // Event listener untuk tombol hapus
+    $(document).on('click', '.delete-master-item', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const button = $(this);
+        const id = button.data('id');
+        const type = button.data('type');
 
-    function attachListenerToLastRow() {
-        $('#import-table tbody').one('input change', 'tr:last-child input, tr:last-child select', function() {
-            if ($(this).val()) {
-                createAndAppendEmptyRow();
+        Swal.fire({
+            title: 'Hapus Item?',
+            text: "Item ini akan dihapus permanen dari database. Anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "<?= base_url('import/delete-master') ?>",
+                    method: 'POST',
+                    data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: type, id: id },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            masterData[type] = masterData[type].filter(item => item.id != id);
+                            newlyAddedItems[type] = newlyAddedItems[type].filter(itemId => itemId != id);
+                            $('.ui-autocomplete-input').autocomplete('close');
+                            Swal.fire('Terhapus!', response.message, 'success');
+                        } else {
+                            Swal.fire('Gagal!', response.message, 'error');
+                        }
+                    }
+                });
+            }
+        });
+    });
+    
+    // --- FUNGSI-FUNGSI BANTUAN ---
+    function setInitialValue($input, $hiddenInput, masterType, $row) {
+        const initialValue = $input.val();
+        if (!initialValue) return;
+
+        let sourceData = [];
+        if (masterType === 'subkategori') {
+            const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+            if(kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
+        } else if (masterType !== 'tipe') {
+            sourceData = masterData[masterType] || [];
+        }
+
+        const foundItem = sourceData.find(item => item.label.toUpperCase() === initialValue.toUpperCase());
+        if (foundItem) {
+            $hiddenInput.val(foundItem.id);
+        }
+    }
+
+    function getSourceDataForInput($input, request, response) {
+        const masterType = $input.data('type');
+        const $row = $input.closest('tr');
+        let sourceData = [];
+
+        if (masterType === 'subkategori') {
+            const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+            if (kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
+        } else if (masterType === 'tipe') {
+            const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+            if (merkId && !isNaN(merkId)) {
+                $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, data => {
+                    const mappedData = data.map(item => ({ id: item.id, label: item.nama_tipe }));
+                    masterData.tipe = mappedData; // Cache data tipe
+                    filterAndRespond(request.term, mappedData, response, masterType);
+                });
+                return;
+            } 
+        } else {
+            sourceData = masterData[masterType] || [];
+        }
+        filterAndRespond(request.term, sourceData, response, masterType);
+    }
+
+    function filterAndRespond(term, data, responseCallback, type) {
+        const lowerTerm = term.toLowerCase();
+        const filtered = data.filter(item => item.label.toLowerCase().includes(lowerTerm));
+        const exactMatch = data.some(item => item.label.toLowerCase() === lowerTerm);
+
+        if (term !== '' && !exactMatch) {
+            filtered.push({ label: `+ Tambah Baru: "${term}"`, value: term, isNew: true });
+        }
+        responseCallback(filtered);
+    }
+
+    function validateInputOnBlur($input, $hiddenInput) {
+        const currentValue = $input.val();
+        if (currentValue === '') {
+            $hiddenInput.val('').trigger('change');
+            return;
+        }
+        
+        const sourceData = getSourceDataForInput($input, { term: '' }, () => {});
+        const match = (sourceData || []).find(item => item.label.toLowerCase() === currentValue.toLowerCase());
+
+        if (!match) {
+            $input.val('');
+            $hiddenInput.val('').trigger('change');
+        }
+    }
+    
+    function handleNewMasterData($input, name) {
+        const masterType = $input.data('type');
+        const $hiddenInput = $input.next('.autocomplete-id');
+        const $row = $input.closest('tr');
+        let parentId = null;
+        if (masterType === 'subkategori') parentId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+        if (masterType === 'tipe') parentId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+        
+        $.ajax({
+            url: "<?= base_url('import/add-master') ?>",
+            method: 'POST',
+            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: name, parent_id: parentId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $input.val(response.text);
+                    $hiddenInput.val(response.id).trigger('change');
+                    
+                    let newItem = { id: response.id, label: response.text };
+                    if(parentId) newItem.parent_id = parentId;
+                    
+                    if(masterData[masterType]) {
+                        masterData[masterType].push(newItem);
+                        newlyAddedItems[masterType].push(response.id);
+                    }
+                } else {
+                    Swal.fire('Gagal!', response.message || 'Gagal menyimpan data baru.', 'error');
+                    $input.val('');
+                    $hiddenInput.val('').trigger('change');
+                }
             }
         });
     }
-    
-    $('#import-table').on('keydown', 'input, .select2-container', function(e) {
-        const $this = $(this).is('input') ? $(this) : $(this).prev('select');
-        const $cell = $this.closest('td'); const $row = $this.closest('tr'); let $next;
-        switch (e.key) {
-            case 'ArrowUp': $next = $row.prev().find('td:eq(' + $cell.index() + ')').find('input, select'); break;
-            case 'ArrowDown': $next = $row.next().find('td:eq(' + $cell.index() + ')').find('input, select'); break;
-            case 'ArrowLeft': $next = $cell.prev().find('input, select'); break;
-            case 'ArrowRight': $next = $cell.next().find('input, select'); break;
-            default: return;
-        }
-        if ($next && $next.length) {
-            e.preventDefault();
-            if ($next.hasClass('select2-master')) { $next.select2('open'); } else { $next.focus(); }
-        }
+
+    // Inisialisasi awal untuk semua baris yang ada
+    $('#import-table tbody tr').each(function() {
+        initializeAutocompleteForRow($(this));
     });
-
-    $('tbody tr').each(function() { initializeSelect2ForRow($(this)); });
     
-    <?php if ($import_data): ?>
-        createAndAppendEmptyRow();
-    <?php endif; ?>
-
+    // Auto save session data on change
     $('#import-table tbody').on('change', 'input, select', function() {
         const $el = $(this); const $row = $el.closest('tr');
-        const rowIndex = $row.data('row-index'); const nameAttr = $el.attr('name');
-        if (typeof rowIndex === 'undefined') return;
+        const rowIndex = $row.data('row-index'); 
+        const nameAttr = $el.attr('name');
+        if (typeof rowIndex === 'undefined' || !nameAttr) return;
+        
         const fieldName = nameAttr.match(/\[(\w+)\]$/)[1]; 
         
         let valueToSend = $el.val();
-        // Untuk dropdown, kirim Teks-nya, bukan ID-nya
-        if ($el.is('select')) {
+        // Untuk autocomplete, kirim teksnya. Untuk dropdown biasa, kirim nilainya.
+        if($el.hasClass('autocomplete-master')){
+            // Teks sudah ada di val()
+        } else if ($el.is('select')) {
              valueToSend = $el.find('option:selected').text();
         }
 
         $.ajax({
             url: "<?= base_url('import/update-session') ?>", method: 'POST',
             data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', rowIndex: rowIndex, fieldName: fieldName, value: valueToSend
-            },
-            dataType: 'json',
-            success: function(response) {
-                if(response.status === 'success') { console.log(`Auto-saved`); }
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', 
+                rowIndex: rowIndex, 
+                fieldName: fieldName, 
+                value: valueToSend
             }
         });
-    });
-
-    $('#save-form').on('submit', function(e) {
-        const $lastRow = $('#import-table tbody tr:last');
-        let isLastRowEmpty = true;
-        $lastRow.find('input, select').each(function() {
-            if ($(this).val() && $(this).val().trim() !== '') { isLastRowEmpty = false; return false; }
-        });
-        if (isLastRowEmpty) { $lastRow.remove(); }
     });
 });
 </script>

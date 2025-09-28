@@ -14,21 +14,22 @@ class AsetModel extends Model
     protected $protectFields    = true;
 
 
-protected $allowedFields    = [
-    'kode',
-    'kategori_id',
-    'sub_kategori_id',
-    'merk_id', // PASTIKAN INI ADA
-    'tipe_id', // PASTIKAN INI ADA
-    'serial_number',
-    'tahun',
-    'lokasi_id',
-    'keterangan',
-    'status',
-    'harga_beli',
-    'entitas_pembelian',
-    'qrcode',
-];
+    protected $allowedFields    = [
+        'kode',
+        'kategori_id',
+        'sub_kategori_id',
+        'merk_id',
+        'tipe_id',
+        'serial_number',
+        'tahun',
+        'lokasi_id',
+        'keterangan',
+        'status',
+        'harga_beli',
+        'entitas_pembelian',
+        'penanggung_jawab', // <-- TAMBAHKAN INI
+        'qrcode',
+    ];
    
 
     protected bool $allowEmptyInserts = false;

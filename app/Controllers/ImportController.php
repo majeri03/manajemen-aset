@@ -29,7 +29,7 @@ class ImportController extends BaseController
 
 public function upload()
     {
-        $file = $this->request->getFile('excel_file');
+     $file = $this->request->getFile('excel_file');
 
         if ($file->isValid() && !$file->hasMoved()) {
             $asetModel = new AsetModel();
@@ -37,34 +37,28 @@ public function upload()
             $spreadsheet = $reader->load($file->getTempName());
             $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
-            // 1. Ambil semua serial number dari database (yang tidak kosong/null dan sudah kapital)
             $existingSerialsDB = array_map('strtoupper', array_filter(array_column($asetModel->select('serial_number')->findAll(), 'serial_number')));
             
             $dataToImport = [];
             $serialsInFile = [];
 
-            // 2. Loop pertama: Kumpulkan semua serial number dari file Excel
+            // Kumpulkan serial number dari file
             for ($i = 2; $i <= count($sheet); $i++) {
-                $sn = strtoupper(trim($sheet[$i]['E']));
+                $sn = strtoupper(trim($sheet[$i]['E'])); // Kolom Serial Number
                 if (!empty($sn)) {
                     $serialsInFile[] = $sn;
                 }
             }
             
-            // 3. Cari duplikat di dalam file Excel itu sendiri
             $duplicatesInFile = array_keys(array_filter(array_count_values($serialsInFile), fn($count) => $count > 1));
             
-            // 4. Loop kedua: Proses setiap baris, buat data lengkap, dan tandai duplikat
+            // Proses setiap baris
             for ($i = 2; $i <= count($sheet); $i++) {
                 $serialNumber = strtoupper(trim($sheet[$i]['E']));
-                $isDuplicate = false;
-
-                if (!empty($serialNumber) && (in_array($serialNumber, $existingSerialsDB) || in_array($serialNumber, $duplicatesInFile))) {
-                    $isDuplicate = true;
-                }
+                $isDuplicate = !empty($serialNumber) && (in_array($serialNumber, $existingSerialsDB) || in_array($serialNumber, $duplicatesInFile));
                 
-                $statusExcel = strtolower(trim($sheet[$i]['J']));
-                $statusFinal = 'Baik Terpakai';
+                $statusExcel = strtolower(trim($sheet[$i]['K'])); // Kolom status sekarang di 'K'
+                $statusFinal = 'Baik Terpakai'; // Default
                 if (str_contains($statusExcel, 'tidak terpakai')) {
                     $statusFinal = 'Baik Tidak Terpakai';
                 } elseif (str_contains($statusExcel, 'rusak')) {
@@ -77,15 +71,17 @@ public function upload()
                     'merk'              => strtoupper(trim($sheet[$i]['C'])),
                     'tipe'              => strtoupper(trim($sheet[$i]['D'])),
                     'serial_number'     => $serialNumber,
-                    'tahun'             => trim($sheet[$i]['F']),
-                    'harga_beli'        => trim($sheet[$i]['G']),
-                    'entitas_pembelian' => strtoupper(trim($sheet[$i]['H'])),
-                    'lokasi'            => strtoupper(trim($sheet[$i]['I'])),
+                    'entitas_pembelian' => strtoupper(trim($sheet[$i]['F'])), // Kolom Entitas 'F'
+                    'tahun'             => trim($sheet[$i]['G']),             // Kolom Tahun 'G'
+                    'harga_beli'        => trim($sheet[$i]['H']),             // Kolom Harga Beli 'H'
+                    'penanggung_jawab'  => strtoupper(trim($sheet[$i]['I'])), // Kolom Penanggung Jawab 'I'
+                    'lokasi'            => strtoupper(trim($sheet[$i]['J'])), // Kolom Lokasi 'J'
                     'status'            => $statusFinal,
-                    'keterangan'        => strtoupper(trim($sheet[$i]['K'])),
+                    'keterangan'        => strtoupper(trim($sheet[$i]['L'])), // Kolom Keterangan 'L'
                     'is_duplicate'      => $isDuplicate,
                 ];
 
+                // Hanya impor baris yang memiliki data
                 if (implode('', array_slice($rowData, 0, 5)) !== '') {
                     $dataToImport[] = $rowData;
                 }
@@ -245,5 +241,55 @@ public function upload()
             }
             return $this->response->setJSON(['status' => 'error', 'message' => 'Row index not found.']);
         }
+    }
+
+    // ... (di dalam class ImportController)
+
+public function deleteMasterData()
+    {
+        // Pastikan ini adalah request AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(403, 'Forbidden');
+        }
+
+        $type = $this->request->getPost('type');
+        $id   = $this->request->getPost('id');
+        $model = null;
+        $db = \Config\Database::connect();
+        $isUsed = false;
+
+        // Tentukan model dan cek apakah data sedang digunakan
+        switch ($type) {
+            case 'kategori':
+                $model = new KategoriModel();
+                $isUsed = $db->table('aset')->where('kategori_id', $id)->countAllResults() > 0;
+                break;
+            case 'subkategori':
+                $model = new SubKategoriModel();
+                $isUsed = $db->table('aset')->where('sub_kategori_id', $id)->countAllResults() > 0;
+                break;
+            case 'lokasi':
+                $model = new LokasiModel();
+                $isUsed = $db->table('aset')->where('lokasi_id', $id)->countAllResults() > 0;
+                break;
+            case 'merk':
+                $model = new MerkModel();
+                $isUsed = $db->table('aset')->where('merk_id', $id)->countAllResults() > 0;
+                break;
+            case 'tipe':
+                $model = new TipeModel();
+                $isUsed = $db->table('aset')->where('tipe_id', $id)->countAllResults() > 0;
+                break;
+        }
+
+        if ($isUsed) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data ini sudah terpakai dan tidak bisa dihapus dari halaman ini.']);
+        }
+
+        if ($model && $model->delete($id)) {
+            return $this->response->setJSON(['status' => 'success', 'message' => 'Item berhasil dihapus.']);
+        }
+
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal menghapus data.']);
     }
 }
