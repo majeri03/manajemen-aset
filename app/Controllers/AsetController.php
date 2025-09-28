@@ -87,6 +87,7 @@ class AsetController extends ResourceController
             'keyword'     => $this->request->getGet('keyword'),
         ];
     
+        // [MODIFIKASI] Tambahkan 'penanggung_jawab' dan 'entitas_pembelian' ke SELECT dan pencarian
         $query = $this->asetModel
             ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
@@ -104,9 +105,11 @@ class AsetController extends ResourceController
         if (!empty($filters['keyword'])) {
             $query = $query->groupStart()
                 ->like('aset.kode', $filters['keyword'])
-                ->orLike('aset.merk', $filters['keyword'])
+                ->orLike('m.nama_merk', $filters['keyword']) // Menggunakan alias tabel
                 ->orLike('aset.serial_number', $filters['keyword'])
-                ->orLike('l.nama_lokasi', $filters['keyword']) // Pencarian berdasarkan nama lokasi
+                ->orLike('l.nama_lokasi', $filters['keyword'])
+                ->orLike('aset.penanggung_jawab', $filters['keyword']) // Pencarian berdasarkan penanggung jawab
+                ->orLike('aset.entitas_pembelian', $filters['keyword']) // Pencarian berdasarkan entitas
                 ->groupEnd();
         }
         
@@ -118,12 +121,13 @@ class AsetController extends ResourceController
             'kategori_list'    => $this->kategoriModel->findAll(),
             'subkategori_list' => $this->subKategoriModel->findAll(),
             'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
-            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(), // TAMBAHKAN
+            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
             'filters'          => $filters
         ];
     
         return view('aset/index', $data);
     }
+
 
     /**
      * Return the properties of a resource object.
@@ -135,13 +139,13 @@ class AsetController extends ResourceController
 public function show($id = null)
 {
     $aset = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
-            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
-            ->join('merk m', 'm.id = aset.merk_id', 'left') // PASTIKAN JOIN INI ADA
-            ->join('tipe t', 't.id = aset.tipe_id', 'left') // PASTIKAN JOIN INI ADA
-            ->find($id);
+                ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
+                ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+                ->join('merk m', 'm.id = aset.merk_id', 'left') 
+                ->join('tipe t', 't.id = aset.tipe_id', 'left') 
+                ->find($id);
 
         if ($aset) {
             $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
@@ -149,6 +153,7 @@ public function show($id = null)
         }
         
         return $this->response->setStatusCode(404, 'Aset tidak ditemukan');
+    
 }
 
     /**
@@ -187,23 +192,24 @@ public function show($id = null)
         $subKategoriId = $this->request->getPost('sub_kategori_id');
         $merkId = $this->request->getPost('merk_id');
     
-        // Hasilkan kode aset baru di sisi server
         $newAssetCode = $this->generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId);
 
         $data = [
-            'kode'            => $newAssetCode,
-            'kategori_id'     => $this->request->getPost('kategori_id'),
-            'sub_kategori_id' => $subKategoriId,
-            'merk_id'         => $merkId,
-            'tipe_id'         => $this->request->getPost('tipe_id'),
-            'serial_number'   => $this->request->getPost('serial_number'),
-            'tahun'           => $tahun,
-            'lokasi_id'       => $this->request->getPost('lokasi_id'), 
-            'status'          => $this->request->getPost('status'),
-            'keterangan'      => $this->request->getPost('keterangan'),
-            'harga_beli'      => $this->request->getPost('harga_beli'),
+            'kode'              => $newAssetCode,
+            'kategori_id'       => $this->request->getPost('kategori_id'),
+            'sub_kategori_id'   => $subKategoriId,
+            'merk_id'           => $merkId,
+            'tipe_id'           => $this->request->getPost('tipe_id'),
+            'serial_number'     => $this->request->getPost('serial_number'),
+            'tahun'             => $tahun,
+            'lokasi_id'         => $this->request->getPost('lokasi_id'), 
+            'status'            => $this->request->getPost('status'),
+            'keterangan'        => $this->request->getPost('keterangan'),
+            'harga_beli'        => $this->request->getPost('harga_beli'),
             'entitas_pembelian' => strtoupper($entitas),
+            'penanggung_jawab'  => strtoupper($this->request->getPost('penanggung_jawab')),
         ];
+
 
         if ($this->asetModel->save($data)) {
             $newAsetId = $this->asetModel->getInsertID();
@@ -299,6 +305,7 @@ public function show($id = null)
             'keterangan',
             'harga_beli',
             'entitas_pembelian',
+            'penanggung_jawab',
         ];
 
         $data = $this->request->getPost($allowedFields);
@@ -358,14 +365,24 @@ public function show($id = null)
 
     public function publicDetail($id)
     {
+        $asetData = $this->asetModel
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
+            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left')
+            ->join('tipe t', 't.id = aset.tipe_id', 'left')
+            ->find($id);
+
         $data = [
             'title' => 'Detail Aset',
-            'aset'  => $this->asetModel
-                                ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
-                                ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-                                ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-                                ->find($id),
+            'aset'  => $asetData,
         ];
+
+        // Cek jika aset tidak ditemukan
+        if (empty($data['aset'])) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Aset dengan ID ' . $id . ' tidak ditemukan.');
+        }
 
         return view('aset/public_detail', $data);
     }

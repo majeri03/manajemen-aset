@@ -27,6 +27,7 @@
                     <p><strong>Tahun:</strong> <?= esc($aset['tahun']) ?></p>
                     <p><strong>Harga Beli:</strong> <?= esc($aset['harga_beli']) ?></p>
                     <p><strong>Entitas Pembelian:</strong> <?= esc($aset['entitas_pembelian']) ?></p>
+                    <p><strong>Penanggung Jawab:</strong> <?= esc($aset['penanggung_jawab']) ?></p>
                     <p><strong>Lokasi Terdaftar:</strong> <?= esc($aset['nama_lokasi']) ?></p>
                     <p><strong>Kondisi:</strong> <?= esc($aset['status']) ?></p>
                     <p><strong>Keterangan:</strong> <?= esc($aset['keterangan']) ?></p>

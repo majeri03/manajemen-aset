@@ -41,6 +41,7 @@ Data Aset
                 <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
                 <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                 <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
+                <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <p><strong>Status:</strong> <span id="detail-status"></span></p>
@@ -137,26 +138,26 @@ Data Aset
             <thead>
                 <tr>
                     <th scope="col">KODE</th>
-                    <th scope="col">KATEGORI</th>
                     <th scope="col">SUB KATEGORI</th>
                     <th scope="col">MERK</th>
                     <th scope="col">SERIAL NUMBER</th>
-                    <th scope="col">STATUS</th>
+                    <th scope="col">PENANGGUNG JAWAB</th>
                     <th scope="col">LOKASI</th>
+                    <th scope="col">STATUS</th>
                     <th scope="col">AKSI</th>
                 </tr>
             </thead>
-            <tbody id="asetTableBody">
+        <tbody id="asetTableBody">
                 <?php if (!empty($asets)): ?>
                     <?php foreach ($asets as $aset): ?>
                         <tr>
                             <td><?= esc($aset['kode']) ?></td>
-                            <td><?= esc($aset['nama_kategori']) ?></td>
                             <td><?= esc($aset['nama_sub_kategori']) ?></td>
                             <td><?= esc($aset['nama_merk']) ?></td>
                             <td><?= esc($aset['serial_number']) ?></td>
-                            <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
+                            <td><?= esc($aset['penanggung_jawab']) ?></td>
                             <td><?= esc($aset['nama_lokasi']) ?></td>
+                            <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
                             <td>
                                 <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
                                     <i class="bi bi-eye-fill"></i>
@@ -183,6 +184,34 @@ Data Aset
         </form>
     </div>
 </div>
+
+<div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailAsetModalLabel">Detail Aset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
+                <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                <p><strong>Sub Kategori:</strong> <span id="detail-sub-kategori"></span></p>
+                <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                <p><strong>Type:</strong> <span id="detail-type"></span></p>
+                <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
+                <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
+                <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
+                <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
+                <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
+                <p><strong>Status:</strong> <span id="detail-status"></span></p>
+                <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
+                <hr>
+                </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -248,6 +277,10 @@ Data Aset
                         <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                         <option value="Rusak">Rusak</option>
                     </select>
+                </div>
+                <div class="mb-3">
+                    <label for="penanggung_jawab-tambah" class="form-label">Penanggung Jawab</label>
+                    <input type="text" class="form-control" id="penanggung_jawab-tambah" name="penanggung_jawab" oninput="this.value = this.value.toUpperCase();">
                 </div>
                 <div class="mb-3">
                     <label for="lokasi-tambah" class="form-label">Lokasi</label>
@@ -520,6 +553,7 @@ Data Aset
                         document.getElementById('detail-tahun').textContent = data.tahun;
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
+                        document.getElementById('detail-penanggung_jawab').textContent = data.penanggung_jawab || '-';
                         document.getElementById('detail-lokasi').textContent = data.nama_lokasi;
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                         document.getElementById('detail-status').textContent = data.status;
