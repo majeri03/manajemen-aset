@@ -75,6 +75,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('import/save', 'ImportController::save');
     $routes->get('import/cancel', 'ImportController::cancel');
     $routes->post('import/add-master', 'ImportController::addMasterData'); // Untuk AJAX
+    $routes->get('import/print-labels', 'ImportController::printLabels');
+    
     // [BARU] Tambahkan rute ini untuk auto-save
     $routes->post('import/update-session', 'ImportController::updateSessionData');
     $routes->post('import/delete-master', 'ImportController::deleteMasterData');

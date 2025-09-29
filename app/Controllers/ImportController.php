@@ -10,6 +10,8 @@ use App\Models\LokasiModel;
 use App\Models\MerkModel;
 use App\Models\TipeModel;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class ImportController extends BaseController
 {
@@ -130,67 +132,140 @@ public function upload()
     }
 
     public function save()
-    {
-        $importedData = $this->request->getPost('aset');
-        $asetModel = new AsetModel();
-        $savedCount = 0;
+{
+    $importedData = $this->request->getPost('aset');
+    $asetModel = new AsetModel();
+    $allRowsAreValid = true; // Anggap semua data valid pada awalnya
+    $validatedData = [];   // Untuk menampung data yang sudah divalidasi
+    $originalDataWithErrors = []; // Untuk menampung data asli jika ada error
 
-        if (empty($importedData)) {
-            return redirect()->to('/import')->with('error', 'Tidak ada data untuk disimpan.');
+    if (empty($importedData)) {
+        return redirect()->to('/import')->with('error', 'Tidak ada data untuk disimpan.');
+    }
+
+    // =============================================================
+    // TAHAP 1: VALIDASI SEMUA DATA TANPA MENYIMPAN
+    // =============================================================
+    foreach ($importedData as $index => $data) {
+        // Lewati baris kosong
+        if (count(array_filter($data)) === 0) {
+            $originalDataWithErrors[] = session()->get('import_data')[$index]; // tetap bawa baris kosong
+            continue;
         }
 
-        foreach ($importedData as $data) {
-            $isRowEmpty = true;
-            foreach ($data as $key => $value) {
-                if (!empty($value)) {
-                    $isRowEmpty = false;
-                    break;
-                }
+        $errors = [];
+        $requiredFields = [
+            'kategori_id' => 'Kategori', 'sub_kategori_id' => 'Sub Kategori',
+            'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun' => 'Tahun',
+            'entitas_pembelian' => 'Entitas Pembelian', 'lokasi_id' => 'Lokasi', 'status' => 'Status'
+        ];
+
+        foreach ($requiredFields as $field => $label) {
+            if (empty($data[$field])) {
+                $errors[] = "$label wajib diisi.";
             }
-            if ($isRowEmpty) continue;
-
-            $requiredFields = [
-                'kategori_id', 'sub_kategori_id', 'merk_id', 'tipe_id', 
-                'tahun', 'entitas_pembelian', 'lokasi_id', 'status'
-            ];
-            $isValid = true;
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    $isValid = false;
-                    break;
-                }
-            }
-            if (!$isValid) continue;
-
-            $kode = $this->generateUniqueAssetCode(
-                 $data['entitas_pembelian'], $data['tahun'],
-                 $data['sub_kategori_id'], $data['merk_id']
-            );
-
-             $asetModel->save([
-                'kode'              => $kode,
-                'kategori_id'       => $data['kategori_id'],
-                'sub_kategori_id'   => $data['sub_kategori_id'],
-                'merk_id'           => $data['merk_id'],
-                'tipe_id'           => $data['tipe_id'],
-                'serial_number'     => $data['serial_number'],
-                'tahun'             => $data['tahun'],
-                'harga_beli'        => $data['harga_beli'],
-                'entitas_pembelian' => $data['entitas_pembelian'],
-                'lokasi_id'         => $data['lokasi_id'],
-                'status'            => $data['status'],
-                'keterangan'        => $data['keterangan'],
-             ]);
-             $savedCount++;
         }
         
-        session()->remove('import_data');
-        if ($savedCount > 0) {
-            return redirect()->to('/aset')->with('success', $savedCount . ' baris data aset berhasil diimpor.');
-        } else {
-            return redirect()->to('/import')->with('error', 'Tidak ada data valid yang dapat disimpan. Pastikan semua kolom wajib diisi pada baris yang ingin Anda simpan.');
+        if (!empty($data['serial_number'])) {
+            $existing = $asetModel->where('serial_number', $data['serial_number'])->first();
+            if ($existing) {
+                $errors[] = "Serial Number sudah ada di database.";
+            }
+        }
+
+        // Ambil data asli dari sesi untuk ditampilkan kembali jika ada error
+        $dataFromSession = session()->get('import_data')[$index];
+
+        if (!empty($errors)) {
+            $allRowsAreValid = false; // Tandai bahwa ada data yang tidak valid
+            $dataFromSession['errors'] = $errors;
+        }
+        
+        $originalDataWithErrors[] = $dataFromSession;
+        $validatedData[] = $data; // Kumpulkan data yang akan disimpan nanti
+    }
+
+    // =============================================================
+    // TAHAP 2: KEPUTUSAN BERDASARKAN HASIL VALIDASI
+    // =============================================================
+    if (!$allRowsAreValid) {
+        // Jika ada SATU SAJA data yang tidak valid, batalkan seluruh proses.
+        // Kembalikan semua data ke halaman import dengan pesan error.
+        session()->set('import_data', $originalDataWithErrors);
+        return redirect()->to('/import')->with('error', 'Beberapa data perlu diperbaiki sebelum dapat disimpan.');
+    }
+
+    // =============================================================
+    // TAHAP 3: SIMPAN SEMUA DATA & BUAT QR CODE (Hanya jika semua valid)
+    // =============================================================
+    $newlyCreatedAssets = [];
+    foreach ($validatedData as $data) {
+        $kode = $this->generateUniqueAssetCode(
+            $data['entitas_pembelian'], $data['tahun'],
+            $data['sub_kategori_id'], $data['merk_id']
+        );
+
+        if ($asetModel->save([
+            'kode'              => $kode,
+            'kategori_id'       => $data['kategori_id'],
+            'sub_kategori_id'   => $data['sub_kategori_id'],
+            'merk_id'           => $data['merk_id'],
+            'tipe_id'           => $data['tipe_id'],
+            'serial_number'     => $data['serial_number'],
+            'tahun'             => $data['tahun'],
+            'harga_beli'        => $data['harga_beli'],
+            'entitas_pembelian' => $data['entitas_pembelian'],
+            'penanggung_jawab'  => $data['penanggung_jawab'],
+            'lokasi_id'         => $data['lokasi_id'],
+            'status'            => $data['status'],
+            'keterangan'        => $data['keterangan'],
+        ])) {
+            $newAsetId = $asetModel->getInsertID();
+
+            $url = base_url('tracking/aset/' . $newAsetId);
+            if (!is_dir(FCPATH . 'qrcodes')) {
+                mkdir(FCPATH . 'qrcodes', 0777, true);
+            }
+            
+            $qrCode = QrCode::create($url);
+            $writer = new PngWriter();
+            $result = $writer->write($qrCode);
+            $qrCodePath = 'qrcodes/aset-' . $newAsetId . '.png';
+            $result->saveToFile(FCPATH . $qrCodePath);
+
+            $asetModel->update($newAsetId, ['qrcode' => $qrCodePath]);
+            
+            $newlyCreatedAssets[] = $asetModel
+                ->select('aset.*, sub_kategori.nama_sub_kategori')
+                ->join('sub_kategori', 'sub_kategori.id = aset.sub_kategori_id', 'left')
+                ->find($newAsetId);
         }
     }
+
+    // Hapus sesi dan arahkan ke halaman cetak label
+    session()->remove('import_data');
+    return redirect()->to('/import/print-labels')
+                     ->with('new_assets', $newlyCreatedAssets)
+                     ->with('success', count($newlyCreatedAssets) . ' label aset baru siap dicetak.');
+}
+
+    public function printLabels()
+    {
+        $newAssets = session()->getFlashdata('new_assets');
+
+        if (empty($newAssets)) {
+            return redirect()->to('/aset');
+        }
+
+        $data = [
+            'title' => 'Cetak Label Aset Baru',
+            'asets' => $newAssets,
+        ];
+
+        return view('import/print_labels', $data);
+    }
+
+
 
     public function cancel()
     {
@@ -226,19 +301,27 @@ public function upload()
     public function updateSessionData()
     {
         if ($this->request->isAJAX()) {
-            $rowIndex = $this->request->getPost('rowIndex');
-            $fieldName = $this->request->getPost('fieldName');
-            $value = $this->request->getPost('value');
+            $rowIndex    = $this->request->getPost('rowIndex');
+            $fieldName   = $this->request->getPost('fieldName'); // misal: 'kategori_id' atau 'serial_number'
+            $value       = $this->request->getPost('value');     // Teks yang diketik/dipilih
+            $id          = $this->request->getPost('id');         // ID dari master data (jika ada)
 
             $importData = session()->get('import_data');
 
             if (isset($importData[$rowIndex])) {
-                $sessionFieldName = str_replace(['_id'], '', $fieldName);
-                $importData[$rowIndex][$sessionFieldName] = $value;
-                
+                $baseFieldName = str_replace('_id', '', $fieldName);
+
+                // Selalu simpan teks yang ditampilkan di kolom utama
+                $importData[$rowIndex][$baseFieldName] = $value;
+
+                // Jika ada ID yang dikirim (saat memilih dari autocomplete), simpan ID tersebut.
+                // Jika tidak, hapus ID lama karena teks sudah tidak cocok.
+                $importData[$rowIndex][$baseFieldName . '_id'] = $id;
+
                 session()->set('import_data', $importData);
                 return $this->response->setJSON(['status' => 'success']);
             }
+
             return $this->response->setJSON(['status' => 'error', 'message' => 'Row index not found.']);
         }
     }

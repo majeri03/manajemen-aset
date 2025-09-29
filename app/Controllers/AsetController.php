@@ -241,6 +241,7 @@ public function show($id = null)
             return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
         }
     }
+    
 
     public function getDetail($id = null)
     {
