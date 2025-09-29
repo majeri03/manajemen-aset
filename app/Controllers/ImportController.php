@@ -228,7 +228,7 @@ public function upload()
         ])) {
             $newAsetId = $asetModel->getInsertID();
 
-            $url = base_url('tracking/aset/' . $newAsetId);
+            $url = base_url('stockopname/aset/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
             }

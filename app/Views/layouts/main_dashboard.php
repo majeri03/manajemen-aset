@@ -42,6 +42,11 @@
                             <li><a href="<?= base_url('aset') ?>" class="nav-link submenu-link <?= ($current_page == 'aset') ? 'active' : '' ?>"><i class="bi bi-box-seam"></i> <span>Data Aset</span></a></li>
                             <li><a href="<?= base_url('master-data') ?>" class="nav-link submenu-link <?= ($current_page == 'master-data') ? 'active' : '' ?>"><i class="bi bi-hdd-stack-fill"></i> <span>Data Master</span></a></li>
                             <li><a href="<?= base_url('import') ?>" class="nav-link submenu-link <?= ($current_page == 'import') ? 'active' : '' ?>"><i class="bi bi-file-earmark-excel"></i> <span>Import Data</span></a></li>
+                            <li>
+                                <a href="<?= base_url('user') ?>" class="nav-link <?= ($current_page == 'user') ? 'active' : '' ?>">
+                                    <i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

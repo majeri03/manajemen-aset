@@ -25,35 +25,50 @@ Data Aset
 
 
 <div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered modal-lg"> <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="detailAsetModalLabel">Detail Aset</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
-                <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
-                <p><strong>Sub Kategori:</strong> <span id="detail-sub-kategori"></span></p>
-                <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
-                <p><strong>Type:</strong> <span id="detail-type"></span></p>
-                <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
-                <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
-                <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
-                <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
-                <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
-                <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Kode:</strong> <span id="detail-kode"></span></p>
+                        <p><strong>Kategori Barang:</strong> <span id="detail-kategori"></span></p>
+                        <p><strong>Sub Kategori:</strong> <span id="detail-sub-kategori"></span></p>
+                        <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
+                        <p><strong>Type:</strong> <span id="detail-type"></span></p>
+                        <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                        <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
+                        <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
+                        <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
+                        <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
+                        <p><strong>Status:</strong> <span id="detail-status"></span></p>
+                    </div>
+                </div>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
-                <p><strong>Status:</strong> <span id="detail-status"></span></p>
                 <hr>
-                <p>
-                    <strong>Terakhir Diperbarui:</strong> <span id="detail-updated_at"></span>
-                    <button id="lihat-riwayat-btn" class="btn btn-sm btn-outline-primary ms-2">Lihat Riwayat Lengkap</button>
-                </p>
 
-                <div id="timeline-container" class="mt-3" style="display: none;">
-                    <ul class="list-group" id="timeline-list">
-                        </ul>
+                <ul class="nav nav-tabs" id="historyTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="verifikasi-tab" data-bs-toggle="tab" data-bs-target="#verifikasi-content" type="button" role="tab">Riwayat Verifikasi</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="perubahan-tab" data-bs-toggle="tab" data-bs-target="#perubahan-content" type="button" role="tab">Riwayat Perubahan Data</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="historyTabsContent">
+                    <div class="tab-pane fade show active" id="verifikasi-content" role="tabpanel">
+                        <ul class="list-group mt-3" id="timeline-verifikasi-list">
+                            </ul>
+                    </div>
+                    <div class="tab-pane fade" id="perubahan-content" role="tabpanel">
+                         <ul class="list-group mt-3" id="timeline-perubahan-list">
+                            </ul>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -526,21 +541,21 @@ Data Aset
         }
 
          // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
-        const detailAsetModal = document.getElementById('detailAsetModal');
+const detailAsetModal = document.getElementById('detailAsetModal');
         let currentAsetId = null;
 
         if (detailAsetModal) {
-             const riwayatBtn = detailAsetModal.querySelector('#lihat-riwayat-btn');
-            const timelineContainer = detailAsetModal.querySelector('#timeline-container');
-            const timelineList = detailAsetModal.querySelector('#timeline-list');
-            
             detailAsetModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
                 currentAsetId = button.getAttribute('data-id');
 
-                timelineContainer.style.display = 'none';
-                timelineList.innerHTML = '';
-                
+                // Reset semua konten riwayat
+                const verifikasiList = document.getElementById('timeline-verifikasi-list');
+                const perubahanList = document.getElementById('timeline-perubahan-list');
+                verifikasiList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+                perubahanList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+
+                // Fetch Detail Aset
                 fetch(`/aset/${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -554,22 +569,35 @@ Data Aset
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                         document.getElementById('detail-penanggung_jawab').textContent = data.penanggung_jawab || '-';
-                        document.getElementById('detail-lokasi').textContent = data.nama_lokasi;
+                        document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                         document.getElementById('detail-status').textContent = data.status;
-                        document.getElementById('detail-updated_at').textContent = data.updated_at;
                     })
                     .catch(error => console.error('Error fetching detail:', error));
-            });
 
-             riwayatBtn.addEventListener('click', function() {
-                if (!currentAsetId) return;
-                timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
-                timelineContainer.style.display = 'block';
+                // Fetch Riwayat Verifikasi (Stock Opname)
+                fetch(`<?= base_url('aset/stockopname_history/') ?>${currentAsetId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        verifikasiList.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const date = new Date(item.opname_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+                                const badge = item.ada_perubahan == '1' ? '<span class="badge bg-warning">Ada Usulan Perubahan</span>' : '<span class="badge bg-success">Data Sesuai</span>';
+                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Diverifikasi oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Status verifikasi: ${badge}</p></li>`;
+                                verifikasiList.innerHTML += listItem;
+                            });
+                        } else {
+                            verifikasiList.innerHTML = '<li class="list-group-item">Belum ada riwayat verifikasi untuk aset ini.</li>';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching stock opname history:', error));
+                
+                // Fetch Riwayat Perubahan Data
                 fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
-                        timelineList.innerHTML = '';
+                        perubahanList.innerHTML = '';
                         if (data.length > 0) {
                             data.forEach(item => {
                                 const proposed = JSON.parse(item.proposed_data);
@@ -578,17 +606,14 @@ Data Aset
                                     changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
                                 }
                                 const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
-                                timelineList.innerHTML += listItem;
+                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Diajukan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
+                                perubahanList.innerHTML += listItem;
                             });
                         } else {
-                            timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
+                            perubahanList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan data untuk aset ini.</li>';
                         }
                     })
-                    .catch(error => {
-                        console.error('Error fetching history:', error);
-                        timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
-                    });
+                    .catch(error => console.error('Error fetching change history:', error));
             });
         };
 
