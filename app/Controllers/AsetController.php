@@ -44,7 +44,6 @@ class AsetController extends ResourceController
         $lastAsset = $this->asetModel
             ->where('entitas_pembelian', $entitas)
             ->where('sub_kategori_id', $subKategoriId)
-            ->where('tahun', $tahun)
             ->orderBy('kode', 'DESC')
             ->first();
     

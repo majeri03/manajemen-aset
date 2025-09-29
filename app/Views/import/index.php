@@ -81,7 +81,7 @@
             <i class="bi bi-file-earmark-arrow-up-fill" style="font-size: 4rem; color: var(--primary-blue);"></i>
             <h5 class="mt-3">Unggah File Anda Di Sini</h5>
             <p class="text-muted">Gunakan file template untuk memastikan format data sudah benar.</p>
-            <form action="<?= base_url('import/upload') ?>" method="post" enctype="multipart/form-data" class="mt-4">
+            <form id="upload-form" action="<?= base_url('import/upload') ?>" method="post" enctype="multipart/form-data" class="mt-4">
                 <?= csrf_field() ?>
                 <div class="input-group">
                     <input type="file" class="form-control" name="excel_file" id="excel_file" accept=".xlsx" required>
@@ -99,7 +99,7 @@
                         <h6 class="mb-0 fw-bold">Unduh Template</h6>
                         <p class="mb-0 text-muted small">Mulai dengan mengunduh file template Excel.</p>
                     </div>
-                    <a href="<?= base_url('assets/template/template_import.xlsx') ?>" class="btn btn-outline-success ms-auto" download><i class="bi bi-download"></i></a>
+                    <a href="<?= base_url('import/template') ?>" class="btn btn-outline-success ms-auto"><i class="bi bi-download"></i></a>
                 </div>
             </div>
             <div class="step-card">
@@ -241,6 +241,43 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Popup untuk form UPLOAD
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function() {
+            // Cek apakah file sudah dipilih
+            const fileInput = document.getElementById('excel_file');
+            if (fileInput.files.length > 0) {
+                Swal.fire({
+                    title: 'Memproses File...',
+                    text: 'Mohon tunggu, sistem sedang membaca data Excel Anda.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        });
+    }
+
+    // 2. Popup untuk form SIMPAN DATA
+    const saveForm = document.getElementById('save-form');
+    if (saveForm) {
+        saveForm.addEventListener('submit', function() {
+            Swal.fire({
+                title: 'Menyimpan Data...',
+                text: 'Mohon tunggu, data sedang divalidasi dan disimpan ke database.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        });
+    }
+});
+
+
 $(document).ready(function() {
     // Data master dari PHP, diformat untuk autocomplete
     const masterData = {
