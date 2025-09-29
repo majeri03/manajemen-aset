@@ -40,9 +40,6 @@ Dashboard
                     <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
                     <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
                 </ul>
-            </div>
-            <a href="<?= base_url('tracking') ?>" class="btn btn-custom-icon"><i class="bi bi-geo-alt me-2"></i> Tracking Aset</a>
-        </div>
     </div>
 </div>
 
@@ -73,37 +70,47 @@ Dashboard
 
 <div class="container-fluid">
     <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
-            <div class="summary-card shadow-sm">
-                <div class="card-icon total-aset">
-                    <i class="bi bi-wallet2"></i>
-                </div>
-                <div class="card-text">
-                    <h6 class="text-muted">Total Jumlah Aset</h6>
-                    <h4 class="count-up" data-to="<?= $total_aset ?>"><?= $total_aset ?> Unit</h4>
-                </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card shadow-sm blue">
+            <div class="stat-card-icon">
+                <i class="bi bi-wallet2"></i>
             </div>
+            <h6 class="stat-card-title">Total Jumlah Aset</h6>
+            <h3 class="stat-card-value count-up" data-to="<?= $total_aset ?>"><?= $total_aset ?></h3>
+            <p class="stat-card-detail">Unit Terdaftar</p>
         </div>
-        <div class="col-md-6 col-lg-4">
-            <div class="summary-card shadow-sm">
-                <div class="card-icon aset-rusak">
-                    <i class="bi bi-wrench-adjustable"></i>
-                </div>
-                <div class="card-text">
-                    <h6 class="text-muted">Aset Rusak</h6>
-                    <h4 class="count-up" data-to="<?= $aset_rusak ?>"><?= $aset_rusak ?> Unit</h4>
-                </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card shadow-sm green">
+            <div class="stat-card-icon">
+                <i class="bi bi-cash-stack"></i>
             </div>
+            <h6 class="stat-card-title">Total Nilai Aset</h6>
+            <h3 class="stat-card-value count-up" data-to="<?= $total_nilai_aset ?>">Rp <?= number_format($total_nilai_aset, 0, ',', '.') ?></h3>
+            <p class="stat-card-detail">Berdasarkan Harga Beli</p>
         </div>
-        <div class="col-md-6 col-lg-4">
-            <div class="summary-card shadow-sm">
-                <div class="card-icon pengguna"> <i class="bi bi-bell-fill"></i> </div>
-                <div class="card-text">
-                    <h6 class="text-muted">Permintaan Perubahan</h6>
-                    <h4 class="count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?> Permintaan</h4>
-                </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card shadow-sm red">
+            <div class="stat-card-icon">
+                <i class="bi bi-wrench-adjustable"></i>
             </div>
+            <h6 class="stat-card-title">Aset Rusak</h6>
+            <h3 class="stat-card-value count-up" data-to="<?= $aset_rusak ?>"><?= $aset_rusak ?></h3>
+            <p class="stat-card-detail">Unit Perlu Perbaikan</p>
         </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card shadow-sm yellow">
+            <div class="stat-card-icon">
+                <i class="bi bi-bell-fill"></i>
+            </div>
+            <h6 class="stat-card-title">Permintaan Pending</h6>
+            <h3 class="stat-card-value count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?></h3>
+            <p class="stat-card-detail">Menunggu Persetujuan</p>
+        </div>
+    </div>
+</div>
 
     <div class="row mt-5 g-4">
         <div class="col-lg-6">
@@ -138,7 +145,7 @@ Dashboard
                         <th scope="col">MERK</th>
                         <th scope="col">TIPE</th> <th scope="col">SERIAL NUMBER</th>
                         <th scope="col">TAHUN</th>
-                        <th scope="col">PENANGGUNG JAWAB</th>
+                  
                         <th scope="col">LOKASI</th>
                         <th scope="col">AKSI</th>
                     </tr>
@@ -154,7 +161,7 @@ Dashboard
                                 <td><?= esc($aset['nama_tipe']) ?></td> 
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
-                                <td><?= esc($aset['penanggung_jawab']) ?></td>
+                            
                                 <td><?= esc($aset['nama_lokasi']) ?></td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm view-detail" 
@@ -515,13 +522,19 @@ var assetStatusChart = new Chart(ctx2, {
 
 
 window.onload = function() {
+    // 1. Skrip ini mencari semua elemen dengan class 'count-up'
     const countUpElements = document.querySelectorAll('.count-up');
+    
     countUpElements.forEach(el => {
+        // 2. Mengambil angka target dari atribut 'data-to'
         const endValue = el.getAttribute('data-to');
+        
+        // 3. Mengecek apakah teksnya mengandung 'Rp' untuk format Rupiah
         const isRupiah = el.innerText.includes('Rp');
         let instance;
 
         if (isRupiah) {
+            // Jika ya, format sebagai mata uang
             instance = new CountUp(el, endValue, {
                 prefix: 'Rp ',
                 separator: '.',
@@ -529,6 +542,7 @@ window.onload = function() {
                 duration: 2.5
             });
         } else {
+            // Jika tidak, tambahkan akhiran seperti 'Unit' atau 'Permintaan'
             instance = new CountUp(el, endValue, {
                 suffix: ' ' + (el.innerText.split(' ')[1] || ''),
                 duration: 2.5
