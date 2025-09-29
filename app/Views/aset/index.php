@@ -207,7 +207,7 @@ Data Aset
                 <p><strong>Status:</strong> <span id="detail-status"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-                </div>
+            </div>
         </div>
     </div>
 </div>

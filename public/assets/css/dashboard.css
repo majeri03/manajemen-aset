@@ -1,5 +1,138 @@
 /* public/assets/css/dashboard.css */
 
+/* ======================================= */
+/* === DESAIN BARU UNTUK KARTU STATISTIK === */
+/* ======================================= */
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 25px;
+    border: none;
+    transition: all 0.3s ease-in-out;
+    color: #fff;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.stat-card-icon {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    font-size: 80px;
+    opacity: 0.2;
+    transform: rotate(-15deg);
+    transition: all 0.3s ease-in-out;
+}
+
+.stat-card:hover .stat-card-icon {
+    opacity: 0.3;
+    transform: rotate(0deg) scale(1.1);
+}
+
+.stat-card-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.stat-card-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    line-height: 1.2;
+}
+
+.stat-card-detail {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin: 0;
+}
+
+/* ======================================= */
+/* === GAYA UNTUK TAMPILAN RESPONSIVE/MOBILE === */
+/* ======================================= */
+
+.page-wrapper {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.main-content-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.main-content {
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040; /* Di bawah sidebar, di atas konten */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease;
+}
+
+
+/* Media Query untuk layar kecil (di bawah 992px) */
+@media (max-width: 991.98px) {
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 280px; /* Lebar sidebar saat muncul di mobile */
+        z-index: 1050; /* Tampil di atas segalanya */
+        transform: translateX(-100%); /* Sembunyikan ke kiri */
+        transition: transform 0.3s ease-in-out;
+    }
+
+    #sidebar.active {
+        transform: translateX(0); /* Tampilkan sidebar */
+    }
+
+    /* Sembunyikan tombol collapse desktop di mobile */
+    .sidebar-toggler {
+        display: none;
+    }
+}
+
+/* Skema Warna Kartu */
+.stat-card.blue {
+    background-image: linear-gradient(135deg, #003481 0%, #3da2ff 100%);
+}
+.stat-card.green {
+    background-image: linear-gradient(135deg, #057a55 0%, #34d399 100%);
+}
+.stat-card.red {
+    background-image: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+}
+.stat-card.yellow {
+    background-image: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+}
+
 :root {
     --primary-blue: #003481;
     --secondary-blue: #3da2ff;
