@@ -88,6 +88,10 @@ Edit Aset
                 <input type="text" class="form-control" id="entitas_pembelian" name="entitas_pembelian" value="<?= esc($aset['entitas_pembelian']) ?>">
             </div>
             <div class="col-md-6">
+                <label for="penanggung_jawab" class="form-label">Penanggung Jawab</label>
+                <input type="text" class="form-control" id="penanggung_jawab" name="penanggung_jawab" value="<?= esc($aset['penanggung_jawab']) ?>" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            <div class="col-md-6">
                 <label for="lokasi_id" class="form-label">Lokasi</label>
                 <select class="form-select" id="lokasi_id" name="lokasi_id" required>
                     <option value="">Pilih Lokasi</option>

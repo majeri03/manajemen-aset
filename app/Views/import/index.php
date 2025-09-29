@@ -159,8 +159,19 @@
                 </thead>
                 <tbody>
                     <?php foreach ($import_data as $index => $row): ?>
-                        <tr data-row-index="<?= $index ?>" class="<?= ($row['is_duplicate'] ?? false) ? 'table-danger' : ''; ?>">
-                            <td><?= $index + 1 ?></td>
+                        <?php 
+                            $hasError = !empty($row['errors']);
+                            // Tambahkan kelas 'table-warning' jika ada error
+                            $rowClass = ($row['is_duplicate'] ?? false) ? 'table-danger' : ($hasError ? 'table-warning' : '');
+                        ?>
+                        <tr data-row-index="<?= $index ?>" class="<?= $rowClass ?>">
+                            <td>
+                                <?= $index + 1 ?>
+                                <?php if ($hasError): ?>
+                                    <i class="bi bi-exclamation-triangle-fill text-danger" title="<?= implode(', ', $row['errors']) ?>"></i>
+                                <?php endif; ?>
+                            </td>
+
                             <td>
                                 <input type="text" class="form-control autocomplete-master" data-type="kategori" value="<?= esc($row['kategori']) ?>" required>
                                 <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][kategori_id]">
@@ -200,6 +211,20 @@
                             </td>
                             <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>"></td>
                         </tr>
+                        <?php if ($hasError): ?>
+                            <tr class="table-danger-light">
+                                <td colspan="13">
+                                    <div class="px-3 py-1 text-danger-emphasis">
+                                        <strong><i class="bi bi-exclamation-circle-fill me-2"></i>Kesalahan:</strong>
+                                        <ul class="mb-0 ps-4">
+                                        <?php foreach($row['errors'] as $error): ?>
+                                            <li><?= esc($error) ?></li>
+                                        <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -456,32 +481,196 @@ $(document).ready(function() {
     });
     
     // Auto save session data on change
-    $('#import-table tbody').on('change', 'input, select', function() {
-        const $el = $(this); const $row = $el.closest('tr');
-        const rowIndex = $row.data('row-index'); 
-        const nameAttr = $el.attr('name');
-        if (typeof rowIndex === 'undefined' || !nameAttr) return;
-        
-        const fieldName = nameAttr.match(/\[(\w+)\]$/)[1]; 
-        
-        let valueToSend = $el.val();
-        // Untuk autocomplete, kirim teksnya. Untuk dropdown biasa, kirim nilainya.
-        if($el.hasClass('autocomplete-master')){
-            // Teks sudah ada di val()
-        } else if ($el.is('select')) {
-             valueToSend = $el.find('option:selected').text();
+    $('#import-table tbody').on('input paste change', 'input, select', function() {
+        const $el = $(this);
+
+        // Abaikan event dari hidden input untuk mencegah pengiriman ganda
+        if ($el.is(':hidden')) {
+            return;
         }
 
+        const $row = $el.closest('tr');
+        const rowIndex = $row.data('row-index');
+
+        // Dapatkan nama field. Untuk autocomplete, acuannya adalah nama dari hidden input.
+        const nameAttr = $el.attr('name') || $el.next('.autocomplete-id').attr('name');
+
+        if (typeof rowIndex === 'undefined' || !nameAttr) {
+            return; // Hentikan jika tidak ada row index atau nama field
+        }
+
+        const fieldName = nameAttr.match(/\[(\w+)\]$/)[1];
+        const valueToSend = $el.val();
+
+        // Kirim teks mentah yang diketik/dipilih pengguna ke server
         $.ajax({
-            url: "<?= base_url('import/update-session') ?>", method: 'POST',
+            url: "<?= base_url('import/update-session') ?>",
+            method: 'POST',
             data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>', 
-                rowIndex: rowIndex, 
-                fieldName: fieldName, 
-                value: valueToSend
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+                rowIndex: rowIndex,
+                fieldName: fieldName,
+                value: valueToSend,
             }
         });
     });
+});
+// Lokasi: app/Views/import/index.php (di dalam tag <script>)
+
+$(document).ready(function() {
+    // --- DATA MASTER DARI PHP ---
+    const masterData = {
+        kategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_kategori']], $kategori)) ?>,
+        subkategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_sub_kategori'], 'parent_id' => $item['kategori_id']], $subkategori)) ?>,
+        merk: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_merk']], $merk)) ?>,
+        lokasi: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_lokasi']], $lokasi)) ?>,
+    };
+
+    // --- FUNGSI UNTUK MENYIMPAN PERUBAHAN KE SESI ---
+    function saveChangeToSession(element) {
+        const $el = $(element);
+        const $row = $el.closest('tr');
+        const rowIndex = $row.data('row-index');
+        
+        const nameAttr = $el.attr('name') || $el.next('.autocomplete-id').attr('name');
+        if (typeof rowIndex === 'undefined' || !nameAttr) return;
+
+        const fieldName = nameAttr.match(/\[(\w+)\]$/)[1];
+        const valueToSend = $el.val();
+        let idToSend = null;
+
+        if ($el.hasClass('autocomplete-master')) {
+            idToSend = $el.next('.autocomplete-id').val();
+        }
+
+        $.ajax({
+            url: "<?= base_url('import/update-session') ?>",
+            method: 'POST',
+            data: {
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+                rowIndex: rowIndex,
+                fieldName: fieldName,
+                value: valueToSend,
+                id: idToSend
+            }
+        });
+    }
+
+    // --- INISIALISASI AUTOCOMPLETE DAN EVENT ---
+    function initializeRow(row) {
+        const $row = $(row);
+        
+        // 1. Inisialisasi Autocomplete (Searchbox)
+        $row.find('.autocomplete-master').each(function() {
+            const $input = $(this);
+            const $hiddenInput = $input.next('.autocomplete-id');
+            const masterType = $input.data('type');
+
+            // Set nilai awal dari data yang di-load
+            const initialText = $input.val();
+            if(initialText) {
+                let source = [];
+                 // Logika untuk mengisi ID awal berdasarkan teks, dengan mempertimbangkan parent
+                if (masterType === 'subkategori') {
+                    const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+                    source = masterData.subkategori.filter(s => s.parent_id == kategoriId);
+                } else {
+                    source = masterData[masterType] || [];
+                }
+
+                const foundItem = source.find(item => item.label.toUpperCase() === initialText.toUpperCase());
+                if(foundItem) {
+                    $hiddenInput.val(foundItem.id);
+                }
+            }
+            
+$input.autocomplete({
+                // =================================================================
+                // INI BAGIAN UTAMA YANG DIPERBAIKI
+                // =================================================================
+                source: function(request, response) {
+                    let sourceData = [];
+                    const term = request.term.toLowerCase();
+
+                    // LOGIKA BARU UNTUK FILTER BERDASARKAN PARENT
+                    if (masterType === 'subkategori') {
+                        const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+                        if (kategoriId) {
+                            sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
+                        }
+                    } else if (masterType === 'tipe') {
+                        const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+                        if (merkId) {
+                            // Ambil data Tipe dari server berdasarkan Merk ID
+                            $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, function(data) {
+                                const tipes = data.map(item => ({ id: item.id, label: item.nama_tipe }));
+                                const filtered = tipes.filter(item => item.label.toLowerCase().includes(term));
+                                if (term !== '' && !tipes.some(item => item.label.toLowerCase() === term)) {
+                                     filtered.push({ label: `+ Tambah Baru: "${request.term}"`, value: request.term, isNew: true });
+                                }
+                                response(filtered);
+                            });
+                            return; // Hentikan eksekusi karena AJAX berjalan asynchronous
+                        }
+                    } else {
+                        sourceData = masterData[masterType] || [];
+                    }
+
+                    // Filter data berdasarkan ketikan pengguna
+                    const filtered = sourceData.filter(item => item.label.toLowerCase().includes(term));
+                    const exactMatch = sourceData.some(item => item.label.toLowerCase() === term);
+                    if (term !== '' && !exactMatch) {
+                        filtered.push({ label: `+ Tambah Baru: "${request.term}"`, value: request.term, isNew: true });
+                    }
+                    response(filtered);
+                },
+ minLength: 0,
+                select: function(event, ui) {
+                    const $currentInput = $(this);
+                    const masterType = $currentInput.data('type');
+
+                    if (ui.item.isNew) {
+                        handleNewMasterData($currentInput, ui.item.value);
+                    } else {
+                        $currentInput.val(ui.item.label);
+                        $currentInput.next('.autocomplete-id').val(ui.item.id);
+                        
+                        // LOGIKA BARU: Jika Kategori atau Merk berubah, kosongkan anaknya
+                        if (masterType === 'kategori') {
+                            const $subKategoriInput = $row.find('[data-type="subkategori"]');
+                            $subKategoriInput.val('');
+                            $subKategoriInput.next('.autocomplete-id').val('');
+                        } else if (masterType === 'merk') {
+                            const $tipeInput = $row.find('[data-type="tipe"]');
+                            $tipeInput.val('');
+                            $tipeInput.next('.autocomplete-id').val('');
+                        }
+
+                        saveChangeToSession(this); 
+                    }
+                    return false;
+                }
+            }).focus(function() {
+                $(this).autocomplete("search", "");
+            });
+        });
+
+        // Event Listener untuk menyimpan semua perubahan
+        $row.find('input, select').on('input paste change', function() {
+             saveChangeToSession(this);
+        });
+    }
+
+    // --- LOOP UNTUK INISIALISASI SETIAP BARIS ---
+    $('#import-table tbody tr').each(function() {
+        initializeRow(this);
+    });
+
+    // --- (Sisa fungsi seperti handleNewMasterData, dll. bisa diletakkan di sini jika ada) ---
+    // Pastikan Anda masih memiliki fungsi handleNewMasterData, dll. jika sebelumnya terpisah
+    function handleNewMasterData($input, name) {
+        // ... (Fungsi ini dari kode Anda sebelumnya, tidak perlu diubah)
+    }
 });
 </script>
 <?= $this->endSection() ?>

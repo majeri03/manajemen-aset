@@ -138,6 +138,7 @@ Dashboard
                         <th scope="col">MERK</th>
                         <th scope="col">TIPE</th> <th scope="col">SERIAL NUMBER</th>
                         <th scope="col">TAHUN</th>
+                        <th scope="col">PENANGGUNG JAWAB</th>
                         <th scope="col">LOKASI</th>
                         <th scope="col">AKSI</th>
                     </tr>
@@ -153,6 +154,7 @@ Dashboard
                                 <td><?= esc($aset['nama_tipe']) ?></td> 
                                 <td><?= esc($aset['serial_number']) ?></td>
                                 <td><?= esc($aset['tahun']) ?></td>
+                                <td><?= esc($aset['penanggung_jawab']) ?></td>
                                 <td><?= esc($aset['nama_lokasi']) ?></td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm view-detail" 
@@ -192,6 +194,7 @@ Dashboard
                 <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
                 <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                 <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
+                <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <p><strong>Status:</strong> <span id="detail-status"></span></p>
@@ -279,6 +282,10 @@ Dashboard
                             <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                             <option value="Rusak">Rusak</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="penanggung_jawab-tambah" class="form-label">Penanggung Jawab</label>
+                        <input type="text" class="form-control" id="penanggung_jawab-tambah" name="penanggung_jawab" oninput="this.value = this.value.toUpperCase();">
                     </div>
                     <div class="mb-3">
                         <label for="lokasi-tambah" class="form-label">Lokasi</label>
@@ -581,6 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('detail-tahun').textContent = data.tahun;
                     document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                     document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
+                    document.getElementById('detail-penanggung_jawab').textContent = data.penanggung_jawab || '-';
                     document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                     document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                     document.getElementById('detail-status').textContent = data.status;
