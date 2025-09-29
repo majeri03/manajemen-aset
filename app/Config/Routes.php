@@ -10,10 +10,9 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::processLogin');
-$routes->get('/register', 'AuthController::register');
-$routes->post('/register', 'AuthController::processRegister');
+
 $routes->get('/logout', 'AuthController::logout');
-$routes->get('tracking/aset/(:num)', 'AsetController::publicDetail/$1');
+// $routes->get('tracking/aset/(:num)', 'AsetController::publicDetail/$1');
 
 
 // --- Rute yang Memerlukan Login ---
@@ -27,6 +26,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('aset/search', 'AsetController::search');
     $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
     $routes->get('aset/laporan/export', 'AsetController::export');
+    $routes->get('aset/stockopname_history/(:num)', 'AsetController::getStockOpnameHistory/$1');
     
     $routes->resource('aset', ['controller' => 'AsetController']);
     // Permintaan Perubahan Aset
@@ -81,4 +81,16 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('import/update-session', 'ImportController::updateSessionData');
     $routes->post('import/delete-master', 'ImportController::deleteMasterData');
 
+    //Rute MANAJEMEN AKUN
+    $routes->get('user', 'UserController::index');
+    $routes->get('user/create', 'UserController::create');
+    $routes->post('user/store', 'UserController::store');
+    $routes->get('user/edit/(:num)', 'UserController::edit/$1');
+    $routes->post('user/update/(:num)', 'UserController::update/$1');
+    $routes->get('user/delete/(:num)', 'UserController::delete/$1');
+
+    //rute stockopname
+    
+    $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
+    $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
 });

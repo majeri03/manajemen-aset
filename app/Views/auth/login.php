@@ -39,9 +39,9 @@ Login
             </div>
         </form>
 
-        <div class="text-center mt-3">
+        <!-- <div class="text-center mt-3">
             <p>Belum punya akun? <a href="/register" style=" text-decoration: none; font-weight: bold;">Daftar di sini</a></p>
-        </div>
+        </div> -->
     </div>
 
     <div class="auth-info-section d-none d-md-flex">

@@ -214,7 +214,7 @@ public function show($id = null)
         if ($this->asetModel->save($data)) {
             $newAsetId = $this->asetModel->getInsertID();
 
-            $url = base_url('tracking/aset/' . $newAsetId);
+            $url = base_url('stockopname/aset/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
             }
@@ -568,5 +568,19 @@ public function show($id = null)
     {
         $tipes = $this->tipeModel->where('merk_id', $merkId)->orderBy('nama_tipe', 'ASC')->findAll();
         return $this->response->setJSON($tipes);
+    }
+
+    // stockOpname
+    public function getStockOpnameHistory($asetId)
+    {
+        $db = \Config\Database::connect();
+        $history = $db->table('stock_opname_history as soh')
+                        ->select('soh.opname_at, soh.catatan, u.full_name, soh.ada_perubahan')
+                        ->join('users as u', 'u.id = soh.user_id')
+                        ->where('soh.aset_id', $asetId)
+                        ->orderBy('soh.opname_at', 'DESC')
+                        ->get()->getResultArray();
+
+        return $this->response->setJSON($history);
     }
 }

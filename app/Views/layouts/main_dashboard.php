@@ -60,6 +60,11 @@
             <i class="bi bi-file-earmark-bar-graph"></i> <span>Laporan</span>
         </a>
     </li>
+    <li>
+        <a href="<?= base_url('user') ?>" class="nav-link <?= ($current_page == 'user') ? 'active' : '' ?>">
+            <i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span>
+        </a>
+    </li>
 </ul>
             <hr>
             <div class="dropdown">
