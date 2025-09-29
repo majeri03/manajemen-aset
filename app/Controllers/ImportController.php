@@ -9,7 +9,13 @@ use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
 use App\Models\MerkModel;
 use App\Models\TipeModel;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+// Gunakan alias untuk membedakan Reader dan Writer dengan jelas
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 
@@ -35,7 +41,8 @@ public function upload()
 
         if ($file->isValid() && !$file->hasMoved()) {
             $asetModel = new AsetModel();
-            $reader = new Xlsx();
+            $reader = new XlsxReader();
+            
             $spreadsheet = $reader->load($file->getTempName());
             $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
@@ -106,7 +113,6 @@ public function upload()
         $lastAsset = $asetModel
             ->where('entitas_pembelian', $entitas)
             ->where('sub_kategori_id', $subKategoriId)
-            ->where('tahun', $tahun)
             ->orderBy('id', 'DESC')
             ->first();
         
@@ -374,5 +380,103 @@ public function deleteMasterData()
         }
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal menghapus data.']);
+    }
+
+    // Lokasi: app/Controllers/ImportController.php
+
+public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Aset');
+
+        // 1. Ambil data master dari database
+        $kategoriList = array_column((new KategoriModel())->orderBy('nama_kategori', 'ASC')->findAll(), 'nama_kategori');
+        $lokasiList = array_column((new LokasiModel())->orderBy('nama_lokasi', 'ASC')->findAll(), 'nama_lokasi');
+        $statusList = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak'];
+
+        // =============================================================
+        // 2. BUAT SHEET BARU YANG TERSEMBUNYI UNTUK DATA MASTER
+        // =============================================================
+        $masterSheet = new Worksheet($spreadsheet, 'MasterData');
+        $spreadsheet->addSheet($masterSheet);
+
+        // Isi sheet master dengan data
+        foreach ($kategoriList as $index => $value) {
+            $masterSheet->setCellValue('A' . ($index + 1), $value);
+        }
+        foreach ($lokasiList as $index => $value) {
+            $masterSheet->setCellValue('B' . ($index + 1), $value);
+        }
+        foreach ($statusList as $index => $value) {
+            $masterSheet->setCellValue('C' . ($index + 1), $value);
+        }
+
+        // Sembunyikan sheet master ini dari pengguna
+        $masterSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+
+
+        // 3. Tulis header kolom di sheet utama
+        $headers = [
+            'A1' => 'KATEGORI', 'B1' => 'SUB KATEGORI', 'C1' => 'MERK', 'D1' => 'TIPE', 
+            'E1' => 'SERIAL NUMBER', 'F1' => 'ENTITAS PEMBELIAN', 'G1' => 'TAHUN', 'H1' => 'HARGA BELI', 
+            'I1' => 'PENANGGUNG JAWAB', 'J1' => 'LOKASI', 'K1' => 'STATUS', 'L1' => 'KETERANGAN',
+        ];
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // =============================================================
+        // 4. TERAPKAN VALIDASI DROPDOWN DENGAN REFERENSI KE SHEET MASTER (VERSI PERBAIKAN)
+        // =============================================================
+        $rowCount = 1001; // Jumlah baris yang ingin diberi dropdown
+
+        // Dropdown untuk Kategori (Kolom A)
+        $validationKategori = $sheet->getCell('A2')->getDataValidation();
+        $validationKategori->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+        $validationKategori->setFormula1('MasterData!$A$1:$A$' . count($kategoriList));
+        $sheet->setDataValidation("A2:A{$rowCount}", $validationKategori); // <-- PERBAIKAN DI SINI
+
+        // Dropdown untuk Lokasi (Kolom J)
+        $validationLokasi = $sheet->getCell('J2')->getDataValidation();
+        $validationLokasi->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+        $validationLokasi->setFormula1('MasterData!$B$1:$B$' . count($lokasiList));
+        $sheet->setDataValidation("J2:J{$rowCount}", $validationLokasi); // <-- PERBAIKAN DI SINI
+
+        // Dropdown untuk Status (Kolom K)
+        $validationStatus = $sheet->getCell('K2')->getDataValidation();
+        $validationStatus->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+        $validationStatus->setFormula1('MasterData!$C$1:$C$' . count($statusList));
+        $sheet->setDataValidation("K2:K{$rowCount}", $validationStatus); // <-- PERBAIKAN DI SINI
+
+
+        // Styling, AutoFilter, dan Auto-size
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+        $styleArray = [
+            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF003481']]
+        ];
+        $sheet->getStyle('A1:L1')->applyFromArray($styleArray);
+        foreach (range('A', 'L') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Atur sheet aktif kembali ke sheet utama sebelum menyimpan
+        $spreadsheet->setActiveSheetIndex(0);
+
+        // Simpan dan kirim file untuk diunduh
+        $writer = new Xlsx($spreadsheet);
+        $writer = new XlsxWriter($spreadsheet);
+        $filename = 'template_import_aset_' . date('Y-m-d') . '.xlsx';
+        
+        $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $this->response->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"');
+        
+        ob_start();
+        $writer->save('php://output');
+        $fileData = ob_get_contents();
+        ob_end_clean();
+
+        return $this->response->setBody($fileData);
     }
 }
