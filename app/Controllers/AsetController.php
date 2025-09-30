@@ -604,4 +604,93 @@ public function show($id = null)
 
         return $this->response->setJSON($history);
     }
+
+    // app/Controllers/AsetController.php
+
+// app/Controllers/AsetController.php
+
+// app/Controllers/AsetController.php
+
+public function barcodes()
+{
+    // Muat semua model yang dibutuhkan untuk filter
+    $lokasiModel = new LokasiModel();
+    $kategoriModel = new KategoriModel();
+    $merkModel = new MerkModel();
+
+    // Ambil nilai filter dari URL (GET request)
+    $filters = [
+        'kategori_id'       => $this->request->getGet('kategori_id'),
+        'lokasi_id'         => $this->request->getGet('lokasi_id'),
+        'merk_id'           => $this->request->getGet('merk_id'),
+        'tahun'             => $this->request->getGet('tahun'),
+        'penanggung_jawab'  => $this->request->getGet('penanggung_jawab'),
+        'keyword'           => $this->request->getGet('keyword'),
+    ];
+
+    // ===== MEMBANGUN QUERY SECARA LANGSUNG (LEBIH EKSPLISIT) =====
+    $db = db_connect();
+    $builder = $db->table('aset');
+
+    $builder->select('
+        aset.kode, aset.qrcode, aset.tahun, aset.penanggung_jawab, aset.entitas_pembelian, 
+        k.nama_kategori, 
+        sk.nama_sub_kategori, 
+        l.nama_lokasi, 
+        m.nama_merk, 
+        t.nama_tipe
+    ');
+    $builder->join('kategori k', 'k.id = aset.kategori_id', 'left');
+    $builder->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+    $builder->join('lokasi l', 'l.id = aset.lokasi_id', 'left');
+    $builder->join('merk m', 'm.id = aset.merk_id', 'left');
+    $builder->join('tipe t', 't.id = aset.tipe_id', 'left');
+    $builder->where('aset.qrcode IS NOT NULL');
+    $builder->where('aset.qrcode !=', '');
+    $builder->where('aset.deleted_at IS NULL'); // Hanya ambil aset yang tidak dihapus
+
+    // Terapkan semua filter
+    if (!empty($filters['kategori_id'])) {
+        $builder->where('aset.kategori_id', $filters['kategori_id']);
+    }
+    if (!empty($filters['lokasi_id'])) {
+        $builder->where('aset.lokasi_id', $filters['lokasi_id']);
+    }
+    if (!empty($filters['merk_id'])) {
+        $builder->where('aset.merk_id', $filters['merk_id']);
+    }
+    if (!empty($filters['tahun'])) {
+        $builder->where('aset.tahun', $filters['tahun']);
+    }
+    if (!empty($filters['penanggung_jawab'])) {
+        $builder->where('aset.penanggung_jawab', $filters['penanggung_jawab']);
+    }
+    if (!empty($filters['keyword'])) {
+        $keyword = strtoupper($filters['keyword']);
+        $builder->groupStart()
+              ->like('UPPER(aset.kode)', $keyword)
+              ->orLike('UPPER(sk.nama_sub_kategori)', $keyword)
+              ->orLike('UPPER(m.nama_merk)', $keyword)
+              ->orLike('UPPER(t.nama_tipe)', $keyword)
+              ->groupEnd();
+    }
+    
+    // Eksekusi query
+    $asets = $builder->orderBy('aset.kode', 'ASC')->get()->getResultArray();
+
+    // Ambil data untuk dropdown filter
+    $penanggungJawabList = $this->asetModel->distinct()->select('penanggung_jawab')->where('penanggung_jawab IS NOT NULL AND penanggung_jawab != ""')->orderBy('penanggung_jawab', 'ASC')->findAll();
+
+    $data = [
+        'title'               => 'Cetak Barcode Aset',
+        'asets'               => $asets,
+        'kategori_list'       => $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll(),
+        'lokasi_list'         => $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+        'merk_list'           => $merkModel->orderBy('nama_merk', 'ASC')->findAll(),
+        'penanggung_jawab_list' => $penanggungJawabList,
+        'filters'             => $filters
+    ];
+
+    return view('aset/barcodes', $data);
+}
 }

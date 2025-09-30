@@ -116,6 +116,9 @@ Data Aset
 </div>
 
 <div class="d-flex justify-content-end mb-3">
+    <a href="<?= base_url('aset/barcodes') ?>" class="btn btn-info me-2">
+        <i class="bi bi-upc-scan me-2"></i>Lihat Semua Barcode
+    </a>
     <a href="<?= base_url('aset/laporan/export') . '?' . http_build_query($filters ?? []) ?>" class="btn btn-success">
         <i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel
     </a>
