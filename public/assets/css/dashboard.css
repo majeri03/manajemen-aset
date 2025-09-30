@@ -344,6 +344,9 @@ body {
         width: 100%;
         margin-top: 1rem;
     }
+        .main-content-wrapper {
+        width: 100%;
+    }
 }
 
 /* Aturan tambahan untuk layar ponsel yang lebih kecil (kurang dari 768px) */
