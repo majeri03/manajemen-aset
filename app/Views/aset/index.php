@@ -11,15 +11,17 @@ Data Aset
             <h4 class="mb-0">Data Aset</h4>
             <p class="text-muted small">Kelola semua aset perusahaan Anda.</p>
         </div>
-        <div class="col-md-6 col-lg-8 mt-3 mt-md-0 d-flex justify-content-end align-items-center flex-wrap">
-            <div class="input-group search-bar me-3">
-                <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
-                <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
+            <div class="col-md-6 col-lg-8 mt-3 mt-md-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="input-group search-bar flex-grow-1">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
+                        <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
+                    </div>
+                    <button class="btn btn-custom-icon flex-shrink-0" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
+                        <i class="bi bi-plus-circle me-2"></i> Tambah Aset
+                    </button>
+                </div>
             </div>
-            <button class="btn btn-custom-icon me-2" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
-                <i class="bi bi-plus-circle me-2"></i> Tambah Aset
-            </button>
-        </div>
     </div>
 </div>
 
@@ -82,7 +84,7 @@ Data Aset
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form action="<?= base_url('aset') ?>" method="get" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-3 col-6">
                 <label for="filter-kategori" class="form-label">Kategori</label>
                 <select name="kategori_id" id="filter-kategori" class="form-select">
                     <option value="">Semua</option>
@@ -93,9 +95,8 @@ Data Aset
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-6">
                 <label for="filter-status" class="form-label">Status</label>
-                <!-- [MODIFIED] Filter options -->
                 <select name="status" id="filter-status" class="form-select">
                     <option value="">Semua</option>
                     <option value="Baik Terpakai" <?= ($filters['status'] ?? '') == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
