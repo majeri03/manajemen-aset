@@ -6,40 +6,20 @@ Dashboard
 
 <?= $this->section('content') ?>
 
-<div class="main-header mb-4">
-    <div class="row align-items-center">
-        <div class="col-md-6 col-lg-4">
-            <h4 class="mb-0">Dashboard Overview</h4>
-            <p class="text-muted small">Ringkasan cepat aset perusahaan Anda.</p>
-        </div>
-        <div class="col-md-6 col-lg-8 mt-3 mt-md-0 d-flex justify-content-end align-items-center flex-wrap">
-            <form action="<?= base_url('aset') ?>" method="get" class="me-3">
-                <div class="input-group search-bar">
-                    <input type="text" class="form-control" name="keyword" placeholder="Cari aset...">
-                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                </div>
-            </form>
-            <button class="btn btn-custom-icon me-2" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
-                <i class="bi bi-plus-circle me-2"></i> Tambah Aset
-            </button>
-            <div class="dropdown me-2">
-                <button class="btn btn-custom-icon dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(1)">Januari</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(2)">Februari</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(3)">Maret</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(4)">April</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(5)">Mei</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(6)">Juni</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(7)">Juli</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(8)">Agustus</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(9)">September</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(10)">Oktober</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
-                </ul>
+<div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    
+    <div>
+        <h4 class="mb-0">Dashboard Overview</h4>
+        <p class="text-muted small">Ringkasan cepat dan titik aksi untuk aset perusahaan Anda.</p>
+    </div>
+
+    <div class="ms-auto search-container">
+        <form action="<?= base_url('aset') ?>" method="get">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-lg" name="keyword" placeholder="Cari aset...">
+                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -53,7 +33,6 @@ Dashboard
 <?php if (session()->getFlashdata('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <?= session()->getFlashdata('error') ?>
-
         <?php if ($conflictingId = session()->getFlashdata('conflicting_asset_id')): ?>
             <button type="button" class="btn btn-dark btn-sm ms-3 view-detail" 
                     data-bs-toggle="modal" 
@@ -62,125 +41,242 @@ Dashboard
                 Lihat Aset yang Sudah Ada
             </button>
         <?php endif; ?>
-
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
+<div class="row g-4">
 
-<div class="container-fluid">
-    <div class="row g-4">
-    <div class="col-lg-3 col-md-6">
-        <div class="stat-card shadow-sm blue">
-            <div class="stat-card-icon">
-                <i class="bi bi-wallet2"></i>
+    <div class="col-lg-8 d-flex flex-column">
+        
+        <div class="row g-4">
+            <div class="col-lg-6 col-md-6">
+                <a href="<?= base_url('aset') ?>" class="stat-card-link">
+                    <div class="stat-card shadow-sm blue h-100">
+                        <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
+                        <h6 class="stat-card-title">Total Jumlah Aset</h6>
+                        <h3 class="stat-card-value count-up" data-to="<?= $total_aset ?>"><?= $total_aset ?></h3>
+                        <p class="stat-card-detail">Unit Terdaftar</p>
+                        <span class="stat-card-go">Lihat Detail →</span>
+                    </div>
+                </a>
             </div>
-            <h6 class="stat-card-title">Total Jumlah Aset</h6>
-            <h3 class="stat-card-value count-up" data-to="<?= $total_aset ?>"><?= $total_aset ?></h3>
-            <p class="stat-card-detail">Unit Terdaftar</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="stat-card shadow-sm green">
-            <div class="stat-card-icon">
-                <i class="bi bi-cash-stack"></i>
+            <div class="col-lg-6 col-md-6">
+                <a href="<?= base_url('aset?status=Rusak') ?>" class="stat-card-link">
+                    <div class="stat-card shadow-sm red h-100">
+                        <div class="stat-card-icon"><i class="bi bi-wrench-adjustable"></i></div>
+                        <h6 class="stat-card-title">Aset Rusak</h6>
+                        <h3 class="stat-card-value count-up" data-to="<?= $aset_rusak ?>"><?= $aset_rusak ?></h3>
+                        <p class="stat-card-detail">Unit Perlu Perbaikan</p>
+                        <span class="stat-card-go">Lihat Detail →</span>
+                    </div>
+                </a>
             </div>
-            <h6 class="stat-card-title">Total Nilai Aset</h6>
-            <h3 class="stat-card-value count-up" data-to="<?= $total_nilai_aset ?>">Rp <?= number_format($total_nilai_aset, 0, ',', '.') ?></h3>
-            <p class="stat-card-detail">Berdasarkan Harga Beli</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="stat-card shadow-sm red">
-            <div class="stat-card-icon">
-                <i class="bi bi-wrench-adjustable"></i>
+            <div class="col-lg-6 col-md-6">
+                <a href="<?= base_url('aset') ?>" class="stat-card-link">
+                    <div class="stat-card shadow-sm green h-100">
+                        <div class="stat-card-icon"><i class="bi bi-cash-stack"></i></div>
+                        <h6 class="stat-card-title">Total Nilai Aset</h6>
+                        <h3 class="stat-card-value count-up" data-to="<?= $total_nilai_aset ?>">Rp <?= number_format($total_nilai_aset, 0, ',', '.') ?></h3>
+                        <p class="stat-card-detail">Berdasarkan Harga Beli</p>
+                        <span class="stat-card-go">Lihat Detail →</span>
+                    </div>
+                </a>
             </div>
-            <h6 class="stat-card-title">Aset Rusak</h6>
-            <h3 class="stat-card-value count-up" data-to="<?= $aset_rusak ?>"><?= $aset_rusak ?></h3>
-            <p class="stat-card-detail">Unit Perlu Perbaikan</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="stat-card shadow-sm yellow">
-            <div class="stat-card-icon">
-                <i class="bi bi-bell-fill"></i>
+            <div class="col-lg-6 col-md-6">
+                <a href="<?= base_url('requests') ?>" class="stat-card-link">
+                    <div class="stat-card shadow-sm yellow h-100">
+                        <div class="stat-card-icon"><i class="bi bi-bell-fill"></i></div>
+                        <h6 class="stat-card-title">Permintaan Pending</h6>
+                        <h3 class="stat-card-value count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?></h3>
+                        <p class="stat-card-detail">Menunggu Persetujuan</p>
+                        <span class="stat-card-go">Proses Sekarang →</span>
+                    </div>
+                </a>
             </div>
-            <h6 class="stat-card-title">Permintaan Pending</h6>
-            <h3 class="stat-card-value count-up" data-to="<?= $pending_requests ?>"><?= $pending_requests ?></h3>
-            <p class="stat-card-detail">Menunggu Persetujuan</p>
         </div>
+
+        <div class="table-container shadow-sm mt-4 flex-grow-1">
+            <ul class="nav nav-tabs" id="chartTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">Distribusi Kategori</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>
+                </li>
+            </ul>
+            <div class="tab-content pt-3">
+                <div class="tab-pane fade show active" id="distribusi" role="tabpanel">
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="assetCategoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="status" role="tabpanel">
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="assetStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <div class="col-lg-4 d-flex flex-column">
+        
+        <div class="d-grid gap-2 mb-4">
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#tambahAsetModal"><i class="bi bi-plus-circle me-2"></i> Tambah Aset Baru</button>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-lg dropdown-toggle w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan Bulanan
+                </button>
+                <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(1)">Januari</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(2)">Februari</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(3)">Maret</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(4)">April</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(5)">Mei</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(6)">Juni</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(7)">Juli</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(8)">Agustus</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(9)">September</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(10)">Oktober</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="table-container shadow-sm mb-4">
+            <h5 class="mb-3">Aset Perlu Perhatian</h5>
+            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Kode Aset</th>
+                            <th>Status</th>
+                            <th>Verifikasi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($aset_perlu_perhatian)): ?>
+                            <?php foreach ($aset_perlu_perhatian as $aset): ?>
+                                <tr>
+                                    <td>
+                                        <div><?= esc($aset['kode']) ?></div>
+                                        <small class="text-muted"><?= esc($aset['nama_lokasi']) ?></small>
+                                    </td>
+                                    <td>
+                                        <?php if($aset['status'] == 'Rusak'): ?>
+                                            <span class="badge bg-danger">Rusak</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($aset['opname_at']): ?>
+                                            <?= date('d M Y', strtotime($aset['opname_at'])) ?>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning">Belum Pernah</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Lihat & Perbaiki Data">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" class="text-center p-3">Tidak ada aset yang memerlukan perhatian.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-container shadow-sm flex-grow-1">
+            <h5 class="mb-3">Top Penanggung Jawab</h5>
+            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle">
+                     <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th class="text-end">Jumlah Aset</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($daftar_penanggung_jawab)): ?>
+                            <?php foreach ($daftar_penanggung_jawab as $pj): ?>
+                                <tr>
+                                    <td><?= esc($pj['penanggung_jawab']) ?></td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary rounded-pill"><?= esc($pj['jumlah_aset']) ?></span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="2" class="text-center p-3">Belum ada penanggung jawab.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
 </div>
 
-    <div class="row mt-5 g-4">
-        <div class="col-lg-6">
-            <div class="table-container shadow-sm">
-                <h5 class="mb-4">Distribusi Aset (Kategori)</h5>
-                <div class="chart-container">
-                    <canvas id="assetCategoryChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="table-container shadow-sm">
-                <h5 class="mb-4">Status Aset</h5>
-                <div class="chart-container">
-                    <canvas id="assetStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-<div class="container-fluid">
-    <div class="table-container shadow-sm mt-5">
-        <h5 class="mb-4">Aset Terbaru</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th scope="col">KODE</th>
-                        <th scope="col">KATEGORI BARANG</th>
-                        <th scope="col">SUB KATEGORI</th>
-                        <th scope="col">MERK</th>
-                        <th scope="col">TIPE</th> <th scope="col">SERIAL NUMBER</th>
-                        <th scope="col">TAHUN</th>
-                  
-                        <th scope="col">LOKASI</th>
-                        <th scope="col">AKSI</th>
-                    </tr>
-                </thead>
-                <tbody id="asetTableBody">
-                    <?php if (!empty($asets)): ?>
-                        <?php foreach ($asets as $aset): ?>
-                            <tr>
-                                <td><?= esc($aset['kode']) ?></td>
-                                <td><?= esc($aset['nama_kategori']) ?></td>
-                                <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                                <td><?= esc($aset['nama_merk']) ?></td> 
-                                <td><?= esc($aset['nama_tipe']) ?></td> 
-                                <td><?= esc($aset['serial_number']) ?></td>
-                                <td><?= esc($aset['tahun']) ?></td>
-                            
-                                <td><?= esc($aset['nama_lokasi']) ?></td>
-                                <td>
-                                    <button type="button" class="btn btn-info btn-sm view-detail" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#detailAsetModal"
-                                            data-id="<?= $aset['id'] ?>">
-                                        <i class="bi bi-eye-fill"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+<div class="table-container shadow-sm mt-4">
+    <h5 class="mb-4">Aset Terbaru</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">KODE</th>
+                    <th scope="col">KATEGORI BARANG</th>
+                    <th scope="col">SUB KATEGORI</th>
+                    <th scope="col">MERK</th>
+                    <th scope="col">TIPE</th>
+                    <th scope="col">SERIAL NUMBER</th>
+                    <th scope="col">TAHUN</th>
+                    <th scope="col">LOKASI</th>
+                    <th scope="col">AKSI</th>
+                </tr>
+            </thead>
+            <tbody id="asetTableBody">
+                <?php if (!empty($asets)): ?>
+                    <?php foreach ($asets as $aset): ?>
                         <tr>
-                            <td colspan="9" class="text-center">Belum ada data aset.</td>
+                            <td><?= esc($aset['kode']) ?></td>
+                            <td><?= esc($aset['nama_kategori']) ?></td>
+                            <td><?= esc($aset['nama_sub_kategori']) ?></td>
+                            <td><?= esc($aset['nama_merk']) ?></td> 
+                            <td><?= esc($aset['nama_tipe']) ?></td> 
+                            <td><?= esc($aset['serial_number']) ?></td>
+                            <td><?= esc($aset['tahun']) ?></td>
+                            <td><?= esc($aset['nama_lokasi']) ?></td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm view-detail" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#detailAsetModal"
+                                        data-id="<?= $aset['id'] ?>">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </td>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="9" class="text-center">Belum ada data aset.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -495,6 +591,7 @@ Dashboard
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'bottom',
@@ -531,6 +628,7 @@ var assetStatusChart = new Chart(ctx2, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
             y: {
                 beginAtZero: true,
