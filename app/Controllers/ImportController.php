@@ -465,7 +465,6 @@ public function downloadTemplate()
         $spreadsheet->setActiveSheetIndex(0);
 
         // Simpan dan kirim file untuk diunduh
-        $writer = new Xlsx($spreadsheet);
         $writer = new XlsxWriter($spreadsheet);
         $filename = 'template_import_aset_' . date('Y-m-d') . '.xlsx';
         
