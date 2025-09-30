@@ -20,10 +20,7 @@ Edit Aset
                 <label for="kode" class="form-label">Kode Aset</label>
                 <input type="text" class="form-control" id="kode" value="<?= esc($aset['kode']) ?>" readonly style="background-color: #e9ecef;">
             </div>
-            <div class="col-md-6">
-                <label for="merk" class="form-label">Merk</label>
-                <input type="text" class="form-control" id="merk" value="<?= esc($aset['merk']) ?>" readonly style="background-color: #e9ecef;">
-            </div>
+            
             <div class="col-md-6">
                 <label for="merk_id" class="form-label">Merk</label>
                 <select class="form-select" id="merk_id" name="merk_id" required>
