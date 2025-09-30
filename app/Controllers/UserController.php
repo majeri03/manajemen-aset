@@ -10,13 +10,43 @@ class UserController extends BaseController
     public function index()
     {
         $userModel = new UserModel();
+        $db = \Config\Database::connect();
+
+        $soModeSetting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+
         $data = [
-            'title' => 'Manajemen Pengguna',
-            'users' => $userModel->findAll(),
+            'title'   => 'Manajemen Pengguna',
+            'users'   => $userModel->findAll(),
+            'so_mode' => $soModeSetting ? $soModeSetting->setting_value : 'off', 
         ];
         return view('user/index', $data);
     }
+    public function toggleSoMode()
+    {
+        $db = \Config\Database::connect();
+        $newStatus = $this->request->getPost('status');
 
+        if (in_array($newStatus, ['on', 'off'])) {
+            $db->table('settings')->where('setting_key', 'stock_opname_mode')->update(['setting_value' => $newStatus]);
+            return $this->response->setJSON(['success' => true, 'message' => 'Mode Stock Opname berhasil diubah.']);
+        }
+        return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
+    }
+
+    public function toggleUserSoPermission($userId)
+    {
+        $userModel = new UserModel();
+        $permission = $this->request->getPost('permission'); // Akan bernilai 'true' atau 'false' dari JS
+
+        $data = [
+            'can_perform_so' => ($permission === 'true') ? 1 : 0
+        ];
+
+        if ($userModel->update($userId, $data)) {
+            return $this->response->setJSON(['success' => true, 'message' => 'Izin pengguna berhasil diubah.']);
+        }
+        return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengubah izin pengguna.']);
+    }
     public function create()
     {
         $data = [

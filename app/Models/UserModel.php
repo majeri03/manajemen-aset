@@ -21,7 +21,8 @@ class UserModel extends Model
         'password_hash',
         'password',
         'role',
-        'status'
+        'status',
+        'can_perform_so',
     ];
 
     protected $useTimestamps = true;

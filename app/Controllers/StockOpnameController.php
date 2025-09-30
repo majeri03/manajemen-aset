@@ -4,18 +4,95 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\AsetModel;
+use App\Models\KategoriModel; // Tambahkan ini
 use App\Models\LokasiModel;
 
 class StockOpnameController extends BaseController
 {
+    /**
+     * Menampilkan halaman riwayat stock opname dengan filter.
+     */
+    public function index()
+    {
+        $db = \Config\Database::connect();
+        $kategoriModel = new KategoriModel();
+
+        $selectedKategori = $this->request->getGet('kategori_id');
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
+
+        $history = [];
+
+        if ($this->request->getGet('filter')) { // Hanya query jika tombol filter ditekan
+            $builder = $db->table('stock_opname_history as soh')
+                ->select('
+                    soh.opname_at, soh.catatan, u.full_name, soh.ada_perubahan, 
+                    a.kode as kode_aset, 
+                    sk.nama_sub_kategori,
+                    m.nama_merk,
+                    t.nama_tipe,
+                    l.nama_lokasi
+                ')
+                ->join('users as u', 'u.id = soh.user_id')
+                ->join('aset as a', 'a.id = soh.aset_id')
+                ->join('sub_kategori as sk', 'sk.id = a.sub_kategori_id', 'left')
+                ->join('merk as m', 'm.id = a.merk_id', 'left')
+                ->join('tipe as t', 't.id = a.tipe_id', 'left')
+                ->join('lokasi as l', 'l.id = a.lokasi_id', 'left')
+                ->orderBy('soh.opname_at', 'DESC');
+
+            if ($selectedKategori) {
+                $builder->where('a.kategori_id', $selectedKategori);
+            }
+            if ($startDate && $endDate) {
+                $builder->where('soh.opname_at >=', $startDate . ' 00:00:00');
+                $builder->where('soh.opname_at <=', $endDate . ' 23:59:59');
+            }
+
+            $history = $builder->get()->getResultArray();
+        }
+
+        $data = [
+            'title'        => 'Riwayat Stock Opname',
+            'kategori_list'=> $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll(),
+            'history'      => $history,
+            'filters'      => [
+                'kategori_id' => $selectedKategori,
+                'start_date'  => $startDate,
+                'end_date'    => $endDate,
+            ]
+        ];
+
+        return view('stock_opname/index', $data);
+    }
+
     /**
      * Menampilkan form untuk verifikasi/stock opname aset.
      * URL: /stockopname/aset/{id}
      */
     public function view($asetId)
     {
+        $db = \Config\Database::connect();
+        $userModel = new \App\Models\UserModel(); // Panggil UserModel
+
+        // Cek 1: Apakah mode SO aktif secara global?
+        $setting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+        if (!$setting || $setting->setting_value !== 'on') {
+            return view('stock_opname/inactive', ['title' => 'Akses Ditolak']);
+        }
+
+        // Cek 2: Apakah pengguna yang login punya izin?
+        $currentUser = $userModel->find(session()->get('user_id'));
+        if (!$currentUser || !$currentUser->can_perform_so) {
+            return view('stock_opname/inactive', [
+                'title' => 'Akses Ditolak',
+                'message' => 'Anda tidak memiliki izin untuk melakukan Stock Opname. Silakan hubungi administrator.'
+            ]);
+        }
+
+        // --- Jika semua pengecekan lolos, lanjutkan seperti biasa ---
         $asetModel = new AsetModel();
-        
+
         $aset = $asetModel
             ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
@@ -48,20 +125,17 @@ class StockOpnameController extends BaseController
         $asetModel = new AsetModel();
         $db = \Config\Database::connect();
 
-        // 1. Ambil data aset asli dari database
         $asetAsli = $asetModel->find($asetId);
         if (!$asetAsli) {
             return redirect()->to('/dashboard')->with('error', 'Aset tidak ditemukan.');
         }
 
-        // 2. Ambil data yang dikirim dari form
         $dataForm = [
             'lokasi_id'  => $this->request->getPost('lokasi_id'),
             'status'     => $this->request->getPost('status'),
             'keterangan' => $this->request->getPost('keterangan'),
         ];
 
-        // 3. Bandingkan data asli dengan data form untuk mencari perubahan
         $perubahan = [];
         if ($asetAsli['lokasi_id'] != $dataForm['lokasi_id']) {
             $perubahan['lokasi_id'] = $dataForm['lokasi_id'];
@@ -75,7 +149,6 @@ class StockOpnameController extends BaseController
         
         $adaPerubahan = !empty($perubahan);
 
-        // 4. Simpan ke tabel riwayat stock opname
         $historyData = [
             'aset_id'       => $asetId,
             'user_id'       => session()->get('user_id'),
@@ -85,7 +158,6 @@ class StockOpnameController extends BaseController
         ];
         
         if ($adaPerubahan) {
-            // Simpan data sebelum dan sesudah HANYA jika ada perubahan
             $historyData['data_sebelum'] = json_encode([
                 'lokasi_id'  => $asetAsli['lokasi_id'],
                 'status'     => $asetAsli['status'],
@@ -96,7 +168,6 @@ class StockOpnameController extends BaseController
 
         $db->table('stock_opname_history')->insert($historyData);
 
-        // 5. Jika ada perubahan, simpan juga ke tabel request
         if ($adaPerubahan) {
             $requestData = [
                 'aset_id'       => $asetId,
@@ -108,11 +179,88 @@ class StockOpnameController extends BaseController
             $db->table('aset_update_requests')->insert($requestData);
         }
 
-        // 6. Beri notifikasi ke pengguna
         $pesan = $adaPerubahan 
             ? 'Verifikasi berhasil. Usulan perubahan Anda telah diajukan untuk persetujuan.'
             : 'Aset berhasil diverifikasi tanpa ada perubahan.';
 
         return redirect()->to('/dashboard')->with('success', $pesan);
+    }
+    public function export()
+    {
+        $db = \Config\Database::connect();
+
+        $selectedKategori = $this->request->getGet('kategori_id');
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
+
+        $builder = $db->table('stock_opname_history as soh')
+            ->select('
+                a.kode as kode_aset, 
+                sk.nama_sub_kategori, 
+                m.nama_merk,
+                t.nama_tipe,
+                l.nama_lokasi,
+                u.full_name, 
+                soh.opname_at, 
+                soh.ada_perubahan, 
+                soh.catatan
+            ')
+            ->join('users as u', 'u.id = soh.user_id')
+            ->join('aset as a', 'a.id = soh.aset_id')
+            ->join('sub_kategori as sk', 'sk.id = a.sub_kategori_id', 'left')
+            ->join('merk as m', 'm.id = a.merk_id', 'left')
+            ->join('tipe as t', 't.id = a.tipe_id', 'left')
+            ->join('lokasi as l', 'l.id = a.lokasi_id', 'left')
+            ->orderBy('soh.opname_at', 'DESC');
+
+        if ($selectedKategori) {
+            $builder->where('a.kategori_id', $selectedKategori);
+        }
+        if ($startDate && $endDate) {
+            $builder->where('soh.opname_at >=', $startDate . ' 00:00:00');
+            $builder->where('soh.opname_at <=', $endDate . ' 23:59:59');
+        }
+
+        $history = $builder->get()->getResultArray();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'Kode Aset');
+        $sheet->setCellValue('B1', 'Sub Kategori');
+        $sheet->setCellValue('C1', 'Merk');
+        $sheet->setCellValue('D1', 'Tipe');
+        $sheet->setCellValue('E1', 'Lokasi Terakhir');
+        $sheet->setCellValue('F1', 'Diverifikasi Oleh');
+        $sheet->setCellValue('G1', 'Tanggal Verifikasi');
+        $sheet->setCellValue('H1', 'Status Verifikasi');
+        $sheet->setCellValue('I1', 'Catatan');
+
+        $row = 2;
+        foreach ($history as $item) {
+            $sheet->setCellValue('A' . $row, $item['kode_aset']);
+            $sheet->setCellValue('B' . $row, $item['nama_sub_kategori']);
+            $sheet->setCellValue('C' . $row, $item['nama_merk']);
+            $sheet->setCellValue('D' . $row, $item['nama_tipe']);
+            $sheet->setCellValue('E' . $row, $item['nama_lokasi']);
+            $sheet->setCellValue('F' . $row, $item['full_name']);
+            $sheet->setCellValue('G' . $row, date('d M Y H:i', strtotime($item['opname_at'])));
+            $sheet->setCellValue('H' . $row, $item['ada_perubahan'] ? 'Ada Usulan Perubahan' : 'Data Sesuai');
+            $sheet->setCellValue('I' . $row, $item['catatan']);
+            $row++;
+        }
+
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'laporan_stock_opname_' . date('Ymd') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit();
     }
 }
