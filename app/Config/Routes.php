@@ -27,8 +27,10 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
     $routes->get('aset/laporan/export', 'AsetController::export');
     $routes->get('aset/stockopname_history/(:num)', 'AsetController::getStockOpnameHistory/$1');
+    $routes->get('aset/barcodes', 'AsetController::barcodes');
     
     $routes->resource('aset', ['controller' => 'AsetController']);
+
     // Permintaan Perubahan Aset
     $routes->get('requests/new/(:num)', 'RequestController::newRequest/$1');
     $routes->get('requests/approve/(:num)', 'RequestController::approve/$1');
@@ -91,7 +93,6 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('user/delete/(:num)', 'UserController::delete/$1');
 
     //rute stockopname
-    
     $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
     $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
 });
