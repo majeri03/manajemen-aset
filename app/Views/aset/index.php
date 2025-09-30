@@ -232,96 +232,98 @@ Data Aset
 
 
 <div class="modal fade" id="tambahAsetModal" tabindex="-1" aria-labelledby="tambahAsetModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tambahAsetModalLabel">Tambah Aset Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-            <form action="<?= base_url('aset') ?>" method="post">
-                <?= csrf_field() ?>
-                <input type="hidden" name="redirect_to" value="aset">
-                <div class="mb-3">
-                    <label for="kategori_id-tambah" class="form-label">Kategori Barang</label>
-                    <select class="form-select" id="kategori_id-tambah" name="kategori_id" required>
-                        <option value="">Pilih Kategori</option>
-                        <?php foreach ($kategori_list as $kategori): ?>
-                            <option value="<?= $kategori['id'] ?>"><?= $kategori['nama_kategori'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="sub_kategori_id-tambah" class="form-label">Sub Kategori</label>
-                    <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled onchange="generateKodeAset();">
-                        <option value="">Pilih Sub Kategori</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="merk_id-tambah" class="form-label">Merk</label>
-                    <select class="form-select" id="merk_id-tambah" name="merk_id" required onchange="generateKodeAset();">
-                        <option value="">Pilih Merk</option>
-                        <?php foreach ($merk_list as $merk): ?>
-                            <option value="<?= $merk['id'] ?>"><?= esc($merk['nama_merk']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="tipe_id-tambah" class="form-label">Tipe</label>
-                    <select class="form-select" id="tipe_id-tambah" name="tipe_id" required disabled>
-                        <option value="">Pilih Merk Dahulu</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="serial_number-tambah" class="form-label">Serial Number</label>
-                    <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
-                </div>
-                <div class="mb-3">
-                    <label for="tahun-tambah" class="form-label">Tahun</label>
-                    <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
-                </div>
-                <div class="mb-3">
-                    <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
-                    <input type="number" class="form-control" id="harga_beli-tambah" name="harga_beli" placeholder="Contoh: 1500000">
-                </div>
-                <div class="mb-3">
-                    <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
-                    <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: PT. JAYA ABADI" oninput="generateKodeAset();">
-                </div>
-                <div class="mb-3">
-                    <label for="status-tambah" class="form-label">Status Aset</label>
-                    <select class="form-select" id="status-tambah" name="status" required>
-                        <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
-                        <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
-                        <option value="Rusak">Rusak</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="penanggung_jawab-tambah" class="form-label">Penanggung Jawab</label>
-                    <input type="text" class="form-control" id="penanggung_jawab-tambah" name="penanggung_jawab" oninput="this.value = this.value.toUpperCase();">
-                </div>
-                <div class="mb-3">
-                    <label for="lokasi-tambah" class="form-label">Lokasi</label>
-                    <select class="form-select" id="lokasi-tambah" name="lokasi_id" required>
-                        <option value="">Pilih Lokasi</option>
-                        <?php foreach ($lokasi_list as $lokasi): ?>
-                            <option value="<?= $lokasi['id'] ?>"><?= esc($lokasi['nama_lokasi']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="keterangan-tambah" class="form-label">Keterangan</label>
-                    <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="kode-tambah" class="form-label">Kode Aset (Otomatis)</label>
-                    <input type="text" class="form-control" id="kode-tambah" name="kode" readonly style="background-color: #e9ecef;">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Aset</button>
-                </div>
-            </form>
+                <form action="<?= base_url('aset') ?>" method="post">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="redirect_to" value="dashboard">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="kategori_id-tambah" class="form-label">Kategori Barang</label>
+                            <select class="form-select" id="kategori_id-tambah" name="kategori_id" required>
+                                <option value="">Pilih Kategori</option>
+                                <?php foreach ($kategori_list as $kategori): ?>
+                                    <option value="<?= $kategori['id'] ?>"><?= $kategori['nama_kategori'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sub_kategori_id-tambah" class="form-label">Sub Kategori</label>
+                            <select class="form-select" id="sub_kategori_id-tambah" name="sub_kategori_id" required disabled onchange="generateKodeAset();">
+                                <option value="">Pilih Sub Kategori</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="merk_id-tambah" class="form-label">Merk</label>
+                            <select class="form-select" id="merk_id-tambah" name="merk_id" required onchange="generateKodeAset();">
+                                <option value="">Pilih Merk</option>
+                                <?php foreach ($merk_list as $merk): ?>
+                                    <option value="<?= $merk['id'] ?>"><?= esc($merk['nama_merk']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipe_id-tambah" class="form-label">Tipe</label>
+                            <select class="form-select" id="tipe_id-tambah" name="tipe_id" required disabled>
+                                <option value="">Pilih Merk Dahulu</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="serial_number-tambah" class="form-label">Serial Number</label>
+                            <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tahun-tambah" class="form-label">Tahun</label>
+                            <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
+                            <input type="number" class="form-control" id="harga_beli-tambah" name="harga_beli" placeholder="Contoh: 1500000">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
+                            <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: BANDAR INDONESIA" oninput="generateKodeAset();">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status-tambah" class="form-label">Status Aset</label>
+                            <select class="form-select" id="status-tambah" name="status" required>
+                                <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
+                                <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
+                                <option value="Rusak">Rusak</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="penanggung_jawab-tambah" class="form-label">Penanggung Jawab</label>
+                            <input type="text" class="form-control" id="penanggung_jawab-tambah" name="penanggung_jawab" oninput="this.value = this.value.toUpperCase();">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lokasi-tambah" class="form-label">Lokasi</label>
+                            <select class="form-select" id="lokasi-tambah" name="lokasi_id" required>
+                                <option value="">Pilih Lokasi</option>
+                                <?php foreach ($lokasi_list as $lokasi): ?>
+                                    <option value="<?= $lokasi['id'] ?>"><?= esc($lokasi['nama_lokasi']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="kode-tambah" class="form-label">Kode Aset (Otomatis)</label>
+                            <input type="text" class="form-control" id="kode-tambah" name="kode" readonly style="background-color: #e9ecef;">
+                        </div>
+                        <div class="col-12">
+                            <label for="keterangan-tambah" class="form-label">Keterangan</label>
+                            <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer mt-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Aset</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
