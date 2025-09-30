@@ -238,13 +238,12 @@ Dashboard
             <thead>
                 <tr>
                     <th scope="col">KODE</th>
-                    <th scope="col">KATEGORI BARANG</th>
                     <th scope="col">SUB KATEGORI</th>
                     <th scope="col">MERK</th>
-                    <th scope="col">TIPE</th>
-                    <th scope="col">SERIAL NUMBER</th>
-                    <th scope="col">TAHUN</th>
+                    <th scope="col" class="d-none d-lg-table-cell">SERIAL NUMBER</th>
+                    <th scope="col" class="d-none d-lg-table-cell">PENANGGUNG JAWAB</th>
                     <th scope="col">LOKASI</th>
+                    <th scope="col">STATUS</th>
                     <th scope="col">AKSI</th>
                 </tr>
             </thead>
@@ -252,14 +251,14 @@ Dashboard
                 <?php if (!empty($asets)): ?>
                     <?php foreach ($asets as $aset): ?>
                         <tr>
-                            <td><?= esc($aset['kode']) ?></td>
-                            <td><?= esc($aset['nama_kategori']) ?></td>
-                            <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                            <td><?= esc($aset['nama_merk']) ?></td> 
-                            <td><?= esc($aset['nama_tipe']) ?></td> 
-                            <td><?= esc($aset['serial_number']) ?></td>
-                            <td><?= esc($aset['tahun']) ?></td>
-                            <td><?= esc($aset['nama_lokasi']) ?></td>
+                                <td><?= esc($aset['kode']) ?></td>
+                                <td><?= esc($aset['nama_sub_kategori']) ?></td>
+                                <td><?= esc($aset['nama_merk']) ?></td>
+                                <td class="d-none d-lg-table-cell"><?= esc($aset['serial_number']) ?></td>
+                                <td class="d-none d-lg-table-cell"><?= esc($aset['penanggung_jawab']) ?></td>
+                                <td><?= esc($aset['nama_lokasi']) ?></td>
+                                <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
+                                <td>
                             <td>
                                 <button type="button" class="btn btn-info btn-sm view-detail" 
                                         data-bs-toggle="modal" 
