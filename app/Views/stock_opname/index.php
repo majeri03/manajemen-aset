@@ -13,7 +13,7 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form action="<?= base_url('stockopname') ?>" method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="kategori_id" class="form-label">Kategori Aset</label>
                 <select name="kategori_id" id="kategori_id" class="form-select" required>
                     <option value="">-- Pilih Kategori --</option>
@@ -24,15 +24,15 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="start_date" class="form-label">Dari Tanggal</label>
                 <input type="date" name="start_date" id="start_date" class="form-control" value="<?= esc($filters['start_date'] ?? '') ?>">
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="end_date" class="form-label">Sampai Tanggal</label>
                 <input type="date" name="end_date" id="end_date" class="form-control" value="<?= esc($filters['end_date'] ?? '') ?>">
             </div>
-            <div class="col-md-2">
+            <div class="col-12 col-md-2">
                 <button type="submit" name="filter" value="true" class="btn btn-primary w-100">Tampilkan Data</button>
             </div>
         </form>

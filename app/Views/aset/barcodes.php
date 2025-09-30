@@ -54,7 +54,7 @@
 <div class="card shadow-sm mb-4 filter-card">
     <div class="card-body">
         <form action="<?= base_url('aset/barcodes') ?>" method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="filter-lokasi" class="form-label">Lokasi</label>
                 <select name="lokasi_id" id="filter-lokasi" class="form-select">
                     <option value="">SEMUA LOKASI</option>
@@ -65,7 +65,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="filter-penanggung-jawab" class="form-label">Penanggung Jawab</label>
                 <select name="penanggung_jawab" id="filter-penanggung-jawab" class="form-select">
                     <option value="">SEMUA</option>
@@ -76,7 +76,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="filter-merk" class="form-label">Merk</label>
                 <select name="merk_id" id="filter-merk" class="form-select">
                     <option value="">SEMUA MERK</option>
@@ -87,22 +87,21 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label for="tahun" class="form-label">Tahun Beli</label>
                 <input type="number" name="tahun" id="tahun" class="form-control" placeholder="Contoh: 2024" value="<?= esc($filters['tahun'] ?? '') ?>">
             </div>
-            <div class="col-md-12">
+            <div class="col-12">
                 <label for="keyword" class="form-label">Kata Kunci</label>
                 <input type="text" name="keyword" id="keyword" class="form-control" placeholder="CARI KODE, SUB KATEGORI, MERK, TIPE, PENANGGUNG JAWAB..." value="<?= esc($filters['keyword'] ?? '') ?>" oninput="this.value = this.value.toUpperCase()">
             </div>
-            <div class="col-md-12 d-flex">
+            <div class="col-12 d-flex">
                 <button type="submit" class="btn btn-primary flex-grow-1 me-2">FILTER</button>
                 <a href="<?= base_url('aset/barcodes') ?>" class="btn btn-secondary flex-grow-1">RESET</a>
             </div>
         </form>
     </div>
 </div>
-
 <div class="table-container shadow-sm">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <span>Menampilkan <strong><?= count($asets) ?></strong> hasil.</span>

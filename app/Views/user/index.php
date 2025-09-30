@@ -41,7 +41,7 @@
             <thead>
                 <tr>
                     <th>Nama Lengkap</th>
-                    <th>Email</th>
+                    <th class="d-none d-md-table-cell">Email</th>
                     <th>Role</th>
                     <th class="text-center">Izin Stock Opname</th>
                     <th>Aksi</th>
@@ -52,7 +52,7 @@
                     <?php foreach ($users as $user): ?>
                         <tr>
                             <td><?= esc($user->full_name) ?></td>
-                            <td><?= esc($user->email) ?></td>
+                            <td class="d-none d-md-table-cell"><?= esc($user->email) ?></td>
                             <td><span class="badge bg-info"><?= esc(ucfirst($user->role)) ?></span></td>
                             <td class="text-center">
                                 <div class="form-check form-switch d-inline-block">
