@@ -385,97 +385,140 @@ public function deleteMasterData()
     // Lokasi: app/Controllers/ImportController.php
 
 public function downloadTemplate()
-    {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Data Aset');
+{
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setTitle('Data Aset');
 
-        // 1. Ambil data master dari database
-        $kategoriList = array_column((new KategoriModel())->orderBy('nama_kategori', 'ASC')->findAll(), 'nama_kategori');
-        $lokasiList = array_column((new LokasiModel())->orderBy('nama_lokasi', 'ASC')->findAll(), 'nama_lokasi');
-        $statusList = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak'];
+    // 1. Ambil semua data master dari database
+    $kategoriModel = new KategoriModel();
+    $subKategoriModel = new SubKategoriModel();
+    $merkModel = new MerkModel();
+    $tipeModel = new TipeModel();
+    $lokasiModel = new LokasiModel();
 
-        // =============================================================
-        // 2. BUAT SHEET BARU YANG TERSEMBUNYI UNTUK DATA MASTER
-        // =============================================================
-        $masterSheet = new Worksheet($spreadsheet, 'MasterData');
-        $spreadsheet->addSheet($masterSheet);
+    $kategoriList = $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll();
+    $merkList = $merkModel->orderBy('nama_merk', 'ASC')->findAll();
+    $lokasiList = $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll();
+    $statusList = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak'];
 
-        // Isi sheet master dengan data
-        foreach ($kategoriList as $index => $value) {
-            $masterSheet->setCellValue('A' . ($index + 1), $value);
-        }
-        foreach ($lokasiList as $index => $value) {
-            $masterSheet->setCellValue('B' . ($index + 1), $value);
-        }
-        foreach ($statusList as $index => $value) {
-            $masterSheet->setCellValue('C' . ($index + 1), $value);
-        }
+    // 2. Kelompokkan data untuk dropdown dinamis (INI BAGIAN YANG DIPERBAIKI)
+    $subKategoriByKategori = $subKategoriModel->select('kategori.nama_kategori, sub_kategori.nama_sub_kategori')
+        ->join('kategori', 'kategori.id = sub_kategori.kategori_id')
+        ->orderBy('kategori.nama_kategori, sub_kategori.nama_sub_kategori')
+        ->findAll();
 
-        // Sembunyikan sheet master ini dari pengguna
-        $masterSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+    $tipeByMerk = $tipeModel->select('merk.nama_merk, tipe.nama_tipe')
+        ->join('merk', 'merk.id = tipe.merk_id')
+        ->orderBy('merk.nama_merk, tipe.nama_tipe')
+        ->findAll();
 
-
-        // 3. Tulis header kolom di sheet utama
-        $headers = [
-            'A1' => 'KATEGORI', 'B1' => 'SUB KATEGORI', 'C1' => 'MERK', 'D1' => 'TIPE', 
-            'E1' => 'SERIAL NUMBER', 'F1' => 'ENTITAS PEMBELIAN', 'G1' => 'TAHUN', 'H1' => 'HARGA BELI', 
-            'I1' => 'PENANGGUNG JAWAB', 'J1' => 'LOKASI', 'K1' => 'STATUS', 'L1' => 'KETERANGAN',
-        ];
-        foreach ($headers as $cell => $value) {
-            $sheet->setCellValue($cell, $value);
-        }
-
-        // =============================================================
-        // 4. TERAPKAN VALIDASI DROPDOWN DENGAN REFERENSI KE SHEET MASTER (VERSI PERBAIKAN)
-        // =============================================================
-        $rowCount = 1001; // Jumlah baris yang ingin diberi dropdown
-
-        // Dropdown untuk Kategori (Kolom A)
-        $validationKategori = $sheet->getCell('A2')->getDataValidation();
-        $validationKategori->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
-        $validationKategori->setFormula1('MasterData!$A$1:$A$' . count($kategoriList));
-        $sheet->setDataValidation("A2:A{$rowCount}", $validationKategori); // <-- PERBAIKAN DI SINI
-
-        // Dropdown untuk Lokasi (Kolom J)
-        $validationLokasi = $sheet->getCell('J2')->getDataValidation();
-        $validationLokasi->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
-        $validationLokasi->setFormula1('MasterData!$B$1:$B$' . count($lokasiList));
-        $sheet->setDataValidation("J2:J{$rowCount}", $validationLokasi); // <-- PERBAIKAN DI SINI
-
-        // Dropdown untuk Status (Kolom K)
-        $validationStatus = $sheet->getCell('K2')->getDataValidation();
-        $validationStatus->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
-        $validationStatus->setFormula1('MasterData!$C$1:$C$' . count($statusList));
-        $sheet->setDataValidation("K2:K{$rowCount}", $validationStatus); // <-- PERBAIKAN DI SINI
-
-
-        // Styling, AutoFilter, dan Auto-size
-        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
-        $styleArray = [
-            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF003481']]
-        ];
-        $sheet->getStyle('A1:L1')->applyFromArray($styleArray);
-        foreach (range('A', 'L') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-        
-        // Atur sheet aktif kembali ke sheet utama sebelum menyimpan
-        $spreadsheet->setActiveSheetIndex(0);
-
-        // Simpan dan kirim file untuk diunduh
-        $writer = new XlsxWriter($spreadsheet);
-        $filename = 'template_import_aset_' . date('Y-m-d') . '.xlsx';
-        
-        $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $this->response->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"');
-        
-        ob_start();
-        $writer->save('php://output');
-        $fileData = ob_get_contents();
-        ob_end_clean();
-
-        return $this->response->setBody($fileData);
+    $groupedSubKategori = [];
+    foreach ($subKategoriByKategori as $item) {
+        $cleanName = preg_replace('/[^A-Za-z0-9_]/', '_', $item['nama_kategori']);
+        $groupedSubKategori[$cleanName][] = $item['nama_sub_kategori'];
     }
+    $groupedTipe = [];
+    foreach ($tipeByMerk as $item) {
+        $cleanName = preg_replace('/[^A-Za-z0-9_]/', '_', $item['nama_merk']);
+        $groupedTipe[$cleanName][] = $item['nama_tipe'];
+    }
+
+    // 3. Buat dan isi sheet MasterData (menggunakan metode foreach yang stabil)
+    $masterSheet = new Worksheet($spreadsheet, 'MasterData');
+    $spreadsheet->addSheet($masterSheet);
+
+    foreach ($kategoriList as $index => $item) {
+        $masterSheet->setCellValue('A' . ($index + 1), $item['nama_kategori']);
+    }
+    foreach ($merkList as $index => $item) {
+        $masterSheet->setCellValue('B' . ($index + 1), $item['nama_merk']);
+    }
+    foreach ($lokasiList as $index => $item) {
+        $masterSheet->setCellValue('C' . ($index + 1), $item['nama_lokasi']);
+    }
+    foreach ($statusList as $index => $item) {
+        $masterSheet->setCellValue('D' . ($index + 1), $item);
+    }
+    
+    $colIndex = 5; // Kolom E
+    foreach ($groupedSubKategori as $kategoriNama => $subKategoris) {
+        foreach($subKategoris as $rowIndex => $subValue) {
+            $masterSheet->setCellValue(chr(64 + $colIndex) . ($rowIndex + 1), $subValue);
+        }
+        $spreadsheet->addNamedRange(
+            new \PhpOffice\PhpSpreadsheet\NamedRange($kategoriNama, $masterSheet, '$'.chr(64 + $colIndex).'$1:$'.chr(64 + $colIndex).'$'.count($subKategoris))
+        );
+        $colIndex++;
+    }
+    foreach ($groupedTipe as $merkNama => $tipes) {
+        foreach($tipes as $rowIndex => $tipeValue) {
+            $masterSheet->setCellValue(chr(64 + $colIndex) . ($rowIndex + 1), $tipeValue);
+        }
+        $spreadsheet->addNamedRange(
+            new \PhpOffice\PhpSpreadsheet\NamedRange($merkNama, $masterSheet, '$'.chr(64 + $colIndex).'$1:$'.chr(64 + $colIndex).'$'.count($tipes))
+        );
+        $colIndex++;
+    }
+
+    $masterSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+
+    // 4. Tulis header dan terapkan validasi ke semua baris
+    $headers = ['A1'=>'KATEGORI', 'B1'=>'SUB KATEGORI', 'C1'=>'MERK', 'D1'=>'TIPE', 'E1'=>'SERIAL NUMBER', 'F1'=>'ENTITAS PEMBELIAN', 'G1'=>'TAHUN', 'H1'=>'HARGA BELI', 'I1'=>'PENANGGUNG JAWAB', 'J1'=>'LOKASI', 'K1'=>'STATUS', 'L1'=>'KETERANGAN'];
+    foreach ($headers as $cell => $value) { $sheet->setCellValue($cell, $value); }
+
+    $rowCount = 1001;
+
+    $validationKategori = $sheet->getCell('A2')->getDataValidation();
+    $validationKategori->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationKategori->setFormula1('MasterData!$A$1:$A$' . count($kategoriList));
+    $sheet->setDataValidation("A2:A{$rowCount}", $validationKategori);
+
+    $validationSub = $sheet->getCell('B2')->getDataValidation();
+    $validationSub->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationSub->setFormula1('=INDIRECT(SUBSTITUTE(A2," ","_"))');
+    $sheet->setDataValidation("B2:B{$rowCount}", $validationSub);
+
+    $validationMerk = $sheet->getCell('C2')->getDataValidation();
+    $validationMerk->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationMerk->setFormula1('MasterData!$B$1:$B$' . count($merkList));
+    $sheet->setDataValidation("C2:C{$rowCount}", $validationMerk);
+
+    $validationTipe = $sheet->getCell('D2')->getDataValidation();
+    $validationTipe->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationTipe->setFormula1('=INDIRECT(SUBSTITUTE(C2," ","_"))');
+    $sheet->setDataValidation("D2:D{$rowCount}", $validationTipe);
+
+    $validationLokasi = $sheet->getCell('J2')->getDataValidation();
+    $validationLokasi->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationLokasi->setFormula1('MasterData!$C$1:$C$' . count($lokasiList));
+    $sheet->setDataValidation("J2:J{$rowCount}", $validationLokasi);
+
+    $validationStatus = $sheet->getCell('K2')->getDataValidation();
+    $validationStatus->setType(DataValidation::TYPE_LIST)->setShowDropDown(true);
+    $validationStatus->setFormula1('MasterData!$D$1:$D$' . count($statusList));
+    $sheet->setDataValidation("K2:K{$rowCount}", $validationStatus);
+
+    // Styling
+    $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+    $styleArray = ['font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF003481']]];
+    $sheet->getStyle('A1:L1')->applyFromArray($styleArray);
+    foreach (range('A', 'L') as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
+    
+    $spreadsheet->setActiveSheetIndex(0);
+
+    // Simpan dan kirim file untuk diunduh
+    $writer = new XlsxWriter($spreadsheet);
+    $filename = 'template_import_aset_' . date('Y-m-d') . '.xlsx';
+    
+    $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $this->response->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"');
+    
+    ob_start();
+    $writer->save('php://output');
+    $fileData = ob_get_contents();
+    ob_end_clean();
+
+    return $this->response->setBody($fileData);
+}
 }
