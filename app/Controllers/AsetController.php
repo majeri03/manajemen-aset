@@ -477,6 +477,8 @@ public function show($id = null)
     public function getHistory($asetId)
     {
         $db = \Config\Database::connect();
+        $lokasiModel = new LokasiModel(); // Inisialisasi model lokasi
+
         $history = $db->table('aset_update_requests as aur')
                         ->select('aur.created_at, aur.proposed_data, u.full_name')
                         ->join('users as u', 'u.id = aur.user_id')
@@ -485,7 +487,27 @@ public function show($id = null)
                         ->orderBy('aur.created_at', 'DESC')
                         ->get()->getResultArray();
 
-        return $this->response->setJSON($history);
+        // Proses data untuk mengubah ID menjadi nama
+        $processedHistory = [];
+        foreach ($history as $item) {
+            $proposed = json_decode($item['proposed_data'], true);
+            $newProposed = [];
+
+            foreach ($proposed as $key => $value) {
+                if ($key === 'lokasi_id') {
+                    // Cari nama lokasi berdasarkan ID
+                    $lokasi = $lokasiModel->find($value);
+                    $newProposed['Lokasi'] = $lokasi ? $lokasi['nama_lokasi'] : 'ID: ' . $value;
+                } else {
+                    // Untuk field lain, cukup rapikan namanya
+                    $newProposed[ucfirst(str_replace('_', ' ', $key))] = $value;
+                }
+            }
+            $item['proposed_data'] = json_encode($newProposed);
+            $processedHistory[] = $item;
+        }
+
+        return $this->response->setJSON($processedHistory);
     }
     
     public function exportBulanan($bulan)

@@ -57,7 +57,11 @@
                     </a>
                     <div class="collapse <?= $operasional_active ? 'show' : '' ?>" id="operasional-submenu">
                         <ul class="nav flex-column ms-3">
-                            <li><a href="<?= base_url('tracking') ?>" class="nav-link submenu-link <?= ($current_page == 'tracking') ? 'active' : '' ?>"><i class="bi bi-geo-alt-fill"></i> <span>Tracking Aset</span></a></li>
+                            <li>
+                                <a href="<?= base_url('stockopname') ?>" class="nav-link <?= ($current_page == 'stockopname') ? 'active' : '' ?>">
+                                    <i class="bi bi-clipboard-check-fill"></i> <span>Stock Opname</span>
+                                </a>
+                            </li>
                             <li>
                                 <a href="<?= base_url('requests') ?>" class="nav-link submenu-link <?= ($current_page == 'requests') ? 'active' : '' ?> d-flex justify-content-between align-items-center">
                                     <span><i class="bi bi-person-check-fill"></i> <span>Permintaan</span></span>

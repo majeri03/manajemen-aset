@@ -39,7 +39,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->resource('requests', ['controller' => 'RequestController']);
     
     // Pelacakan & Laporan
-    $routes->get('tracking', 'TrackingController::index');
+    $routes->get('stockopname', 'StockOpnameController::index');
     $routes->get('laporan', 'LaporanController::index');
     $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
 
@@ -94,5 +94,9 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
     //rute stockopname
     $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
+    $routes->get('stockopname/export', 'StockOpnameController::export');
     $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
+    
+    $routes->post('user/toggle-so-mode', 'UserController::toggleSoMode');
+    $routes->post('user/toggle-so-permission/(:num)', 'UserController::toggleUserSoPermission/$1');
 });
