@@ -96,6 +96,9 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('user/edit/(:num)', 'UserController::edit/$1');
     $routes->post('user/update/(:num)', 'UserController::update/$1');
     $routes->get('user/delete/(:num)', 'UserController::delete/$1');
+    $routes->delete('user/delete/(:num)', 'UserController::delete/$1'); // Menggunakan metode DELETE
+    $routes->post('user/activate/(:num)', 'UserController::activate/$1');
+    $routes->post('user/reset-password/(:num)', 'UserController::resetPassword/$1'); // Rute baru
 
     //rute stockopname
     $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');

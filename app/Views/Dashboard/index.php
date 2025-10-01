@@ -98,11 +98,12 @@ Dashboard
 
         <div class="table-container shadow-sm mt-4 flex-grow-1">
             <ul class="nav nav-tabs" id="chartTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">Tren Aset</button>
-                </li>
+                
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">Distribusi Kategori</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">Tren Aset</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>

@@ -79,7 +79,7 @@
                                 <?php endif; ?>
                             </a>
                         </li>
-                        <li><a href="<?= base_url('laporan') ?>" class="nav-link submenu-link <?= ($current_page == 'laporan') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Laporan"><i class="bi bi-file-earmark-bar-graph"></i> <span>Laporan</span></a></li>
+                        <li><a href="<?= base_url('laporan') ?>" class="nav-link submenu-link <?= ($current_page == 'laporan') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Laporan"><i class="bi bi-file-earmark-bar-graph"></i> <span>Fast Audit</span></a></li>
                     </ul>
                 </li>
             </ul>
