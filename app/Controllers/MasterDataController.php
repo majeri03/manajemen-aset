@@ -61,6 +61,17 @@ class MasterDataController extends BaseController
         return redirect()->to('/master-data')->with('success', 'Kategori baru berhasil ditambahkan.');
     }
 
+    public function updateKategori($id)
+    {
+        $validationRule = "required|is_unique[kategori.nama_kategori,id,{$id}]";
+        if (!$this->validate(['nama_kategori' => $validationRule])) {
+            return redirect()->to('/master-data?tab=kategori')->withInput()->with('error', $this->validator->getError('nama_kategori'));
+        }
+
+        $this->kategoriModel->update($id, ['nama_kategori' => $this->request->getPost('nama_kategori')]);
+        return redirect()->to('/master-data?tab=kategori')->with('success', 'Kategori berhasil diperbarui.');
+    }
+
     public function deleteKategori($id)
     {
         $relatedSubKategoris = $this->subKategoriModel->where('kategori_id', $id)->first();
@@ -71,6 +82,7 @@ class MasterDataController extends BaseController
         $this->kategoriModel->delete($id);
         return redirect()->to('/master-data')->with('success', 'Kategori berhasil dihapus.');
     }
+    
 
     //--------------------------------------------------------------------
     // Metode untuk CRUD Sub Kategori
@@ -102,6 +114,18 @@ class MasterDataController extends BaseController
         return redirect()->to('/master-data')->with('success', 'Sub-kategori berhasil ditambahkan.');
     }
 
+    public function updateSubKategori($id)
+    {
+        // Untuk sub-kategori, kita hanya perlu memastikan namanya tidak kosong.
+        // Validasi is_unique bisa lebih kompleks (unik per kategori induk), jadi kita sederhanakan.
+        if (!$this->validate(['nama_sub_kategori' => 'required'])) {
+            return redirect()->to('/master-data?tab=kategori')->withInput()->with('error', $this->validator->getError('nama_sub_kategori'));
+        }
+
+        $this->subKategoriModel->update($id, ['nama_sub_kategori' => $this->request->getPost('nama_sub_kategori')]);
+        return redirect()->to('/master-data?tab=kategori')->with('success', 'Sub-Kategori berhasil diperbarui.');
+    }
+
     public function deleteSubKategori($id)
     {
         $db = \Config\Database::connect();
@@ -130,6 +154,23 @@ class MasterDataController extends BaseController
 
         return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi baru berhasil ditambahkan.');
     }
+    // app/Controllers/MasterDataController.php
+
+    public function updateLokasi($id)
+    {
+        // Aturan validasi: nama harus diisi dan harus unik, kecuali untuk data ID saat ini
+        $validationRule = "required|is_unique[lokasi.nama_lokasi,id,{$id}]";
+
+        if (!$this->validate(['nama_lokasi' => $validationRule])) {
+            return redirect()->to('/master-data?tab=lokasi')->withInput()->with('error', $this->validator->getError('nama_lokasi'));
+        }
+
+        $this->lokasiModel->update($id, [
+            'nama_lokasi' => $this->request->getPost('nama_lokasi'),
+        ]);
+
+        return redirect()->to('/master-data?tab=lokasi')->with('success', 'Nama lokasi berhasil diperbarui.');
+    }
     
     //--------------------------------------------------------------------
     // Merk & Tipe
@@ -142,6 +183,17 @@ class MasterDataController extends BaseController
         }
         $this->merkModel->save(['nama_merk' => $this->request->getPost('nama_merk')]);
         return redirect()->to('/master-data?tab=merk')->with('success', 'Merk baru berhasil ditambahkan.');
+    }
+
+    public function updateMerk($id)
+    {
+        $validationRule = "required|is_unique[merk.nama_merk,id,{$id}]";
+        if (!$this->validate(['nama_merk' => $validationRule])) {
+            return redirect()->to('/master-data?tab=merk')->withInput()->with('error', $this->validator->getError('nama_merk'));
+        }
+
+        $this->merkModel->update($id, ['nama_merk' => $this->request->getPost('nama_merk')]);
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Merk berhasil diperbarui.');
     }
 
     public function deleteMerk($id)
@@ -173,6 +225,16 @@ class MasterDataController extends BaseController
         return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil ditambahkan.');
     }
     
+    public function updateTipe($id)
+    {
+        if (!$this->validate(['nama_tipe' => 'required'])) {
+            return redirect()->to('/master-data?tab=merk')->withInput()->with('error', $this->validator->getError('nama_tipe'));
+        }
+
+        $this->tipeModel->update($id, ['nama_tipe' => $this->request->getPost('nama_tipe')]);
+        return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil diperbarui.');
+    }
+    
     // [BARU] Fungsi untuk menghapus Tipe
     public function deleteTipe($id)
     {
@@ -182,6 +244,22 @@ class MasterDataController extends BaseController
         }
         $this->tipeModel->delete($id);
         return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil dihapus.');
+    }
+
+    public function deleteLokasi($id)
+    {
+        // Hubungkan ke database untuk memeriksa relasi
+        $db = \Config\Database::connect();
+        $isUsed = $db->table('aset')->where('lokasi_id', $id)->get()->getRow();
+
+        // Jika lokasi sudah digunakan oleh aset, batalkan penghapusan
+        if ($isUsed) {
+            return redirect()->to('/master-data?tab=lokasi')->with('error', 'Gagal menghapus! Lokasi ini masih digunakan oleh data aset.');
+        }
+
+        // Jika aman, lanjutkan penghapusan
+        $this->lokasiModel->delete($id);
+        return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi berhasil dihapus.');
     }
 }
 

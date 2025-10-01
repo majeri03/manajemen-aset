@@ -387,7 +387,9 @@ public function show($id = null)
         return view('aset/public_detail', $data);
     }
 
-    public function export()
+    // app/Controllers/AsetController.php
+
+public function export()
     {
         $filters = [
             'kategori_id' => $this->request->getGet('kategori_id'),
@@ -395,10 +397,22 @@ public function show($id = null)
             'keyword'     => $this->request->getGet('keyword'),
         ];
         
+        // Query yang sudah diperbaiki dengan join ke semua tabel yang relevan
         $query = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+            ->select('
+                aset.kode, aset.serial_number, aset.tahun, aset.status, aset.keterangan,
+                aset.harga_beli, aset.entitas_pembelian, aset.penanggung_jawab, aset.updated_at,
+                k.nama_kategori,
+                sk.nama_sub_kategori,
+                m.nama_merk,
+                t.nama_tipe,
+                l.nama_lokasi
+            ')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left')
+            ->join('tipe t', 't.id = aset.tipe_id', 'left');
 
         if (!empty($filters['kategori_id'])) {
             $query->where('aset.kategori_id', $filters['kategori_id']);
@@ -408,12 +422,12 @@ public function show($id = null)
         }
         if (!empty($filters['keyword'])) {
             $query->groupStart()
-                  ->like('aset.kode', $filters['keyword'])
-                  ->orLike('aset.merk', $filters['keyword'])
-                  ->orLike('aset.lokasi', $filters['keyword'])
-                  ->orLike('k.nama_kategori', $filters['keyword'])
-                  ->orLike('sk.nama_sub_kategori', $filters['keyword'])
-                  ->groupEnd();
+                ->like('aset.kode', $filters['keyword'])
+                ->orLike('m.nama_merk', $filters['keyword'])
+                ->orLike('l.nama_lokasi', $filters['keyword'])
+                ->orLike('sk.nama_sub_kategori', $filters['keyword'])
+                ->orLike('aset.penanggung_jawab', $filters['keyword'])
+                ->groupEnd();
         }
 
         $asets = $query->orderBy('aset.updated_at', 'DESC')->findAll();
@@ -421,45 +435,48 @@ public function show($id = null)
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Menyesuaikan header dengan data yang diambil
         $sheet->setCellValue('A1', 'Kode Aset');
         $sheet->setCellValue('B1', 'Kategori');
         $sheet->setCellValue('C1', 'Sub Kategori');
         $sheet->setCellValue('D1', 'Merk');
-        $sheet->setCellValue('E1', 'Type');
+        $sheet->setCellValue('E1', 'Tipe');
         $sheet->setCellValue('F1', 'Serial Number');
         $sheet->setCellValue('G1', 'Tahun');
         $sheet->setCellValue('H1', 'Lokasi');
         $sheet->setCellValue('I1', 'Status');
-        $sheet->setCellValue('J1', 'Keterangan');
+        $sheet->setCellValue('J1', 'Penanggung Jawab');
         $sheet->setCellValue('K1', 'Harga Beli');
         $sheet->setCellValue('L1', 'Entitas Pembelian');
-        $sheet->setCellValue('M1', 'Terakhir Diperbarui');
+        $sheet->setCellValue('M1', 'Keterangan');
+        $sheet->setCellValue('N1', 'Terakhir Diperbarui');
         
         $styleArray = [
             'font' => ['bold' => true],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
         ];
-        $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
+        $sheet->getStyle('A1:N1')->applyFromArray($styleArray);
 
         $row = 2;
         foreach ($asets as $aset) {
             $sheet->setCellValue('A' . $row, $aset['kode']);
             $sheet->setCellValue('B' . $row, $aset['nama_kategori']);
             $sheet->setCellValue('C' . $row, $aset['nama_sub_kategori']);
-            $sheet->setCellValue('D' . $row, $aset['merk']);
-            $sheet->setCellValue('E' . $row, $aset['type']);
+            $sheet->setCellValue('D' . $row, $aset['nama_merk']);
+            $sheet->setCellValue('E' . $row, $aset['nama_tipe']);
             $sheet->setCellValue('F' . $row, $aset['serial_number']);
             $sheet->setCellValue('G' . $row, $aset['tahun']);
-            $sheet->setCellValue('H' . $row, $aset['lokasi']);
+            $sheet->setCellValue('H' . $row, $aset['nama_lokasi']);
             $sheet->setCellValue('I' . $row, $aset['status']);
-            $sheet->setCellValue('J' . $row, $aset['keterangan']);
+            $sheet->setCellValue('J' . $row, $aset['penanggung_jawab']);
             $sheet->setCellValue('K' . $row, $aset['harga_beli']);
             $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
-            $sheet->setCellValue('M' . $row, $aset['updated_at']);
+            $sheet->setCellValue('M' . $row, $aset['keterangan']);
+            $sheet->setCellValue('N' . $row, $aset['updated_at']);
             $row++;
         }
         
-        foreach (range('A', 'M') as $col) {
+        foreach (range('A', 'N') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

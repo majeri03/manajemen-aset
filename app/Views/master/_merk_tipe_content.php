@@ -13,29 +13,50 @@
                 <?php if (!empty($merks)): ?>
                     <?php foreach ($merks as $merk): ?>
                         <div class="accordion-item">
-                            <h2 class="accordion-header" id="heading-merk-<?= $merk['id'] ?>">
-                                <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-merk-<?= $merk['id'] ?>" aria-expanded="false" aria-controls="collapse-merk-<?= $merk['id'] ?>">
-                                    <span class="flex-grow-1"><?= esc($merk['nama_merk']) ?></span>
+                            <h2 class="accordion-header d-flex align-items-center" id="heading-merk-<?= $merk['id'] ?>">
+                                <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-merk-<?= $merk['id'] ?>" aria-expanded="false" aria-controls="collapse-merk-<?= $merk['id'] ?>">
+                                    <?= esc($merk['nama_merk']) ?>
+                                </button>
+                                
+                                <div class="action-buttons p-2">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" 
+                                            data-id="<?= $merk['id'] ?>" 
+                                            data-nama="<?= esc($merk['nama_merk']) ?>" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editMerkModal"
+                                            title="Edit Merk">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
                                     <a href="<?= base_url('master-data/merk/delete/' . $merk['id']) ?>" 
-                                       class="btn btn-sm btn-outline-danger me-3" 
-                                       onclick="event.stopPropagation(); return confirm('Anda yakin ingin menghapus merk ini? Semua tipe yang terkait akan ikut terhapus.')" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       onclick="return confirm('Anda yakin ingin menghapus merk ini? Semua tipe yang terkait akan ikut terhapus.')" 
                                        title="Hapus Merk <?= esc($merk['nama_merk']) ?>">
                                         <i class="bi bi-trash"></i>
                                     </a>
-                                </button>
+                                </div>
                             </h2>
                             <div id="collapse-merk-<?= $merk['id'] ?>" class="accordion-collapse collapse" aria-labelledby="heading-merk-<?= $merk['id'] ?>" data-bs-parent="#merkAccordion">
                                 <div class="accordion-body">
                                     <?php
                                         $db = \Config\Database::connect();
-                                        $tipes = $db->table('tipe')->where('merk_id', $merk['id'])->get()->getResultArray();
+                                        $tipes = $db->table('tipe')->where('merk_id', $merk['id'])->orderBy('nama_tipe', 'ASC')->get()->getResultArray();
                                     ?>
                                     <?php if (!empty($tipes)): ?>
                                         <ul class="list-group">
                                             <?php foreach ($tipes as $tipe): ?>
                                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                                     <?= esc($tipe['nama_tipe']) ?>
-                                                    <a href="<?= base_url('master-data/tipe/delete/' . $tipe['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus tipe ini?')"><i class="bi bi-trash"></i></a>
+                                                    <div>
+                                                        <button type="button" class="btn btn-sm btn-outline-warning me-1"
+                                                                data-id="<?= $tipe['id'] ?>"
+                                                                data-nama="<?= esc($tipe['nama_tipe']) ?>"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editTipeModal"
+                                                                title="Edit Tipe">
+                                                            <i class="bi bi-pencil-fill"></i>
+                                                        </button>
+                                                        <a href="<?= base_url('master-data/tipe/delete/' . $tipe['id']) ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus tipe ini?')"><i class="bi bi-trash"></i></a>
+                                                    </div>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
@@ -82,9 +103,47 @@
     </div>
 </div>
 
+<div class="modal fade" id="editMerkModal" tabindex="-1" aria-labelledby="editMerkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editMerkForm" action="" method="post">
+                <?= csrf_field() ?>
+                <div class="modal-header"><h5 class="modal-title">Edit Merk</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <label for="nama_merk_edit" class="form-label">Nama Merk</label>
+                    <input type="text" class="form-control" id="nama_merk_edit" name="nama_merk" oninput="this.value = this.value.toUpperCase()" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editTipeModal" tabindex="-1" aria-labelledby="editTipeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editTipeForm" action="" method="post">
+                <?= csrf_field() ?>
+                <div class="modal-header"><h5 class="modal-title">Edit Tipe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <label for="nama_tipe_edit" class="form-label">Nama Tipe</label>
+                    <input type="text" class="form-control" id="nama_tipe_edit" name="nama_tipe" oninput="this.value = this.value.toUpperCase()" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-// Pastikan script ini tidak bentrok dengan script sebelumnya
 document.addEventListener('DOMContentLoaded', function() {
+    // Script untuk menambah form input tipe (tetap ada)
     const addTipeBtn = document.getElementById('add-tipe-field');
     if (addTipeBtn) {
         let tipeCount = 1;
@@ -92,18 +151,40 @@ document.addEventListener('DOMContentLoaded', function() {
             tipeCount++;
             const newField = document.createElement('div');
             newField.classList.add('mb-2', 'input-group');
-            newField.innerHTML = `
-                <input type="text" class="form-control" name="nama_tipe[]" placeholder="Tipe ${tipeCount}" required oninput="this.value = this.value.toUpperCase()">
-                <button class="btn btn-outline-danger remove-field" type="button"><i class="bi bi-trash"></i></button>
-            `;
+            newField.innerHTML = `<input type="text" class="form-control" name="nama_tipe[]" placeholder="Tipe ${tipeCount}" required oninput="this.value = this.value.toUpperCase()"><button class="btn btn-outline-danger remove-field" type="button"><i class="bi bi-trash"></i></button>`;
             document.getElementById('tipe-fields').appendChild(newField);
         });
 
-        // Event delegation untuk tombol remove
         document.getElementById('tipe-fields').addEventListener('click', function(e) {
             if (e.target.closest('.remove-field')) {
                 e.target.closest('.input-group').remove();
             }
+        });
+    }
+
+    // [BARU] Script untuk Modal Edit Merk
+    const editMerkModal = document.getElementById('editMerkModal');
+    if(editMerkModal) {
+        editMerkModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nama = button.getAttribute('data-nama');
+            const form = editMerkModal.querySelector('form');
+            form.action = `<?= base_url('master-data/merk/update/') ?>${id}`;
+            editMerkModal.querySelector('#nama_merk_edit').value = nama;
+        });
+    }
+
+    // [BARU] Script untuk Modal Edit Tipe
+    const editTipeModal = document.getElementById('editTipeModal');
+    if(editTipeModal) {
+        editTipeModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nama = button.getAttribute('data-nama');
+            const form = editTipeModal.querySelector('form');
+            form.action = `<?= base_url('master-data/tipe/update/') ?>${id}`;
+            editTipeModal.querySelector('#nama_tipe_edit').value = nama;
         });
     }
 });

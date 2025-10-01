@@ -78,15 +78,29 @@ class Dashboard extends BaseController
         ->get()
         ->getResultArray();
 
-        $nilaiPerLokasi = $db->table('aset a')
-            ->select('l.nama_lokasi, SUM(a.harga_beli) as total_nilai')
-            ->join('lokasi l', 'l.id = a.lokasi_id', 'left')
-            ->where('a.deleted_at', null)
-            ->groupBy('l.nama_lokasi')
-            ->orderBy('total_nilai', 'DESC')
-            ->limit(7) // Ambil 7 lokasi teratas
-            ->get()
-            ->getResultArray();
+    $nilaiPerLokasi = $db->table('aset a')
+        ->select('l.nama_lokasi, SUM(a.harga_beli) as total_nilai')
+        ->join('lokasi l', 'l.id = a.lokasi_id', 'left')
+        ->where('a.deleted_at', null)
+        ->groupBy('l.nama_lokasi')
+        ->orderBy('total_nilai', 'DESC')
+        ->limit(7) // Ambil 7 lokasi teratas
+        ->get()
+        ->getResultArray();
+        
+        $trendData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $bulan = date('m', strtotime("-$i months"));
+            $tahun = date('Y', strtotime("-$i months"));
+            $namaBulan = date('M Y', strtotime("-$i months")); // Format: Jan 2024
+            
+            $jumlah = $asetModel->where('MONTH(created_at)', $bulan)
+                                ->where('YEAR(created_at)', $tahun)
+                                ->countAllResults();
+
+    $trendData['labels'][] = $namaBulan;
+    $trendData['data'][] = $jumlah;
+}
 
         // --- 4. DATA UNTUK MODAL TAMBAH ASET ---
         $kategoriModel = new KategoriModel();
@@ -124,6 +138,8 @@ class Dashboard extends BaseController
             'daftar_penanggung_jawab' => $daftarPenanggungJawab,
             'lokasiLabels'            => array_column($nilaiPerLokasi, 'nama_lokasi'),
             'lokasiData'              => array_column($nilaiPerLokasi, 'total_nilai'),
+            'trendLabels'             => $trendData['labels'],
+            'trendData'               => $trendData['data'],
         ];
 
         return view('Dashboard/index', $data);

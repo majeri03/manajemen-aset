@@ -99,10 +99,16 @@ Dashboard
         <div class="table-container shadow-sm mt-4 flex-grow-1">
             <ul class="nav nav-tabs" id="chartTabs" role="tablist">
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">Tren Aset</button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">Distribusi Kategori</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">Nilai per Lokasi</button>
                 </li>
             </ul>
             <div class="tab-content pt-3">
@@ -111,9 +117,19 @@ Dashboard
                         <canvas id="assetCategoryChart"></canvas>
                     </div>
                 </div>
+                <div class="tab-pane fade" id="tren" role="tabpanel">
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="assetTrendChart"></canvas>
+                    </div>
+                </div>
                 <div class="tab-pane fade" id="status" role="tabpanel">
                     <div class="chart-container" style="height: 380px;">
                         <canvas id="assetStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="lokasi" role="tabpanel">
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="assetLocationChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -643,6 +659,101 @@ var assetStatusChart = new Chart(ctx2, {
     }
 });
 
+const lokasiLabels = <?= json_encode($lokasiLabels) ?>;
+const lokasiData = <?= json_encode($lokasiData) ?>;
+const dynamicLocationColors = lokasiLabels.map(() => generateRandomColor());
+
+const ctx3 = document.getElementById('assetLocationChart').getContext('2d');
+new Chart(ctx3, {
+    type: 'bar', // Menggunakan bar chart biasa untuk horizontal
+    data: {
+        labels: lokasiLabels,
+        datasets: [{
+            label: 'Total Nilai Aset',
+            data: lokasiData,
+            backgroundColor: dynamicLocationColors, // <-- NILAI BARU
+            borderColor: dynamicLocationColors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        indexAxis: 'y', // Ini kunci untuk membuat bar chart menjadi horizontal
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.x !== null) {
+                            label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.x);
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value, index, values) {
+                        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', notation: 'compact' }).format(value);
+                    }
+                }
+            }
+        }
+    }
+});
+
+
+const trendLabels = <?= json_encode($trendLabels) ?>;
+const trendData = <?= json_encode($trendData) ?>;
+
+const ctx4 = document.getElementById('assetTrendChart').getContext('2d');
+const gradient = ctx4.createLinearGradient(0, 0, 0, 400);
+gradient.addColorStop(0, 'rgba(61, 162, 255, 0.5)'); // Warna awal gradien
+gradient.addColorStop(1, 'rgba(61, 162, 255, 0)');  // Warna akhir gradien (transparan)
+
+new Chart(ctx4, {
+    type: 'line',
+    data: {
+        labels: trendLabels,
+        datasets: [{
+            label: 'Aset Baru',
+            data: trendData,
+            borderColor: '#003481', // Warna garis
+            backgroundColor: gradient, // Warna area di bawah garis
+            fill: true,
+            tension: 0.4, // Membuat garis lebih melengkung (smooth)
+            pointBackgroundColor: '#FFFFFF',
+            pointBorderColor: '#003481',
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#003481',
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { 
+                beginAtZero: true,
+                ticks: {
+                    // Pastikan sumbu Y hanya menampilkan angka bulat
+                    stepSize: 1,
+                    callback: function(value) { if (Number.isInteger(value)) { return value; } }
+                }
+            },
+            x: { grid: { display: false } }
+        }
+    }
+});
 
 window.onload = function() {
     // 1. Skrip ini mencari semua elemen dengan class 'count-up'
