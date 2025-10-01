@@ -5,7 +5,6 @@ Dashboard
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
 <div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     
     <div>
@@ -97,22 +96,32 @@ Dashboard
         </div>
 
         <div class="table-container shadow-sm mt-4 flex-grow-1">
-            <ul class="nav nav-tabs" id="chartTabs" role="tablist">
-                
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">Distribusi Kategori</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">Tren Aset</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">Nilai per Lokasi</button>
-                </li>
-            </ul>
-            <div class="tab-content pt-3">
+            <div class="chart-nav-container dashboard-chart-nav">
+                <ul class="nav nav-pills chart-nav" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">
+                            <i class="bi bi-pie-chart-fill"></i> Kategori
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">
+                            <i class="bi bi-graph-up-arrow"></i> Tren
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
+                            <i class="bi bi-clipboard2-check-fill"></i> Kondisi
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">
+                            <i class="bi bi-geo-alt-fill"></i> Lokasi
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content">
                 <div class="tab-pane fade show active" id="distribusi" role="tabpanel">
                     <div class="chart-container" style="height: 380px;">
                         <canvas id="assetCategoryChart"></canvas>

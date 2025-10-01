@@ -228,6 +228,118 @@ body {
     background-image: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
 }
 
+/* ====================================================================== */
+/* === STYLE BARU UNTUK NAVIGASI, KARTU PENGGUNA, & KARTU PERMINTAAN === */
+/* ====================================================================== */
+
+/* Style untuk Navigasi Kontrol (digunakan di Dashboard, Master, Permintaan) */
+.chart-nav-container {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.chart-nav {
+    background-color: #e9ecef;
+    border-radius: 12px;
+    padding: 5px;
+    display: inline-flex;
+    flex-wrap: wrap;
+}
+
+.chart-nav .nav-link {
+    color: var(--text-muted);
+    font-weight: 500;
+    border-radius: 9px;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+    border: none;
+    background: none;
+    white-space: nowrap;
+}
+
+.chart-nav .nav-link:hover {
+    color: var(--text-dark);
+}
+
+.chart-nav .nav-link.active {
+    background-color: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 52, 129, 0.3);
+}
+
+.chart-nav .nav-link .bi {
+    margin-right: 8px;
+}
+
+/* Penyesuaian Navigasi untuk mobile */
+@media (max-width: 768px) {
+    .chart-nav-container {
+        justify-content: center;
+    }
+    .chart-nav {
+        width: 100%;
+    }
+    .chart-nav .nav-item {
+        flex: 1 1 50%;
+        text-align: center;
+    }
+    .chart-nav .nav-link {
+        padding: 10px 5px;
+        width: 100%;
+    }
+}
+
+/* Style untuk Kartu Pengguna (di halaman Manajemen Pengguna) */
+.user-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--secondary-blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.status-badge {
+    font-size: 0.8rem;
+}
+
+/* Style untuk Kartu Permintaan (di halaman Permintaan) */
+.request-card {
+    border-left: 4px solid var(--primary-blue);
+    transition: all 0.2s ease-in-out;
+}
+
+.request-card:hover {
+    border-left-color: var(--secondary-blue);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08) !important;
+}
+
+.request-card .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #eee;
+}
+
+.request-card ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+
 /* ======================================= */
 /* === GRAFIK & TABEL === */
 /* ======================================= */
