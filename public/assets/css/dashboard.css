@@ -97,6 +97,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: calc(100% - 250px);
 }
 
 .main-content {
@@ -273,7 +274,7 @@ body {
 }
 
 /* Penyesuaian Navigasi untuk mobile */
-@media (max-width: 768px) {
+@media (max-width: 100px) {
     .chart-nav-container {
         justify-content: center;
     }
@@ -287,6 +288,9 @@ body {
     .chart-nav .nav-link {
         padding: 10px 5px;
         width: 100%;
+    }
+    .main-content-wrapper {
+        width: 100%; /* Pastikan ini tetap ada untuk menimpa aturan desktop */
     }
 }
 

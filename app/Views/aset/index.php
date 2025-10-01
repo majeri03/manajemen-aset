@@ -83,39 +83,38 @@ Data Aset
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form action="<?= base_url('aset') ?>" method="get" class="row g-3">
-            <div class="col-md-3 col-6">
-                <label for="filter-kategori" class="form-label">Kategori</label>
-                <select name="kategori_id" id="filter-kategori" class="form-select">
-                    <option value="">Semua</option>
-                    <?php foreach ($kategori_list as $kategori) : ?>
-                        <option value="<?= esc($kategori['id']) ?>" <?= ($filters['kategori_id'] ?? '') == $kategori['id'] ? 'selected' : '' ?>>
-                            <?= esc($kategori['nama_kategori']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-md-3 col-6">
-                <label for="filter-status" class="form-label">Status</label>
-                <select name="status" id="filter-status" class="form-select">
-                    <option value="">Semua</option>
-                    <option value="Baik Terpakai" <?= ($filters['status'] ?? '') == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
-                    <option value="Baik Tidak Terpakai" <?= ($filters['status'] ?? '') == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
-                    <option value="Rusak" <?= ($filters['status'] ?? '') == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="keyword" class="form-label">Kata Kunci</label>
-                <input type="text" name="keyword" id="keyword" class="form-control" placeholder="Cari kode, merk, lokasi..." value="<?= esc($filters['keyword'] ?? '') ?>">
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">Filter</button>
-                <a href="<?= base_url('aset') ?>" class="btn btn-secondary">Reset</a>
-            </div>
-        </form>
+<form action="<?= base_url('aset') ?>" method="get" class="row g-3 align-items-center">
+    <div class="col-lg-3 col-md-6">
+        <label for="filter-kategori" class="form-label">Kategori</label>
+        <select name="kategori_id" id="filter-kategori" class="form-select">
+            <option value="">Semua</option>
+            <?php foreach ($kategori_list as $kategori) : ?>
+                <option value="<?= esc($kategori['id']) ?>" <?= ($filters['kategori_id'] ?? '') == $kategori['id'] ? 'selected' : '' ?>>
+                    <?= esc($kategori['nama_kategori']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <label for="filter-status" class="form-label">Status</label>
+        <select name="status" id="filter-status" class="form-select">
+            <option value="">Semua</option>
+            <option value="Baik Terpakai" <?= ($filters['status'] ?? '') == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
+            <option value="Baik Tidak Terpakai" <?= ($filters['status'] ?? '') == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
+            <option value="Rusak" <?= ($filters['status'] ?? '') == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
+        </select>
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <label for="keyword" class="form-label">Kata Kunci</label>
+        <input type="text" name="keyword" id="keyword" class="form-control" placeholder="Cari kode, merk, lokasi..." value="<?= esc($filters['keyword'] ?? '') ?>">
+    </div>
+    <div class="col-lg-12 d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary me-2" style="width: 150px;">Filter</button>
+        <a href="<?= base_url('aset') ?>" class="btn btn-secondary" style="width: 150px;">Reset</a>
+    </div>
+</form>
     </div>
 </div>
-
 <div class="d-flex justify-content-end mb-3">
     <a href="<?= base_url('aset/barcodes') ?>" class="btn btn-info me-2">
         <i class="bi bi-upc-scan me-2"></i>Lihat Semua Barcode
