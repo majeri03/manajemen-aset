@@ -7,20 +7,56 @@ use App\Models\UserModel;
 
 class UserController extends BaseController
 {
-    public function index()
-    {
-        $userModel = new UserModel();
-        $db = \Config\Database::connect();
+public function index()
+{
+    $userModel = new UserModel();
+    $db = \Config\Database::connect();
 
-        $soModeSetting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+    $keyword = $this->request->getGet('keyword');
+    $role = $this->request->getGet('role');
 
-        $data = [
-            'title'   => 'Manajemen Pengguna',
-            'users'   => $userModel->findAll(),
-            'so_mode' => $soModeSetting ? $soModeSetting->setting_value : 'off', 
-        ];
-        return view('user/index', $data);
+    $query = $userModel; // Mulai query builder
+
+    if ($keyword) {
+        $query->groupStart();
+        $query->like('full_name', $keyword)
+              ->orLike('email', $keyword);
+        $query->groupEnd();
     }
+
+    if ($role) {
+        $query->where('role', $role);
+    }
+    
+    $users = $query->findAll();
+
+    // ===== TAMBAHKAN LOGIKA STATISTIK INI =====
+    $totalUsers = count($userModel->findAll()); // Hitung total sebelum filter
+    $roleCounts = [
+        'admin'   => $userModel->where('role', 'admin')->countAllResults(),
+        'manager' => $userModel->where('role', 'manager')->countAllResults(),
+        'staff'   => $userModel->where('role', 'staff')->countAllResults(),
+    ];
+    $statusCounts = [
+        'active'   => $userModel->where('status', 'active')->countAllResults(),
+        'inactive' => $userModel->where('status', 'inactive')->countAllResults(),
+    ];
+    // ===========================================
+
+    $soModeSetting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+
+    $data = [
+        'title'        => 'Manajemen Pengguna',
+        'users'        => $users,
+        'so_mode'      => $soModeSetting ? $soModeSetting->setting_value : 'off',
+        'filters'      => ['keyword' => $keyword, 'role' => $role],
+        'totalUsers'   => $totalUsers,
+        'roleCounts'   => $roleCounts,
+        'statusCounts' => $statusCounts,
+    ];
+
+    return view('user/index', $data);
+}
     public function toggleSoMode()
     {
         $db = \Config\Database::connect();
@@ -74,10 +110,12 @@ class UserController extends BaseController
             'email' => $this->request->getPost('email'),
             'password' => $this->request->getPost('password'),
             'role' => $this->request->getPost('role'),
+            'status' => 'active' // Status default saat dibuat
         ]);
 
         return redirect()->to('/user')->with('success', 'Pengguna baru berhasil ditambahkan.');
     }
+
 
     public function edit($id)
     {
@@ -95,6 +133,7 @@ class UserController extends BaseController
             'full_name' => 'required|min_length[3]',
             'email' => 'required|valid_email|is_unique[users.email,id,' . $id . ']',
             'role' => 'required',
+            'status' => 'required|in_list[active,inactive]',
         ];
 
         if ($this->request->getPost('password')) {
@@ -110,10 +149,11 @@ class UserController extends BaseController
             'full_name' => $this->request->getPost('full_name'),
             'email' => $this->request->getPost('email'),
             'role' => $this->request->getPost('role'),
+            'status' => $this->request->getPost('status'),
         ];
 
         if ($this->request->getPost('password')) {
-            $data['password'] = $this->request->getPost('password');
+            $data['password_hash'] = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
         }
 
         $userModel->update($id, $data);
@@ -121,11 +161,37 @@ class UserController extends BaseController
         return redirect()->to('/user')->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
+    public function activate($id)
+    {
+        $userModel = new UserModel();
+        $userModel->update($id, ['status' => 'active']);
+
+        return redirect()->to('/user')->with('success', 'Pengguna berhasil diaktifkan kembali.');
+    }
+
+    public function resetPassword($id)
+    {
+        $userModel = new UserModel();
+        // Buat password acak 8 karakter
+        $newPassword = substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(8/strlen($x)) )),1,8);
+
+        $data = [
+            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+        ];
+
+        if ($userModel->update($id, $data)) {
+            return redirect()->to('/user')->with('success', 'Password berhasil direset! Password baru: <strong>' . $newPassword . '</strong>');
+        } else {
+            return redirect()->to('/user')->with('error', 'Gagal mereset password.');
+        }
+    }
+
     public function delete($id)
     {
         $userModel = new UserModel();
-        $userModel->delete($id);
+        // Ubah ini menjadi nonaktif, bukan hapus
+        $userModel->update($id, ['status' => 'inactive']);
 
-        return redirect()->to('/user')->with('success', 'Pengguna berhasil dihapus.');
+        return redirect()->to('/user')->with('success', 'Pengguna telah dinonaktifkan.');
     }
 }
