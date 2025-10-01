@@ -50,22 +50,27 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     
     // Rute untuk mengelola Kategori
     $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
+    $routes->post('master-data/kategori/update/(:num)', 'MasterDataController::updateKategori/$1');
     $routes->get('master-data/kategori/delete/(:num)', 'MasterDataController::deleteKategori/$1');
     
     // Rute untuk mengelola Sub-Kategori
     $routes->post('master-data/subkategori/create', 'MasterDataController::createSubKategori');
+    $routes->post('master-data/subkategori/update/(:num)', 'MasterDataController::updateSubKategori/$1');
     $routes->get('master-data/subkategori/delete/(:num)', 'MasterDataController::deleteSubKategori/$1');
     
     // Rute untuk mengelola Lokasi
     $routes->post('master-data/lokasi/create', 'MasterDataController::createLokasi');
+    $routes->post('master-data/lokasi/update/(:num)', 'MasterDataController::updateLokasi/$1');
     $routes->get('master-data/lokasi/delete/(:num)', 'MasterDataController::deleteLokasi/$1');
 
     // Rute untuk mengelola Merk
     $routes->post('master-data/merk/create', 'MasterDataController::createMerk');
+    $routes->post('master-data/merk/update/(:num)', 'MasterDataController::updateMerk/$1');
     $routes->get('master-data/merk/delete/(:num)', 'MasterDataController::deleteMerk/$1');
 
     // Rute untuk mengelola Tipe
     $routes->post('master-data/tipe/create', 'MasterDataController::createTipe');
+    $routes->post('master-data/tipe/update/(:num)', 'MasterDataController::updateTipe/$1');
     $routes->get('master-data/tipe/delete/(:num)', 'MasterDataController::deleteTipe/$1');
 
     // Rute API untuk dropdown dinamis
