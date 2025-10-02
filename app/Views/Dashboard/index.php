@@ -5,7 +5,6 @@ Dashboard
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
 <div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     
     <div>
@@ -85,6 +84,7 @@ Dashboard
                 </a>
             </div>
             <?php endif; ?>
+            <?php if (session()->get('role') === 'admin'): ?>
             <div class="col-lg-6 col-md-6">
                 <a href="<?= base_url('requests') ?>" class="stat-card-link">
                     <div class="stat-card shadow-sm yellow h-100">
@@ -96,27 +96,38 @@ Dashboard
                     </div>
                 </a>
             </div>
+            <?php endif; ?>
         </div>
 
         <div class="table-container shadow-sm mt-4 flex-grow-1">
-            <ul class="nav nav-tabs" id="chartTabs" role="tablist">
-                
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">Distribusi Kategori</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">Tren Aset</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>
-                </li>
-                <?php if (session()->get('role') === 'admin'): ?>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">Nilai per Lokasi</button>
-                </li>
-                <?php endif; ?>
-            </ul>
-            <div class="tab-content pt-3">
+            <div class="chart-nav-container dashboard-chart-nav">
+                <ul class="nav nav-pills chart-nav" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="distribusi-tab" data-bs-toggle="tab" data-bs-target="#distribusi" type="button" role="tab">
+                            <i class="bi bi-pie-chart-fill"></i> Kategori
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tren-tab" data-bs-toggle="tab" data-bs-target="#tren" type="button" role="tab">
+                            <i class="bi bi-graph-up-arrow"></i> Tren
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
+                            <i class="bi bi-clipboard2-check-fill"></i> Kondisi
+                        </button>
+                    </li>
+                    <?php if (session()->get('role') === 'admin'): ?>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">
+                            <i class="bi bi-geo-alt-fill"></i> Lokasi
+                        </button>
+                    </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+
+            <div class="tab-content">
                 <div class="tab-pane fade show active" id="distribusi" role="tabpanel">
                     <div class="chart-container" style="height: 380px;">
                         <canvas id="assetCategoryChart"></canvas>
@@ -143,31 +154,31 @@ Dashboard
     </div>
 
     <div class="col-lg-4 d-flex flex-column">
-        
         <div class="d-grid gap-2 mb-4">
-            <?php if (session()->get('role') === 'admin'): ?>
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#tambahAsetModal"><i class="bi bi-plus-circle me-2"></i> Tambah Aset Baru</button>
-            <?php endif; ?>
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary btn-lg dropdown-toggle w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan Bulanan
-                </button>
-                <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(1)">Januari</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(2)">Februari</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(3)">Maret</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(4)">April</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(5)">Mei</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(6)">Juni</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(7)">Juli</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(8)">Agustus</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(9)">September</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(10)">Oktober</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
-                </ul>
-            </div>
-        </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
+        <i class="bi bi-plus-circle me-2"></i> Tambah Aset
+    </button>
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Bulanan
+        </button>
+        <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(1)">Januari</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(2)">Februari</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(3)">Maret</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(4)">April</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(5)">Mei</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(6)">Juni</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(7)">Juli</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(8)">Agustus</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(9)">September</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(10)">Oktober</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(11)">November</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportLaporanBulanan(12)">Desember</a></li>
+        </ul>
+    </div>
+</div>
+
 
         <div class="table-container shadow-sm mb-4">
             <h5 class="mb-3">Aset Perlu Perhatian</h5>
@@ -489,7 +500,7 @@ Dashboard
 
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
+<script src="https://unpkg.com/countup.js@2.0.7/dist/countUp.umd.js"></script>
 <script>
 
         // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
@@ -894,34 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error fetching change history:', error));
     });
-        riwayatBtn.addEventListener('click', function() {
-            if (!currentAsetId) return;
-            timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
-            timelineContainer.style.display = 'block';
-            fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
-                .then(response => response.json())
-                .then(data => {
-                    timelineList.innerHTML = '';
-                    if (data.length > 0) {
-                        data.forEach(item => {
-                            const proposed = JSON.parse(item.proposed_data);
-                            let changes = '';
-                            for (const key in proposed) {
-                                changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
-                            }
-                            const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                            const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
-                            timelineList.innerHTML += listItem;
-                        });
-                    } else {
-                        timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching history:', error);
-                    timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
-                });
-        });
+        
     }
 
     const kategoriTambahSelect = document.getElementById('kategori_id-tambah');

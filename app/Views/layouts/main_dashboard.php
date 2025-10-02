@@ -123,7 +123,7 @@
                 </div>
             </nav>
 
-            <div class="main-content">
+            <div class="main-content container-fluid">
                 <?= $this->renderSection('content') ?>
             </div>
         </div>
