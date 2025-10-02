@@ -169,8 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             let infoText = details.is_misplaced 
-                ? `<span class="text-danger">Lokasi Salah!</span>` 
-                : 'Lokasi Sesuai';
+            ? `<span class="text-danger">Lokasi Salah! Lokasi Benar di: ${details.actual_location}</span>` 
+            : 'Lokasi Sesuai';
 
             let verifiedBadge = details.verified_today ? '<span class="badge bg-success ms-2">Sudah Diverifikasi</span>' : '';
 
@@ -248,6 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 Toast.fire({ icon: 'success', title: `Berhasil: ${data.data.kode} ditambahkan.` });
                 let assetDetails = data.data;
                 assetDetails.is_misplaced = !allAssetsInLocation.has(assetId);
+                assetDetails.actual_location = data.data.nama_lokasi;
                 foundAssets.set(assetId, assetDetails);
                 redrawLists();
                 saveState();
