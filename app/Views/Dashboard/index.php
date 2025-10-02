@@ -100,6 +100,7 @@ Dashboard
         </div>
 
         <div class="table-container shadow-sm mt-4 flex-grow-1">
+
             <div class="chart-nav-container dashboard-chart-nav">
                 <ul class="nav nav-pills chart-nav" id="chartTabs" role="tablist">
                     <li class="nav-item" role="presentation">
