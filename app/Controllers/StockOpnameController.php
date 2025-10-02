@@ -157,33 +157,55 @@ class StockOpnameController extends BaseController
             'ada_perubahan' => $adaPerubahan,
         ];
         
+        // KONDISI 1: Aset sudah pernah dicek dalam siklus ini.
+    if ($asetAsli['status_verifikasi'] === 'Sudah Dicek') {
+        // Jika sudah dicek TAPI ada perubahan baru yang diajukan, izinkan.
         if ($adaPerubahan) {
-            $historyData['data_sebelum'] = json_encode([
-                'lokasi_id'  => $asetAsli['lokasi_id'],
-                'status'     => $asetAsli['status'],
-                'keterangan' => $asetAsli['keterangan'],
-            ]);
-            $historyData['data_sesudah'] = json_encode($perubahan);
-        }
-
-        $db->table('stock_opname_history')->insert($historyData);
-
-        if ($adaPerubahan) {
-            $requestData = [
+            // Buat permintaan perubahan untuk disetujui admin
+            $db->table('aset_update_requests')->insert([
                 'aset_id'       => $asetId,
                 'user_id'       => session()->get('user_id'),
                 'proposed_data' => json_encode($perubahan),
                 'status'        => 'pending',
                 'created_at'    => date('Y-m-d H:i:s'),
-            ];
-            $db->table('aset_update_requests')->insert($requestData);
+            ]);
+            return redirect()->to('stockopname/aset/' . $asetId)->with('success', 'Pengajuan perubahan tambahan berhasil dikirim.');
+        } 
+        // Jika sudah dicek DAN tidak ada perubahan, tolak.
+        else {
+            return redirect()->to('stockopname/aset/' . $asetId)->with('info', 'Aset sudah diverifikasi dan tidak ada perubahan data yang diajukan.');
         }
+    } 
+    // KONDISI 2: Aset ini belum pernah dicek dalam siklus ini.
+    else {
+        // Tandai aset ini sebagai 'Sudah Dicek' untuk siklus ini.
+        $asetModel->update($asetId, ['status_verifikasi' => 'Sudah Dicek']);
 
-        $pesan = $adaPerubahan 
-            ? 'Verifikasi berhasil. Usulan perubahan Anda telah diajukan untuk persetujuan.'
-            : 'Aset berhasil diverifikasi tanpa ada perubahan.';
+        // Buat catatan di riwayat verifikasi.
+        $db->table('stock_opname_history')->insert([
+            'aset_id'       => $asetId,
+            'user_id'       => session()->get('user_id'),
+            'opname_at'     => date('Y-m-d H:i:s'),
+            'catatan'       => "Verifikasi dari form manual: " . $dataForm['keterangan'],
+            'ada_perubahan' => $adaPerubahan,
+        ]);
 
+        // Jika pada verifikasi pertama ini ada perubahan, ajukan juga.
+        if ($adaPerubahan) {
+            $db->table('aset_update_requests')->insert([
+                'aset_id'       => $asetId,
+                'user_id'       => session()->get('user_id'),
+                'proposed_data' => json_encode($perubahan),
+                'status'        => 'pending',
+                'created_at'    => date('Y-m-d H:i:s'),
+            ]);
+            $pesan = 'Aset berhasil diverifikasi dan usulan perubahan Anda telah diajukan.';
+        } else {
+            $pesan = 'Aset berhasil diverifikasi tanpa ada perubahan.';
+        }
+        
         return redirect()->to('/dashboard')->with('success', $pesan);
+        }
     }
     public function export()
     {
