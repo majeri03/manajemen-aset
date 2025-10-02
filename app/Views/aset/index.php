@@ -17,9 +17,11 @@ Data Aset
                         <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
                         <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
                     </div>
+                    <?php if (session()->get('role') === 'admin'): ?>
                     <button class="btn btn-custom-icon flex-shrink-0" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
                         <i class="bi bi-plus-circle me-2"></i> Tambah Aset
                     </button>
+                    <?php endif; ?>
                 </div>
             </div>
     </div>
@@ -181,12 +183,14 @@ Data Aset
                                 <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
+                                <?php if (session()->get('role') === 'admin'): ?>
                                 <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Edit Aset">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
                                 <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>" class="btn btn-danger btn-sm" title="Hapus Aset">
                                     <i class="bi bi-trash-fill"></i>
                                 </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

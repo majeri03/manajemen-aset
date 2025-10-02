@@ -53,6 +53,7 @@
                     </a>
                 </li>
                 
+                <?php if (session()->get('role') === 'admin'): ?>
                 <li class="nav-item mt-2">
                     <div class="sidebar-heading <?= $manajemen_aset_active ? 'active-group' : '' ?>">Manajemen Aset</div>
                     <ul class="nav flex-column">
@@ -66,7 +67,15 @@
                         </li>
                     </ul>
                 </li>
-
+                <?php else: // Jika bukan admin, hanya tampilkan Data Aset ?>
+                <li class="nav-item mt-2">
+                    <div class="sidebar-heading">Manajemen Aset</div>
+                    <ul class="nav flex-column">
+                        <li><a href="<?= base_url('aset') ?>" class="nav-link submenu-link <?= ($current_page == 'aset') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Aset"><i class="bi bi-box-seam"></i> <span>Data Aset</span></a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>   
+                <?php if (session()->get('role') === 'admin'): ?>
                 <li class="nav-item mt-2">
                     <div class="sidebar-heading <?= $operasional_active ? 'active-group' : '' ?>">Operasional</div>
                     <ul class="nav flex-column">
@@ -82,6 +91,13 @@
                         <li><a href="<?= base_url('laporan') ?>" class="nav-link submenu-link <?= ($current_page == 'laporan') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Laporan"><i class="bi bi-file-earmark-bar-graph"></i> <span>Fast Audit</span></a></li>
                     </ul>
                 </li>
+                <?php endif; ?>
+                <li>
+                    <a href="<?= base_url('scan-cepat') ?>" class="nav-link submenu-link <?= ($current_page == 'scan-cepat') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Scan Cepat">
+                        <i class="bi bi-qr-code-scan"></i> <span>Scan Aset</span>
+                    </a>
+                </li>
+
             </ul>
             <hr>
             <div class="dropdown">

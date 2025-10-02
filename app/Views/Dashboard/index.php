@@ -72,6 +72,7 @@ Dashboard
                     </div>
                 </a>
             </div>
+            <?php if (session()->get('role') === 'admin'): ?>
             <div class="col-lg-6 col-md-6">
                 <a href="<?= base_url('aset') ?>" class="stat-card-link">
                     <div class="stat-card shadow-sm green h-100">
@@ -83,6 +84,7 @@ Dashboard
                     </div>
                 </a>
             </div>
+            <?php endif; ?>
             <div class="col-lg-6 col-md-6">
                 <a href="<?= base_url('requests') ?>" class="stat-card-link">
                     <div class="stat-card shadow-sm yellow h-100">
@@ -108,9 +110,11 @@ Dashboard
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">Kondisi Aset</button>
                 </li>
+                <?php if (session()->get('role') === 'admin'): ?>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">Nilai per Lokasi</button>
                 </li>
+                <?php endif; ?>
             </ul>
             <div class="tab-content pt-3">
                 <div class="tab-pane fade show active" id="distribusi" role="tabpanel">
@@ -141,7 +145,9 @@ Dashboard
     <div class="col-lg-4 d-flex flex-column">
         
         <div class="d-grid gap-2 mb-4">
+            <?php if (session()->get('role') === 'admin'): ?>
             <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#tambahAsetModal"><i class="bi bi-plus-circle me-2"></i> Tambah Aset Baru</button>
+            <?php endif; ?>
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-lg dropdown-toggle w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-file-earmark-arrow-up me-2"></i> Export Laporan Bulanan

@@ -7,104 +7,110 @@ use CodeIgniter\Router\RouteCollection;
  */
 
 // --- Rute Publik (Tidak Perlu Login) ---
-$routes->get('/', 'Home::index');
+$routes->get('/', 'AuthController::login'); // Diarahkan ke login jika belum masuk
 $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::processLogin');
-
 $routes->get('/logout', 'AuthController::logout');
-// $routes->get('tracking/aset/(:num)', 'AsetController::publicDetail/$1');
-
 
 // --- Rute yang Memerlukan Login ---
 $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
-    // Dashboard
+    // ===================================================================
+    // RUTE YANG BISA DIAKSES SEMUA PERAN (ADMIN & STAFF)
+    // ===================================================================
     $routes->get('dashboard', 'Dashboard::index');
-    $routes->get('dashboard/export/(:num)', 'AsetController::exportBulanan/$1');
-
-    // Manajemen Aset (CRUD, Search, History, Export)
+    
+    // Aset (Hanya melihat daftar dan detail)
+    $routes->get('aset', 'AsetController::index');
     $routes->get('aset/search', 'AsetController::search');
     $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
-    $routes->get('aset/laporan/export', 'AsetController::export');
-    $routes->get('aset/stockopname_history/(:num)', 'AsetController::getStockOpnameHistory/$1');
-    $routes->get('aset/barcodes', 'AsetController::barcodes');
-    
-    $routes->resource('aset', ['controller' => 'AsetController']);
+    $routes->get('aset/stockopname_history/(:num)', 'AsetController::getStockopnameHistory/$1');
+    $routes->get('aset/(:num)', 'AsetController::show/$1'); // Detail aset
 
-    // Permintaan Perubahan Aset
+    // Stock Opname (Fitur utama Staff)
+    $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
+    $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
+
+    // Permintaan (Hanya untuk membuat pengajuan baru)
     $routes->get('requests/new/(:num)', 'RequestController::newRequest/$1');
-    $routes->get('requests/approve/(:num)', 'RequestController::approve/$1');
-    $routes->get('requests/reject/(:num)', 'RequestController::reject/$1');  
-    // $routes->post('requests/store', 'RequestController::store');
-    $routes->resource('requests', ['controller' => 'RequestController']);
-    
-    // Pelacakan & Laporan
-    $routes->get('stockopname', 'StockOpnameController::index');
-    $routes->get('laporan', 'LaporanController::index');
-    $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
+    $routes->post('requests', 'RequestController::create'); // Rute untuk menyimpan pengajuan
 
-
-    // --- [MULAI] Rute Baru untuk Data Master ---
-    // Baris ini akan menampilkan halaman utama Data Master
-    $routes->get('master-data', 'MasterDataController::index');
-    
-    // Rute untuk mengelola Kategori
-    $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
-    $routes->post('master-data/kategori/update/(:num)', 'MasterDataController::updateKategori/$1');
-    $routes->get('master-data/kategori/delete/(:num)', 'MasterDataController::deleteKategori/$1');
-    
-    // Rute untuk mengelola Sub-Kategori
-    $routes->post('master-data/subkategori/create', 'MasterDataController::createSubKategori');
-    $routes->post('master-data/subkategori/update/(:num)', 'MasterDataController::updateSubKategori/$1');
-    $routes->get('master-data/subkategori/delete/(:num)', 'MasterDataController::deleteSubKategori/$1');
-    
-    // Rute untuk mengelola Lokasi
-    $routes->post('master-data/lokasi/create', 'MasterDataController::createLokasi');
-    $routes->post('master-data/lokasi/update/(:num)', 'MasterDataController::updateLokasi/$1');
-    $routes->get('master-data/lokasi/delete/(:num)', 'MasterDataController::deleteLokasi/$1');
-
-    // Rute untuk mengelola Merk
-    $routes->post('master-data/merk/create', 'MasterDataController::createMerk');
-    $routes->post('master-data/merk/update/(:num)', 'MasterDataController::updateMerk/$1');
-    $routes->get('master-data/merk/delete/(:num)', 'MasterDataController::deleteMerk/$1');
-
-    // Rute untuk mengelola Tipe
-    $routes->post('master-data/tipe/create', 'MasterDataController::createTipe');
-    $routes->post('master-data/tipe/update/(:num)', 'MasterDataController::updateTipe/$1');
-    $routes->get('master-data/tipe/delete/(:num)', 'MasterDataController::deleteTipe/$1');
-
-    // Rute API untuk dropdown dinamis
+    // API (Umumnya dibutuhkan di banyak tempat)
     $routes->get('api/tipe/(:num)', 'AsetController::getTipesByMerk/$1');
 
-    //Rute Untuk Fitur Import
-    $routes->get('import', 'ImportController::index');
-    $routes->post('import/upload', 'ImportController::upload');
-    $routes->post('import/save', 'ImportController::save');
-    $routes->get('import/cancel', 'ImportController::cancel');
-    $routes->post('import/add-master', 'ImportController::addMasterData'); // Untuk AJAX
-    $routes->get('import/print-labels', 'ImportController::printLabels');
-    $routes->get('import/template', 'ImportController::downloadTemplate');
+    // Scan Cepat
+    $routes->get('scan-cepat', 'StockOpnameController::scanCepat');
+    $routes->post('stockopname/process-scan', 'StockOpnameController::processScan');
+    $routes->get('api/last-verification/(:num)', 'StockOpnameController::getLastVerificationInfo/$1');
+    // ===================================================================
+    // RUTE YANG HANYA BISA DIAKSES OLEH ADMIN
+    // ===================================================================
+    $routes->group('', ['filter' => 'role:admin'], static function ($routes) {
+        
+        // Dashboard (Fitur khusus admin)
+        $routes->get('dashboard/export/(:num)', 'AsetController::exportBulanan/$1');
 
-    // [BARU] Tambahkan rute ini untuk auto-save
-    $routes->post('import/update-session', 'ImportController::updateSessionData');
-    $routes->post('import/delete-master', 'ImportController::deleteMasterData');
+        // Manajemen Aset (Akses Penuh: Tambah, Edit, Hapus)
+        $routes->get('aset/new', 'AsetController::new');
+        $routes->post('aset', 'AsetController::create');
+        $routes->get('aset/(:num)/edit', 'AsetController::edit/$1');
+        $routes->put('aset/(:num)', 'AsetController::update/$1');
+        $routes->post('aset/(:num)', 'AsetController::update/$1'); // Fallback untuk form tanpa PUT
+        $routes->delete('aset/(:num)', 'AsetController::delete/$1');
+        $routes->get('aset/barcodes', 'AsetController::barcodes');
+        $routes->get('aset/laporan/export', 'AsetController::export');
 
-    //Rute MANAJEMEN AKUN
-    $routes->get('user', 'UserController::index');
-    $routes->get('user/create', 'UserController::create');
-    $routes->post('user/store', 'UserController::store');
-    $routes->get('user/edit/(:num)', 'UserController::edit/$1');
-    $routes->post('user/update/(:num)', 'UserController::update/$1');
-    $routes->get('user/delete/(:num)', 'UserController::delete/$1');
-    $routes->delete('user/delete/(:num)', 'UserController::delete/$1'); // Menggunakan metode DELETE
-    $routes->post('user/activate/(:num)', 'UserController::activate/$1');
-    $routes->post('user/reset-password/(:num)', 'UserController::resetPassword/$1'); // Rute baru
+        // Permintaan Perubahan Aset (Melihat daftar & persetujuan)
+        $routes->get('requests', 'RequestController::index');
+        $routes->get('requests/approve/(:num)', 'RequestController::approve/$1');
+        $routes->get('requests/reject/(:num)', 'RequestController::reject/$1');
+        
+        // Pelacakan & Laporan
+        $routes->get('stockopname', 'StockOpnameController::index');
+        $routes->get('stockopname/export', 'StockOpnameController::export');
+        $routes->get('laporan', 'LaporanController::index');
+        $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
 
-    //rute stockopname
-    $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
-    $routes->get('stockopname/export', 'StockOpnameController::export');
-    $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
-    
-    $routes->post('user/toggle-so-mode', 'UserController::toggleSoMode');
-    $routes->post('user/toggle-so-permission/(:num)', 'UserController::toggleUserSoPermission/$1');
+        // Data Master
+        $routes->get('master-data', 'MasterDataController::index');
+        $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
+        $routes->post('master-data/kategori/update/(:num)', 'MasterDataController::updateKategori/$1');
+        $routes->get('master-data/kategori/delete/(:num)', 'MasterDataController::deleteKategori/$1');
+        $routes->post('master-data/subkategori/create', 'MasterDataController::createSubKategori');
+        $routes->post('master-data/subkategori/update/(:num)', 'MasterDataController::updateSubKategori/$1');
+        $routes->get('master-data/subkategori/delete/(:num)', 'MasterDataController::deleteSubKategori/$1');
+        $routes->post('master-data/lokasi/create', 'MasterDataController::createLokasi');
+        $routes->post('master-data/lokasi/update/(:num)', 'MasterDataController::updateLokasi/$1');
+        $routes->get('master-data/lokasi/delete/(:num)', 'MasterDataController::deleteLokasi/$1');
+        $routes->post('master-data/merk/create', 'MasterDataController::createMerk');
+        $routes->post('master-data/merk/update/(:num)', 'MasterDataController::updateMerk/$1');
+        $routes->get('master-data/merk/delete/(:num)', 'MasterDataController::deleteMerk/$1');
+        $routes->post('master-data/tipe/create', 'MasterDataController::createTipe');
+        $routes->post('master-data/tipe/update/(:num)', 'MasterDataController::updateTipe/$1');
+        $routes->get('master-data/tipe/delete/(:num)', 'MasterDataController::deleteTipe/$1');
+
+        // Fitur Import
+        $routes->get('import', 'ImportController::index');
+        $routes->post('import/upload', 'ImportController::upload');
+        $routes->post('import/save', 'ImportController::save');
+        $routes->get('import/cancel', 'ImportController::cancel');
+        $routes->post('import/add-master', 'ImportController::addMasterData');
+        $routes->get('import/print-labels', 'ImportController::printLabels');
+        $routes->get('import/template', 'ImportController::downloadTemplate');
+        $routes->post('import/update-session', 'ImportController::updateSessionData');
+        $routes->post('import/delete-master', 'ImportController::deleteMasterData');
+
+        // Manajemen Akun
+        $routes->get('user', 'UserController::index');
+        $routes->get('user/create', 'UserController::create');
+        $routes->post('user/store', 'UserController::store');
+        $routes->get('user/edit/(:num)', 'UserController::edit/$1');
+        $routes->post('user/update/(:num)', 'UserController::update/$1');
+        $routes->get('user/delete/(:num)', 'UserController::delete/$1');
+        $routes->delete('user/delete/(:num)', 'UserController::delete/$1');
+        $routes->post('user/activate/(:num)', 'UserController::activate/$1');
+        $routes->post('user/reset-password/(:num)', 'UserController::resetPassword/$1');
+        $routes->post('user/toggle-so-mode', 'UserController::toggleSoMode');
+        $routes->post('user/toggle-so-permission/(:num)', 'UserController::toggleUserSoPermission/$1');
+    });
 });
