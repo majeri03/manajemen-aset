@@ -52,6 +52,11 @@
                         <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
                     </a>
                 </li>
+                <li>
+                    <a href="<?= base_url('scan-cepat') ?>" class="nav-link <?= ($current_page == 'scan-cepat') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Scan Cepat">
+                        <i class="bi bi-qr-code-scan"></i> <span>Scan Aset</span>
+                    </a>
+                </li>
                 
                 <?php if (session()->get('role') === 'admin'): ?>
                 <li class="nav-item mt-2">
@@ -60,11 +65,6 @@
                         <li><a href="<?= base_url('aset') ?>" class="nav-link submenu-link <?= ($current_page == 'aset') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Aset"><i class="bi bi-box-seam"></i> <span>Data Aset</span></a></li>
                         <li><a href="<?= base_url('master-data') ?>" class="nav-link submenu-link <?= ($current_page == 'master-data') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Master"><i class="bi bi-hdd-stack-fill"></i> <span>Data Master</span></a></li>
                         <li><a href="<?= base_url('import') ?>" class="nav-link submenu-link <?= ($current_page == 'import') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Import Data"><i class="bi bi-file-earmark-excel"></i> <span>Import Data</span></a></li>
-                        <li>
-                            <a href="<?= base_url('user') ?>" class="nav-link submenu-link <?= ($current_page == 'user') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manajemen Pengguna">
-                                <i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span>
-                            </a>
-                        </li>
                     </ul>
                 </li>
                 <?php else: // Jika bukan admin, hanya tampilkan Data Aset ?>
@@ -86,17 +86,15 @@
                                 <?php if (isset($pending_requests) && $pending_requests > 0): ?>
                                     <span class="badge bg-danger rounded-pill"><?= $pending_requests ?></span>
                                 <?php endif; ?>
+                            <li><a href="<?= base_url('user') ?>" class="nav-link submenu-link <?= ($current_page == 'user') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manajemen Pengguna"><i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span>
                             </a>
                         </li>
-                        <li><a href="<?= base_url('laporan') ?>" class="nav-link submenu-link <?= ($current_page == 'laporan') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Laporan"><i class="bi bi-file-earmark-bar-graph"></i> <span>Fast Audit</span></a></li>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <?php endif; ?>
-                <li>
-                    <a href="<?= base_url('scan-cepat') ?>" class="nav-link submenu-link <?= ($current_page == 'scan-cepat') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Scan Cepat">
-                        <i class="bi bi-qr-code-scan"></i> <span>Scan Aset</span>
-                    </a>
-                </li>
+            
 
             </ul>
             <hr>
