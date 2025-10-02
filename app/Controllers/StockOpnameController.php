@@ -286,8 +286,12 @@ class StockOpnameController extends BaseController
                 'message' => 'Anda tidak memiliki izin untuk melakukan Stock Opname. Silakan hubungi administrator.'
             ]);
         }
-        
-        $data = ['title' => 'Scan Cepat Stock Opname'];
+        $lokasiModel = new \App\Models\LokasiModel();
+
+        $data = [
+            'title'       => 'Scan Cepat Stock Opname',
+            'lokasi_list' => $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(), // [BARU] Kirim daftar lokasi
+        ];
         return view('stock_opname/scan_cepat', $data);
     }
 
@@ -371,7 +375,7 @@ class StockOpnameController extends BaseController
     /**
      * Memproses hasil scan cepat yang dikirim dari form.
      */
-     public function processScan()
+    public function processScan()
     {
         $assetIds = $this->request->getPost('asset_ids');
 
@@ -384,30 +388,31 @@ class StockOpnameController extends BaseController
         $skippedCount = 0;
         $userId = session()->get('user_id');
         $now = date('Y-m-d H:i:s');
-        
-        // [PERUBAHAN] Batas waktu diubah menjadi awal hari ini (pukul 00:00:00)
-        $todayStart = date('Y-m-d 00:00:00'); 
+        $todayStart = date('Y-m-d 00:00:00');
 
         foreach ($assetIds as $asetId) {
-            // [PERUBAHAN] Hapus pengecekan user_id, cukup cek apakah ada entri untuk aset ini sejak awal hari
             $lastScan = $db->table('stock_opname_history')
-                           ->where('aset_id', $asetId)
-                           ->where('opname_at >=', $todayStart) // Cek verifikasi sejak awal hari ini
-                           ->countAllResults();
+                        ->where('aset_id', $asetId)
+                        ->where('opname_at >=', $todayStart)
+                        ->countAllResults();
 
             if ($lastScan > 0) {
                 $skippedCount++;
-                continue; // Lewati aset ini karena sudah diverifikasi hari ini oleh siapapun
+                continue;
             }
 
+            // [BARU] Update status verifikasi aset menjadi 'Sudah Dicek'
+            $db->table('aset')->where('id', $asetId)->update(['status_verifikasi' => 'Sudah Dicek']);
+
+            // Catat ke riwayat
             $historyData = [
                 'aset_id'       => $asetId,
-                'user_id'       => $userId, // Tetap catat siapa yang memverifikasi
+                'user_id'       => $userId,
                 'opname_at'     => $now,
                 'catatan'       => 'Diverifikasi via Scan Cepat.',
                 'ada_perubahan' => false,
             ];
-            
+
             $db->table('stock_opname_history')->insert($historyData);
             $processedCount++;
         }
@@ -418,5 +423,40 @@ class StockOpnameController extends BaseController
         }
 
         return redirect()->to('/dashboard')->with('success', $message);
+    }
+    /**
+     * API Endpoint untuk mengambil daftar aset berdasarkan lokasi
+     * untuk halaman Scan Cepat.
+     */
+    public function getAsetByLocation($locationId = null)
+    {
+        if ($locationId === null) {
+            return $this->response->setStatusCode(400, 'ID Lokasi dibutuhkan.');
+        }
+
+        $asetModel = new \App\Models\AsetModel();
+
+        // Ambil semua aset di lokasi tersebut
+        $asets = $asetModel
+            ->select('id, kode, status_verifikasi')
+            ->where('lokasi_id', $locationId)
+            ->where('deleted_at IS NULL') // Hanya aset yang aktif
+            ->orderBy('kode', 'ASC')
+            ->findAll();
+
+        return $this->response->setJSON($asets);
+    }
+
+    /**
+     * [KHUSUS ADMIN] Memulai siklus stock opname baru dengan mereset status
+     * verifikasi semua aset menjadi 'Belum Dicek'.
+     */
+    public function startCycle()
+    {
+        // Pastikan hanya admin yang bisa mengakses ini (sudah diatur di Routes)
+        $db = \Config\Database::connect();
+        $db->table('aset')->update(['status_verifikasi' => 'Belum Dicek']);
+
+        return redirect()->to('/stockopname')->with('success', 'Siklus Stock Opname baru telah dimulai! Semua aset ditandai sebagai "Belum Dicek".');
     }
 }
