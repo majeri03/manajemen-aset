@@ -23,23 +23,26 @@
     </div>
 <?php endif; ?>
 
-<ul class="nav nav-tabs" id="masterDataTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="kategori-tab" data-bs-toggle="tab" data-bs-target="#kategori-content" type="button" role="tab" aria-controls="kategori-content" aria-selected="true">
-            Manajemen Kategori
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi-content" type="button" role="tab" aria-controls="lokasi-content" aria-selected="false">
-            Manajemen Lokasi
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="merk-tab" data-bs-toggle="tab" data-bs-target="#merk-content" type="button" role="tab" aria-controls="merk-content" aria-selected="false">
-            Manajemen Merk & Tipe
-        </button>
-    </li>
-</ul>
+<div class="chart-nav-container">
+    <ul class="nav nav-pills chart-nav" id="masterDataTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="kategori-tab" data-bs-toggle="tab" data-bs-target="#kategori-content" type="button" role="tab" aria-controls="kategori-content" aria-selected="true">
+                <i class="bi bi-tags-fill"></i> Kategori
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi-content" type="button" role="tab" aria-controls="lokasi-content" aria-selected="false">
+                <i class="bi bi-geo-alt-fill"></i> Lokasi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="merk-tab" data-bs-toggle="tab" data-bs-target="#merk-content" type="button" role="tab" aria-controls="merk-content" aria-selected="false">
+                <i class="bi bi-bookmark-star-fill"></i> Merk & Tipe
+            </button>
+        </li>
+    </ul>
+</div>
+
 
 <div class="tab-content table-container shadow-sm" id="masterDataTabsContent" style="border-top-left-radius: 0;">
     <div class="tab-pane fade show active" id="kategori-content" role="tabpanel" aria-labelledby="kategori-tab">
@@ -53,6 +56,22 @@
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('script') ?>
+<script>
+    // Script untuk menjaga tab tetap aktif setelah halaman dimuat ulang (tidak perlu diubah)
+    document.addEventListener('DOMContentLoaded', function() {
+        let urlParams = new URLSearchParams(window.location.search);
+        let activeTab = urlParams.get('tab');
+        if (activeTab) {
+            let tabElement = document.querySelector('#' + activeTab + '-tab');
+            if(tabElement) {
+                new bootstrap.Tab(tabElement).show();
+            }
+        }
+    });
+</script>
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>

@@ -528,79 +528,95 @@ public function export()
     }
     
     public function exportBulanan($bulan)
-    {
-        if ($bulan < 1 || $bulan > 12) {
-            return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
-        }
-
-        $tahunIni = date('Y');
-
-        $asets = $this->asetModel
-                        ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
-                        ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-                        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-                        ->where('MONTH(aset.updated_at)', $bulan)
-                        ->where('YEAR(aset.updated_at)', $tahunIni)
-                        ->orderBy('aset.updated_at', 'DESC')
-                        ->findAll();
-
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
-        $sheet->setCellValue('A1', 'Kode Aset');
-        $sheet->setCellValue('B1', 'Kategori');
-        $sheet->setCellValue('C1', 'Sub Kategori');
-        $sheet->setCellValue('D1', 'Merk');
-        $sheet->setCellValue('E1', 'Type');
-        $sheet->setCellValue('F1', 'Serial Number');
-        $sheet->setCellValue('G1', 'Tahun');
-        $sheet->setCellValue('H1', 'Lokasi');
-        $sheet->setCellValue('I1', 'Status');
-        $sheet->setCellValue('J1', 'Keterangan');
-        $sheet->setCellValue('K1', 'Harga Beli');
-        $sheet->setCellValue('L1', 'Entitas Pembelian');
-        $sheet->setCellValue('M1', 'Terakhir Diperbarui');
-        
-        $styleArray = [
-            'font' => ['bold' => true],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
-        ];
-        $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
-
-        $row = 2;
-        foreach ($asets as $aset) {
-            $sheet->setCellValue('A' . $row, $aset['kode']);
-            $sheet->setCellValue('B' . $row, $aset['nama_kategori']);
-            $sheet->setCellValue('C' . $row, $aset['nama_sub_kategori']);
-            $sheet->setCellValue('D' . $row, $aset['merk']);
-            $sheet->setCellValue('E' . $row, $aset['type']);
-            $sheet->setCellValue('F' . $row, $aset['serial_number']);
-            $sheet->setCellValue('G' . $row, $aset['tahun']);
-            $sheet->setCellValue('H' . $row, $aset['lokasi']);
-            $sheet->setCellValue('I' . $row, $aset['status']);
-            $sheet->setCellValue('J' . $row, $aset['keterangan']);
-            $sheet->setCellValue('K' . $row, $aset['harga_beli']);
-            $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
-            $sheet->setCellValue('M' . $row, $aset['updated_at']);
-            $row++;
-        }
-        
-        foreach (range('A', 'M') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        $writer = new Xlsx($spreadsheet);
-        
-        $namaBulan = date('F', mktime(0, 0, 0, $bulan, 10));
-        $filename = 'laporan_aset_' . strtolower($namaBulan) . '_' . $tahunIni . '.xlsx';
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-        
-        $writer->save('php://output');
-        exit();
+{
+    if ($bulan < 1 || $bulan > 12) {
+        return redirect()->to('/dashboard')->with('error', 'Bulan yang dipilih tidak valid.');
     }
+
+    $tahunIni = date('Y');
+
+    // ======================================================================
+    // 1. PERBAIKAN PADA QUERY DATABASE
+    // Menambahkan join ke tabel merk, tipe, dan lokasi
+    // ======================================================================
+    $asets = $this->asetModel
+                    ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, m.nama_merk, t.nama_tipe, l.nama_lokasi')
+                    ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                    ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                    ->join('merk m', 'm.id = aset.merk_id', 'left')
+                    ->join('tipe t', 't.id = aset.tipe_id', 'left')
+                    ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+                    ->where('MONTH(aset.updated_at)', $bulan)
+                    ->where('YEAR(aset.updated_at)', $tahunIni)
+                    ->orderBy('aset.updated_at', 'DESC')
+                    ->findAll();
+
+    // ======================================================================
+    // 2. TAMBAHAN VALIDASI DATA
+    // Mencegah download jika tidak ada data yang ditemukan
+    // ======================================================================
+    if (empty($asets)) {
+        return redirect()->to('/dashboard')->with('error', 'Tidak ada data aset untuk diekspor pada bulan yang dipilih.');
+    }
+
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    $sheet->setCellValue('A1', 'Kode Aset');
+    $sheet->setCellValue('B1', 'Kategori');
+    $sheet->setCellValue('C1', 'Sub Kategori');
+    $sheet->setCellValue('D1', 'Merk');
+    $sheet->setCellValue('E1', 'Tipe');
+    $sheet->setCellValue('F1', 'Serial Number');
+    $sheet->setCellValue('G1', 'Tahun');
+    $sheet->setCellValue('H1', 'Lokasi');
+    $sheet->setCellValue('I1', 'Status');
+    $sheet->setCellValue('J1', 'Keterangan');
+    $sheet->setCellValue('K1', 'Harga Beli');
+    $sheet->setCellValue('L1', 'Entitas Pembelian');
+    $sheet->setCellValue('M1', 'Terakhir Diperbarui');
+    
+    $styleArray = [
+        'font' => ['bold' => true],
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFC0C0C0']]
+    ];
+    $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
+
+    $row = 2;
+    foreach ($asets as $aset) {
+        $sheet->setCellValue('A' . $row, $aset['kode']);
+        $sheet->setCellValue('B' . $row, $aset['nama_kategori']);
+        $sheet->setCellValue('C' . $row, $aset['nama_sub_kategori']);
+        // Menggunakan nama_merk, nama_tipe, dan nama_lokasi dari hasil join
+        $sheet->setCellValue('D' . $row, $aset['nama_merk']);
+        $sheet->setCellValue('E' . $row, $aset['nama_tipe']);
+        $sheet->setCellValue('F' . $row, $aset['serial_number']);
+        $sheet->setCellValue('G' . $row, $aset['tahun']);
+        $sheet->setCellValue('H' . $row, $aset['nama_lokasi']);
+        $sheet->setCellValue('I' . $row, $aset['status']);
+        $sheet->setCellValue('J' . $row, $aset['keterangan']);
+        $sheet->setCellValue('K' . $row, $aset['harga_beli']);
+        $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
+        $sheet->setCellValue('M' . $row, $aset['updated_at']);
+        $row++;
+    }
+    
+    foreach (range('A', 'M') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
+
+    $writer = new Xlsx($spreadsheet);
+    
+    $namaBulan = date('F', mktime(0, 0, 0, $bulan, 10));
+    $filename = 'laporan_aset_' . strtolower($namaBulan) . '_' . $tahunIni . '.xlsx';
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    
+    $writer->save('php://output');
+    exit();
+}
 
     public function getTipesByMerk($merkId)
     {
