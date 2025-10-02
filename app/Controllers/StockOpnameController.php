@@ -263,4 +263,160 @@ class StockOpnameController extends BaseController
         $writer->save('php://output');
         exit();
     }
+
+    /**
+     * Menampilkan halaman Scan Cepat.
+     */
+    public function scanCepat()
+    {
+        $db = \Config\Database::connect();
+        $userModel = new \App\Models\UserModel();
+
+        // Cek 1: Apakah mode SO aktif secara global?
+        $setting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+        if (!$setting || $setting->setting_value !== 'on') {
+            return view('stock_opname/inactive', ['title' => 'Akses Ditolak']);
+        }
+
+        // Cek 2: Apakah pengguna yang login punya izin?
+        $currentUser = $userModel->find(session()->get('user_id'));
+        if (!$currentUser || !$currentUser->can_perform_so) {
+            return view('stock_opname/inactive', [
+                'title' => 'Akses Ditolak',
+                'message' => 'Anda tidak memiliki izin untuk melakukan Stock Opname. Silakan hubungi administrator.'
+            ]);
+        }
+        
+        $data = ['title' => 'Scan Cepat Stock Opname'];
+        return view('stock_opname/scan_cepat', $data);
+    }
+
+    /**
+     * API Endpoint untuk mendapatkan info verifikasi terakhir.
+     * --- FUNGSI INI DIPERBARUI & DISEMPURNAKAN ---
+     */
+    public function getLastVerificationInfo($asetId = null)
+    {
+        if ($asetId === null) {
+            return $this->response->setStatusCode(400, 'Aset ID tidak disediakan.');
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            $asetModel = new \App\Models\AsetModel();
+
+            // 1. Ambil detail dasar aset
+            $aset = $asetModel
+                ->select('aset.kode, sk.nama_sub_kategori, m.nama_merk')
+                ->join('sub_kategori as sk', 'sk.id = aset.sub_kategori_id', 'left')
+                ->join('merk as m', 'm.id = aset.merk_id', 'left')
+                ->where('aset.id', $asetId)
+                ->first();                  
+
+            if (!$aset) {
+                return $this->response->setJSON(['status' => 'asset_not_found']);
+            }
+
+            // 2. Cek apakah sudah diverifikasi HARI INI
+            $todayStart = date('Y-m-d 00:00:00');
+            $verifiedToday = $db->table('stock_opname_history')
+                                ->where('aset_id', $asetId)
+                                ->where('opname_at >=', $todayStart)
+                                ->countAllResults() > 0;
+
+            // 3. Ambil riwayat verifikasi TERAKHIR (tidak peduli kapan)
+            $history = $db->table('stock_opname_history as soh')
+                      ->select('soh.opname_at, u.full_name')
+                      ->join('users as u', 'u.id = soh.user_id')
+                      ->where('soh.aset_id', $asetId)
+                      ->orderBy('soh.opname_at', 'DESC')
+                      ->limit(1)
+                      ->get()
+                      ->getRow();
+            
+            // Siapkan data yang akan dikirim
+            $dataToSend = [
+                'kode'              => $aset['kode'],
+                'nama_sub_kategori' => $aset['nama_sub_kategori'],
+                'nama_merk'         => $aset['nama_merk'],
+                'verified_today'    => $verifiedToday,
+                'opname_at'         => null, // Default
+                'full_name'         => null, // Default
+            ];
+
+            $responseStatus = 'no_history';
+
+            if ($history) {
+                // Jika ADA riwayat, isi datanya
+                $responseStatus = 'has_history';
+                $dataToSend['opname_at'] = date('d M Y H:i', strtotime($history->opname_at));
+                $dataToSend['full_name'] = $history->full_name;
+            }
+            
+            // Kirim respons
+            return $this->response->setJSON([
+                'status' => $responseStatus,
+                'data' => $dataToSend
+            ]);
+
+        } catch (\Throwable $e) {
+            log_message('error', '[SCAN_CEPAT_ERROR] ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'server_error',
+                'message' => 'Terjadi kesalahan internal pada server.'
+            ]);
+        }
+    }
+
+    /**
+     * Memproses hasil scan cepat yang dikirim dari form.
+     */
+     public function processScan()
+    {
+        $assetIds = $this->request->getPost('asset_ids');
+
+        if (empty($assetIds)) {
+            return redirect()->to('/scan-cepat')->with('error', 'Tidak ada aset yang dipindai untuk diverifikasi.');
+        }
+
+        $db = \Config\Database::connect();
+        $processedCount = 0;
+        $skippedCount = 0;
+        $userId = session()->get('user_id');
+        $now = date('Y-m-d H:i:s');
+        
+        // [PERUBAHAN] Batas waktu diubah menjadi awal hari ini (pukul 00:00:00)
+        $todayStart = date('Y-m-d 00:00:00'); 
+
+        foreach ($assetIds as $asetId) {
+            // [PERUBAHAN] Hapus pengecekan user_id, cukup cek apakah ada entri untuk aset ini sejak awal hari
+            $lastScan = $db->table('stock_opname_history')
+                           ->where('aset_id', $asetId)
+                           ->where('opname_at >=', $todayStart) // Cek verifikasi sejak awal hari ini
+                           ->countAllResults();
+
+            if ($lastScan > 0) {
+                $skippedCount++;
+                continue; // Lewati aset ini karena sudah diverifikasi hari ini oleh siapapun
+            }
+
+            $historyData = [
+                'aset_id'       => $asetId,
+                'user_id'       => $userId, // Tetap catat siapa yang memverifikasi
+                'opname_at'     => $now,
+                'catatan'       => 'Diverifikasi via Scan Cepat.',
+                'ada_perubahan' => false,
+            ];
+            
+            $db->table('stock_opname_history')->insert($historyData);
+            $processedCount++;
+        }
+
+        $message = $processedCount . ' aset berhasil diverifikasi.';
+        if ($skippedCount > 0) {
+            $message .= ' ' . $skippedCount . ' aset dilewati karena sudah diverifikasi hari ini.';
+        }
+
+        return redirect()->to('/dashboard')->with('success', $message);
+    }
 }
