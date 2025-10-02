@@ -311,9 +311,10 @@ class StockOpnameController extends BaseController
 
             // 1. Ambil detail dasar aset
             $aset = $asetModel
-                ->select('aset.kode, sk.nama_sub_kategori, m.nama_merk')
+                ->select('aset.kode, sk.nama_sub_kategori, m.nama_merk, l.nama_lokasi')
                 ->join('sub_kategori as sk', 'sk.id = aset.sub_kategori_id', 'left')
                 ->join('merk as m', 'm.id = aset.merk_id', 'left')
+                ->join('lokasi as l', 'l.id = aset.lokasi_id', 'left')
                 ->where('aset.id', $asetId)
                 ->first();                  
 
@@ -343,6 +344,7 @@ class StockOpnameController extends BaseController
                 'kode'              => $aset['kode'],
                 'nama_sub_kategori' => $aset['nama_sub_kategori'],
                 'nama_merk'         => $aset['nama_merk'],
+                'nama_lokasi'       => $aset['nama_lokasi'],
                 'verified_today'    => $verifiedToday,
                 'opname_at'         => null, // Default
                 'full_name'         => null, // Default
