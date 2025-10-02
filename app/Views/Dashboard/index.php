@@ -155,7 +155,8 @@ Dashboard
     </div>
 
     <div class="col-lg-4 d-flex flex-column">
-        <div class="d-grid gap-2 mb-4">
+        <?php if (session()->get('role') === 'admin'): ?>
+<div class="d-grid gap-2 mb-4">
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
         <i class="bi bi-plus-circle me-2"></i> Tambah Aset
     </button>
@@ -179,6 +180,7 @@ Dashboard
         </ul>
     </div>
 </div>
+<?php endif; ?>
 
 
         <div class="table-container shadow-sm mb-4">

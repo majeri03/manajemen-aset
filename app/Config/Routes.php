@@ -71,12 +71,13 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->get('requests/approve/(:num)', 'RequestController::approve/$1');
         $routes->get('requests/reject/(:num)', 'RequestController::reject/$1');
         
-        // Pelacakan & Laporan
+        // Pelacakan & Laporan Stockopname
         $routes->get('stockopname', 'StockOpnameController::index');
         $routes->get('stockopname/export', 'StockOpnameController::export');
         $routes->get('laporan', 'LaporanController::index');
         $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
-
+        $routes->get('laporan/stockopname', 'LaporanController::stockOpnameReport');
+        $routes->get('laporan/stockopname/export/(:num)', 'LaporanController::exportStockOpnameReport/$1');
         // Data Master
         $routes->get('master-data', 'MasterDataController::index');
         $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');

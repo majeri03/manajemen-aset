@@ -15,52 +15,52 @@ class StockOpnameController extends BaseController
     public function index()
     {
         $db = \Config\Database::connect();
-        $kategoriModel = new KategoriModel();
+        $lokasiModel = new LokasiModel();
+        $asetModel = new AsetModel();
 
-        $selectedKategori = $this->request->getGet('kategori_id');
-        $startDate = $this->request->getGet('start_date');
-        $endDate = $this->request->getGet('end_date');
+        $activeCycle = $db->table('stock_opname_cycles')->where('status', 'active')->orderBy('id', 'DESC')->get()->getRow();
 
-        $history = [];
+        // --- Data Statistik untuk Dasbor Siklus ---
+        $totalAset    = $asetModel->countAllResults();
+        $sudahDicek   = $asetModel->where('status_verifikasi', 'Sudah Dicek')->countAllResults();
+        $belumDicek   = $totalAset - $sudahDicek;
+        $progress     = ($totalAset > 0) ? ($sudahDicek / $totalAset) * 100 : 0;
 
-        if ($this->request->getGet('filter')) { // Hanya query jika tombol filter ditekan
-            $builder = $db->table('stock_opname_history as soh')
-                ->select('
-                    soh.opname_at, soh.catatan, u.full_name, soh.ada_perubahan, 
-                    a.kode as kode_aset, 
-                    sk.nama_sub_kategori,
-                    m.nama_merk,
-                    t.nama_tipe,
-                    l.nama_lokasi
-                ')
-                ->join('users as u', 'u.id = soh.user_id')
-                ->join('aset as a', 'a.id = soh.aset_id')
-                ->join('sub_kategori as sk', 'sk.id = a.sub_kategori_id', 'left')
-                ->join('merk as m', 'm.id = a.merk_id', 'left')
-                ->join('tipe as t', 't.id = a.tipe_id', 'left')
-                ->join('lokasi as l', 'l.id = a.lokasi_id', 'left')
-                ->orderBy('soh.opname_at', 'DESC');
+        // --- Logika Filter ---
+        $filters = [
+            'lokasi_id'         => $this->request->getGet('lokasi_id'),
+            'status_verifikasi' => $this->request->getGet('status_verifikasi'),
+            'kode'              => $this->request->getGet('kode'),
+        ];
 
-            if ($selectedKategori) {
-                $builder->where('a.kategori_id', $selectedKategori);
-            }
-            if ($startDate && $endDate) {
-                $builder->where('soh.opname_at >=', $startDate . ' 00:00:00');
-                $builder->where('soh.opname_at <=', $endDate . ' 23:59:59');
-            }
+        $builder = $db->table('aset a')
+            ->select('a.id, a.kode, a.status_verifikasi, l.nama_lokasi, sk.nama_sub_kategori, m.nama_merk')
+            ->join('lokasi l', 'l.id = a.lokasi_id', 'left')
+            ->join('sub_kategori sk', 'sk.id = a.sub_kategori_id', 'left')
+            ->join('merk m', 'm.id = a.merk_id', 'left')
+            ->where('a.deleted_at', null); // Hanya aset aktif
 
-            $history = $builder->get()->getResultArray();
+        if (!empty($filters['lokasi_id'])) {
+            $builder->where('a.lokasi_id', $filters['lokasi_id']);
         }
+        if (!empty($filters['status_verifikasi'])) {
+            $builder->where('a.status_verifikasi', $filters['status_verifikasi']);
+        }
+        if (!empty($filters['kode'])) {
+            $builder->like('a.kode', $filters['kode']); 
+        }
+        $asetList = $builder->orderBy('a.kode', 'ASC')->get()->getResultArray();
 
         $data = [
-            'title'        => 'Riwayat Stock Opname',
-            'kategori_list'=> $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll(),
-            'history'      => $history,
-            'filters'      => [
-                'kategori_id' => $selectedKategori,
-                'start_date'  => $startDate,
-                'end_date'    => $endDate,
-            ]
+            'title'             => 'Dasbor Stock Opname',
+            'activeCycle'       => $activeCycle,
+            'lokasi_list'       => $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'totalAset'         => $totalAset,
+            'sudahDicek'        => $sudahDicek,
+            'belumDicek'        => $belumDicek,
+            'progress'          => $progress,
+            'asetList'          => $asetList, // Daftar aset untuk ditampilkan
+            'filters'           => $filters,
         ];
 
         return view('stock_opname/index', $data);
@@ -311,7 +311,7 @@ class StockOpnameController extends BaseController
 
             // 1. Ambil detail dasar aset
             $aset = $asetModel
-                ->select('aset.kode, sk.nama_sub_kategori, m.nama_merk, l.nama_lokasi')
+                ->select('aset.kode, aset.status_verifikasi, sk.nama_sub_kategori, m.nama_merk, l.nama_lokasi')
                 ->join('sub_kategori as sk', 'sk.id = aset.sub_kategori_id', 'left')
                 ->join('merk as m', 'm.id = aset.merk_id', 'left')
                 ->join('lokasi as l', 'l.id = aset.lokasi_id', 'left')
@@ -322,12 +322,6 @@ class StockOpnameController extends BaseController
                 return $this->response->setJSON(['status' => 'asset_not_found']);
             }
 
-            // 2. Cek apakah sudah diverifikasi HARI INI
-            $todayStart = date('Y-m-d 00:00:00');
-            $verifiedToday = $db->table('stock_opname_history')
-                                ->where('aset_id', $asetId)
-                                ->where('opname_at >=', $todayStart)
-                                ->countAllResults() > 0;
 
             // 3. Ambil riwayat verifikasi TERAKHIR (tidak peduli kapan)
             $history = $db->table('stock_opname_history as soh')
@@ -345,7 +339,7 @@ class StockOpnameController extends BaseController
                 'nama_sub_kategori' => $aset['nama_sub_kategori'],
                 'nama_merk'         => $aset['nama_merk'],
                 'nama_lokasi'       => $aset['nama_lokasi'],
-                'verified_today'    => $verifiedToday,
+                'status_verifikasi' => $aset['status_verifikasi'],
                 'opname_at'         => null, // Default
                 'full_name'         => null, // Default
             ];
@@ -386,24 +380,23 @@ class StockOpnameController extends BaseController
         }
 
         $db = \Config\Database::connect();
+        $asetModel = new AsetModel(); // Panggil model Aset
         $processedCount = 0;
         $skippedCount = 0;
         $userId = session()->get('user_id');
         $now = date('Y-m-d H:i:s');
-        $todayStart = date('Y-m-d 00:00:00');
 
         foreach ($assetIds as $asetId) {
-            $lastScan = $db->table('stock_opname_history')
-                        ->where('aset_id', $asetId)
-                        ->where('opname_at >=', $todayStart)
-                        ->countAllResults();
+            // AMBIL DATA ASET TERBARU DARI DATABASE
+            $aset = $asetModel->find($asetId);
 
-            if ($lastScan > 0) {
+            // LEWATI JIKA ASET TIDAK DITEMUKAN ATAU SUDAH DICEK
+            if (!$aset || $aset['status_verifikasi'] === 'Sudah Dicek') {
                 $skippedCount++;
                 continue;
             }
 
-            // [BARU] Update status verifikasi aset menjadi 'Sudah Dicek'
+            // UPDATE status verifikasi aset menjadi 'Sudah Dicek'
             $db->table('aset')->where('id', $asetId)->update(['status_verifikasi' => 'Sudah Dicek']);
 
             // Catat ke riwayat
@@ -421,7 +414,7 @@ class StockOpnameController extends BaseController
 
         $message = $processedCount . ' aset berhasil diverifikasi.';
         if ($skippedCount > 0) {
-            $message .= ' ' . $skippedCount . ' aset dilewati karena sudah diverifikasi hari ini.';
+            $message .= ' ' . $skippedCount . ' aset dilewati karena sudah diverifikasi sebelumnya dalam siklus ini.';
         }
 
         return redirect()->to('/dashboard')->with('success', $message);
@@ -455,10 +448,22 @@ class StockOpnameController extends BaseController
      */
     public function startCycle()
     {
-        // Pastikan hanya admin yang bisa mengakses ini (sudah diatur di Routes)
         $db = \Config\Database::connect();
+        $userId = session()->get('user_id');
+
+        $db->table('stock_opname_cycles')
+           ->where('status', 'active')
+           ->set(['status' => 'completed', 'end_date' => date('Y-m-d H:i:s')])
+           ->update();
+
+        $db->table('stock_opname_cycles')->insert([
+            'start_date'         => date('Y-m-d H:i:s'),
+            'started_by_user_id' => $userId,
+            'status'             => 'active',
+        ]);
+
         $db->table('aset')->update(['status_verifikasi' => 'Belum Dicek']);
 
-        return redirect()->to('/stockopname')->with('success', 'Siklus Stock Opname baru telah dimulai! Semua aset ditandai sebagai "Belum Dicek".');
+        return redirect()->to('/stockopname')->with('success', 'Siklus Stock Opname baru telah dimulai!');
     }
 }

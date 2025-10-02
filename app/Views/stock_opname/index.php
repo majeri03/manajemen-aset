@@ -5,90 +5,120 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="main-header mb-4">
-    <h4 class="mb-0">Riwayat Verifikasi (Stock Opname)</h4>
-    <p class="text-muted small">Lihat dan saring semua catatan verifikasi aset.</p>
-</div>
-
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <form action="<?= base_url('stockopname') ?>" method="get" class="row g-3 align-items-end">
-            <div class="col-12 col-md-4">
-                <label for="kategori_id" class="form-label">Kategori Aset</label>
-                <select name="kategori_id" id="kategori_id" class="form-select" required>
-                    <option value="">-- Pilih Kategori --</option>
-                    <?php foreach ($kategori_list as $kategori) : ?>
-                        <option value="<?= esc($kategori['id']) ?>" <?= ($filters['kategori_id'] ?? '') == $kategori['id'] ? 'selected' : '' ?>>
-                            <?= esc($kategori['nama_kategori']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-6 col-md-3">
-                <label for="start_date" class="form-label">Dari Tanggal</label>
-                <input type="date" name="start_date" id="start_date" class="form-control" value="<?= esc($filters['start_date'] ?? '') ?>">
-            </div>
-            <div class="col-6 col-md-3">
-                <label for="end_date" class="form-label">Sampai Tanggal</label>
-                <input type="date" name="end_date" id="end_date" class="form-control" value="<?= esc($filters['end_date'] ?? '') ?>">
-            </div>
-            <div class="col-12 col-md-2">
-                <button type="submit" name="filter" value="true" class="btn btn-primary w-100">Tampilkan Data</button>
-            </div>
+<div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0">Dasbor Stock Opname</h4>
+        <?php if ($activeCycle): ?>
+            <p class="text-muted small mb-0">
+                Siklus Aktif Dimulai: <strong><?= date('d F Y, H:i', strtotime($activeCycle->start_date)) ?></strong>
+            </p>
+        <?php else: ?>
+            <p class="text-muted small mb-0">Belum ada siklus yang dimulai. Tekan tombol untuk memulai.</p>
+        <?php endif; ?>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="<?= base_url('laporan/stockopname') ?>" class="btn btn-info">
+            <i class="bi bi-archive-fill me-2"></i>Lihat Laporan Siklus
+        </a>
+        <form action="<?= base_url('stockopname/start-cycle') ?>" method="post" onsubmit="return confirmStartCycle(event);" class="d-inline">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-arrow-repeat me-2"></i>Mulai Siklus Baru
+            </button>
         </form>
     </div>
 </div>
 
-<div class="table-container shadow-sm ">
-    <div class="d-flex justify-content-end mb-3">
-        <a href="<?= base_url('stockopname/export?' . http_build_query(array_filter($filters))) ?>" class="btn btn-success">
-            <i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel
-        </a>
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+<?php endif; ?>
+
+<!-- Bagian Statistik Progres -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Progres Siklus Saat Ini</h5>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: <?= round($progress, 2) ?>%;" aria-valuenow="<?= round($progress, 2) ?>" aria-valuemin="0" aria-valuemax="100"><?= round($progress, 2) ?>%</div>
+                </div>
+                <div class="d-flex justify-content-between mt-2 text-muted small">
+                    <span>Sudah Dicek: <strong><?= $sudahDicek ?></strong></span>
+                    <span>Belum Dicek: <strong><?= $belumDicek ?></strong></span>
+                    <span>Total Aset: <strong><?= $totalAset ?></strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bagian Filter dan Daftar Aset -->
+<div class="table-container shadow-sm">
+    <h5 class="mb-3">Daftar Aset dalam Siklus</h5>
+    <form action="<?= base_url('stockopname') ?>" method="get" class="row g-3 align-items-end mb-4">
+        <div class="col-md-3">
+            <label for="lokasi_id" class="form-label">Filter Lokasi</label>
+            <select name="lokasi_id" id="lokasi_id" class="form-select">
+                <option value="">Semua Lokasi</option>
+                <?php foreach ($lokasi_list as $lokasi) : ?>
+                    <option value="<?= esc($lokasi['id']) ?>" <?= ($filters['lokasi_id'] ?? '') == $lokasi['id'] ? 'selected' : '' ?>>
+                        <?= esc($lokasi['nama_lokasi']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="status_verifikasi" class="form-label">Filter Status</label>
+            <select name="status_verifikasi" id="status_verifikasi" class="form-select">
+                <option value="">Semua Status</option>
+                <option value="Belum Dicek" <?= ($filters['status_verifikasi'] ?? '') == 'Belum Dicek' ? 'selected' : '' ?>>Belum Dicek</option>
+                <option value="Sudah Dicek" <?= ($filters['status_verifikasi'] ?? '') == 'Sudah Dicek' ? 'selected' : '' ?>>Sudah Dicek</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="kode" class="form-label">Cari Kode Aset</label>
+            <input type="text" name="kode" class="form-control" placeholder="Masukkan sebagian atau seluruh kode aset..." value="<?= esc($filters['kode'] ?? '') ?>">
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+    
     <div class="table-responsive">
         <table class="table table-hover align-middle">
-    <thead>
-        <tr>
-            <th>Kode Aset</th>
-            <th>Sub Kategori</th>
-            <th>Merk</th>
-            <th>Tipe</th>
-            <th>Lokasi Terakhir</th>
-            <th>Diverifikasi Oleh</th>
-            <th>Tanggal Verifikasi</th>
-            <th>Status Verifikasi</th>
-        </tr>
-    </thead>
-    <tbody>
-                <?php if (!empty($history)): ?>
-                    <?php foreach ($history as $item): ?>
+            <thead>
+                <tr>
+                    <th>Kode Aset</th>
+                    <th>Sub Kategori</th>
+                    <th>Merk</th>
+                    <th>Lokasi</th>
+                    <th>Status Verifikasi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($asetList)): ?>
+                    <?php foreach ($asetList as $item): ?>
                         <tr>
-                            <td><?= esc($item['kode_aset']) ?></td>
+                            <td><?= esc($item['kode']) ?></td>
                             <td><?= esc($item['nama_sub_kategori']) ?></td>
                             <td><?= esc($item['nama_merk']) ?></td>
-                            <td><?= esc($item['nama_tipe']) ?></td>
                             <td><?= esc($item['nama_lokasi']) ?></td>
-                            <td><?= esc($item['full_name']) ?></td>
-                            <td><?= date('d M Y, H:i', strtotime($item['opname_at'])) ?></td>
                             <td>
-                                <?php if ($item['ada_perubahan']): ?>
-                                    <span class="badge bg-warning">Ada Usulan Perubahan</span>
+                                <?php if ($item['status_verifikasi'] == 'Sudah Dicek'): ?>
+                                    <span class="badge bg-success">Sudah Dicek</span>
                                 <?php else: ?>
-                                    <span class="badge bg-success">Data Sesuai</span>
+                                    <span class="badge bg-warning text-dark">Belum Dicek</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" class="text-center py-5">
-                            <p class="text-muted">
-                                <?php if(empty($filters['kategori_id'])): ?>
-                                    Silakan pilih kategori aset untuk menampilkan riwayat.
-                                <?php else: ?>
-                                    Tidak ada data riwayat untuk filter yang dipilih.
-                                <?php endif; ?>
-                            </p>
+                        <td colspan="5" class="text-center py-5">
+                            <p class="text-muted">Tidak ada data aset untuk filter yang dipilih.</p>
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -96,5 +126,28 @@
         </table>
     </div>
 </div>
-</div>
+<?= $this->endSection() ?>
+
+<?= $this->section('script') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmStartCycle(event) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Mulai Siklus Stock Opname Baru?',
+            text: "Ini akan menyelesaikan siklus yang sedang berjalan (jika ada) dan mereset status verifikasi SEMUA aset menjadi 'Belum Dicek'. Anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Mulai Siklus Baru!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                event.target.submit();
+            }
+        });
+        return false;
+    }
+</script>
 <?= $this->endSection() ?>

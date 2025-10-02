@@ -136,66 +136,74 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function redrawLists() {
-        tungguList.innerHTML = '';
-        ditemukanList.innerHTML = '';
-        // Hapus hanya hidden input aset, bukan csrf token
-        scanForm.querySelectorAll('input[name="asset_ids[]"]').forEach(el => el.remove());
+    tungguList.innerHTML = '';
+    ditemukanList.innerHTML = '';
+    // Hapus hanya hidden input aset, bukan csrf token
+    scanForm.querySelectorAll('input[name="asset_ids[]"]').forEach(el => el.remove());
 
-        let inPlaceFoundCount = 0;
+    let inPlaceFoundCount = 0;
 
-        allAssetsInLocation.forEach((asset, assetIdStr) => {
-            if (!foundAssets.has(assetIdStr)) {
-                const item = document.createElement('div');
-                item.id = `asset-${assetIdStr}`;
-                item.className = 'list-group-item';
-                item.innerHTML = `<div class="asset-code">${asset.kode}</div>`;
-                tungguList.appendChild(item);
-            }
-        });
-
-        foundAssets.forEach((details, assetIdStr) => {
+    allAssetsInLocation.forEach((asset, assetIdStr) => {
+        if (!foundAssets.has(assetIdStr)) {
             const item = document.createElement('div');
-            item.id = `found-item-${assetIdStr}`;
-            item.className = 'list-group-item d-flex justify-content-between align-items-center';
-            
-            if (!details.is_misplaced) {
-                item.classList.add('scanned-found');
-                inPlaceFoundCount++;
-            } else {
-                item.classList.add('scanned-misplaced');
-            }
-            if(details.verified_today) {
-                item.classList.add('verified-today');
-            }
+            item.id = `asset-${assetIdStr}`;
+            item.className = 'list-group-item';
+            item.innerHTML = `<div class="asset-code">${asset.kode}</div>`;
+            tungguList.appendChild(item);
+        }
+    });
 
-            let infoText = details.is_misplaced 
-            ? `<span class="text-danger">Lokasi Salah! Lokasi Benar di: ${details.actual_location}</span>` 
+    foundAssets.forEach((details, assetIdStr) => {
+        const item = document.createElement('div');
+        item.id = `found-item-${assetIdStr}`;
+        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+        
+        if (!details.is_misplaced) {
+            item.classList.add('scanned-found');
+            inPlaceFoundCount++;
+        } else {
+            item.classList.add('scanned-misplaced');
+        }
+        if(details.status_verifikasi === 'Sudah Dicek') { 
+            item.classList.add('verified-today');
+        }
+
+        let infoText = details.is_misplaced 
+            ? `<span class="text-danger">Lokasi Salah! Seharusnya di: ${details.actual_location}</span>` 
             : 'Lokasi Sesuai';
 
-            let verifiedBadge = details.verified_today ? '<span class="badge bg-success ms-2">Sudah Diverifikasi</span>' : '';
+        let verifiedBadge = details.status_verifikasi === 'Sudah Dicek' ? '<span class="badge bg-success ms-2">Sudah Diverifikasi</span>' : ''; 
 
-            item.innerHTML = `
-                <div>
-                    <div class="asset-code">${details.kode}${verifiedBadge}</div>
-                    <small class="asset-info">${infoText}</small>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-danger delete-item" data-id="${assetIdStr}">
-                    <i class="bi bi-trash" style="pointer-events: none;"></i>
-                </button>
-            `;
-            ditemukanList.prepend(item);
+        item.innerHTML = `
+            <div>
+                <div class="asset-code">${details.kode}${verifiedBadge}</div>
+                <small class="asset-info">${infoText}</small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger delete-item" data-id="${assetIdStr}">
+                <i class="bi bi-trash" style="pointer-events: none;"></i>
+            </button>
+        `;
+        ditemukanList.prepend(item);
 
+        // =================================================================
+        // PERUBAHAN LOGIKA UTAMA ADA DI SINI
+        // Hanya tambahkan aset yang lokasinya sesuai ke dalam form
+        // =================================================================
+        if (!details.is_misplaced) {
             const hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
             hiddenInput.name = 'asset_ids[]';
             hiddenInput.value = assetIdStr;
             scanForm.appendChild(hiddenInput);
-        });
-        
-        tungguCount.textContent = allAssetsInLocation.size - inPlaceFoundCount;
-        ditemukanCount.textContent = foundAssets.size;
-        submitButton.disabled = foundAssets.size === 0;
-    }
+        }
+    });
+    
+    tungguCount.textContent = allAssetsInLocation.size - inPlaceFoundCount;
+    ditemukanCount.textContent = foundAssets.size;
+    
+    // Tombol submit hanya aktif jika ada setidaknya satu aset yang lokasinya benar
+    submitButton.disabled = scanForm.querySelectorAll('input[name="asset_ids[]"]').length === 0;
+}
 
     // === 3. LOGIKA UTAMA ===
     lokasiSelect.addEventListener('change', function(e) {
