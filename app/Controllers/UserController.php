@@ -194,4 +194,78 @@ public function index()
 
         return redirect()->to('/user')->with('success', 'Pengguna telah dinonaktifkan.');
     }
+
+    public function profile()
+    {
+        $userModel = new UserModel();
+        $userId = session()->get('user_id');
+
+        $data = [
+            'title' => 'Profil Pengguna',
+            'user'  => $userModel->find($userId),
+        ];
+
+        return view('user/profile', $data);
+    }
+
+    public function updateProfileInfo()
+    {
+        $userModel = new UserModel();
+        $userId = session()->get('user_id');
+
+        $rules = [
+            'full_name' => 'required|min_length[3]',
+            'email'     => 'required|valid_email|is_unique[users.email,id,' . $userId . ']',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->to('profile')->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $data = [
+            'full_name' => $this->request->getPost('full_name'),
+            'email'     => $this->request->getPost('email'),
+        ];
+
+        if ($userModel->update($userId, $data)) {
+            // Perbarui juga session jika nama berubah
+            session()->set('full_name', $data['full_name']);
+            return redirect()->to('profile')->with('success', 'Informasi akun berhasil diperbarui.');
+        }
+
+        return redirect()->to('profile')->with('error', 'Gagal memperbarui informasi akun.');
+    }
+
+    public function updatePassword()
+    {
+        $userModel = new UserModel();
+        $userId = session()->get('user_id');
+        $user = $userModel->find($userId);
+
+        $rules = [
+            'current_password' => 'required',
+            'new_password'     => 'required|min_length[8]',
+            'password_confirm' => 'required|matches[new_password]',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->to('profile')->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        // Verifikasi password saat ini
+        if (!password_verify($this->request->getPost('current_password'), $user->password_hash)) {
+            return redirect()->to('profile')->with('error', 'Password saat ini yang Anda masukkan salah.');
+        }
+
+        $data = [
+            'password_hash' => password_hash($this->request->getPost('new_password'), PASSWORD_DEFAULT),
+        ];
+
+        if ($userModel->update($userId, $data)) {
+            return redirect()->to('profile')->with('success', 'Password berhasil diubah.');
+        }
+        
+        return redirect()->to('profile')->with('error', 'Gagal mengubah password.');
+    }
+
 }

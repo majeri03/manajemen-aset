@@ -112,5 +112,12 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->post('user/reset-password/(:num)', 'UserController::resetPassword/$1');
         $routes->post('user/toggle-so-mode', 'UserController::toggleSoMode');
         $routes->post('user/toggle-so-permission/(:num)', 'UserController::toggleUserSoPermission/$1');
+
+        //profile
+        $routes->get('profile', 'UserController::profile');
+        $routes->post('user/profile', 'UserController::updateProfileInfo'); // Mengubah info dasar
+        $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
+
+        
     });
 });

@@ -106,7 +106,9 @@
                     <strong><?= esc(session()->get('full_name') ?? 'Guest') ?></strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                    <li><a class="dropdown-item" href="#">Profil</a></li>
+                    
+                    <li><a class="dropdown-item" href="<?= base_url('profile') ?>">Profil</a></li>
+                    
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?= base_url('logout') ?>">Logout</a></li>
                 </ul>
