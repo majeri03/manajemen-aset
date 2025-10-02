@@ -494,7 +494,7 @@ Dashboard
 
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
+<script src="https://unpkg.com/countup.js@2.0.7/dist/countUp.umd.js"></script>
 <script>
 
         // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
@@ -899,34 +899,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error fetching change history:', error));
     });
-        riwayatBtn.addEventListener('click', function() {
-            if (!currentAsetId) return;
-            timelineList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
-            timelineContainer.style.display = 'block';
-            fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
-                .then(response => response.json())
-                .then(data => {
-                    timelineList.innerHTML = '';
-                    if (data.length > 0) {
-                        data.forEach(item => {
-                            const proposed = JSON.parse(item.proposed_data);
-                            let changes = '';
-                            for (const key in proposed) {
-                                changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
-                            }
-                            const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                            const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Perubahan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
-                            timelineList.innerHTML += listItem;
-                        });
-                    } else {
-                        timelineList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan untuk aset ini.</li>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching history:', error);
-                    timelineList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat riwayat.</li>';
-                });
-        });
+        
     }
 
     const kategoriTambahSelect = document.getElementById('kategori_id-tambah');
