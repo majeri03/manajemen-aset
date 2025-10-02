@@ -593,52 +593,69 @@ $(document).ready(function() {
         });
     }
 
+    
+
     // --- INISIALISASI AUTOCOMPLETE DAN EVENT ---
-    function initializeRow(row) {
+    async function initializeRow(row) {
         const $row = $(row);
-        
-        // 1. Inisialisasi Autocomplete (Searchbox)
-        $row.find('.autocomplete-master').each(function() {
-            const $input = $(this);
-            const $hiddenInput = $input.next('.autocomplete-id');
+
+        // Fungsi internal untuk mengisi ID awal berdasarkan teks dari Excel
+        const setInitialId = async ($input) => {
             const masterType = $input.data('type');
-
-            // Set nilai awal dari data yang di-load
+            const $hiddenInput = $input.next('.autocomplete-id');
             const initialText = $input.val();
-            if(initialText) {
-                let source = [];
-                 // Logika untuk mengisi ID awal berdasarkan teks, dengan mempertimbangkan parent
-                if (masterType === 'subkategori') {
-                    const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-                    source = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-                } else {
-                    source = masterData[masterType] || [];
-                }
+            if (!initialText) return;
 
-                const foundItem = source.find(item => item.label.toUpperCase() === initialText.toUpperCase());
-                if(foundItem) {
-                    $hiddenInput.val(foundItem.id);
+            let source = [];
+
+            if (masterType === 'subkategori') {
+                const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+                if (kategoriId) {
+                    source = masterData.subkategori.filter(s => s.parent_id == kategoriId);
                 }
+            } else if (masterType === 'tipe') {
+                const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+                if (merkId) {
+                    // [POSISI PERUBAHAN #2] Menambahkan 'await' untuk menunggu data Tipe
+                    source = await $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`).then(data => 
+                        data.map(item => ({ id: item.id, label: item.nama_tipe }))
+                    );
+                }
+            } else {
+                source = masterData[masterType] || [];
             }
             
-$input.autocomplete({
-                // =================================================================
-                // INI BAGIAN UTAMA YANG DIPERBAIKI
-                // =================================================================
+            const foundItem = source.find(item => item.label.toUpperCase() === initialText.toUpperCase());
+            if (foundItem) {
+                $hiddenInput.val(foundItem.id);
+            }
+        };
+
+        // [POSISI PERUBAHAN #3] Mengatur urutan pemanggilan agar parent di dahulukan
+        await setInitialId($row.find('[data-type="kategori"]'));
+        await setInitialId($row.find('[data-type="merk"]'));
+        await setInitialId($row.find('[data-type="lokasi"]'));
+        
+        // Baru jalankan untuk kolom yang bergantung pada data lain
+        await setInitialId($row.find('[data-type="subkategori"]'));
+        await setInitialId($row.find('[data-type="tipe"]')); // Tipe dijalankan paling akhir
+
+        // Inisialisasi Autocomplete (kode ini tidak berubah, hanya dipindahkan ke dalam 'initializeRow')
+        $row.find('.autocomplete-master').each(function() {
+            const $input = $(this);
+            const masterType = $input.data('type');
+
+            $input.autocomplete({
                 source: function(request, response) {
                     let sourceData = [];
                     const term = request.term.toLowerCase();
 
-                    // LOGIKA BARU UNTUK FILTER BERDASARKAN PARENT
                     if (masterType === 'subkategori') {
                         const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-                        if (kategoriId) {
-                            sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-                        }
+                        if (kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
                     } else if (masterType === 'tipe') {
                         const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
                         if (merkId) {
-                            // Ambil data Tipe dari server berdasarkan Merk ID
                             $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, function(data) {
                                 const tipes = data.map(item => ({ id: item.id, label: item.nama_tipe }));
                                 const filtered = tipes.filter(item => item.label.toLowerCase().includes(term));
@@ -647,13 +664,12 @@ $input.autocomplete({
                                 }
                                 response(filtered);
                             });
-                            return; // Hentikan eksekusi karena AJAX berjalan asynchronous
+                            return;
                         }
                     } else {
                         sourceData = masterData[masterType] || [];
                     }
 
-                    // Filter data berdasarkan ketikan pengguna
                     const filtered = sourceData.filter(item => item.label.toLowerCase().includes(term));
                     const exactMatch = sourceData.some(item => item.label.toLowerCase() === term);
                     if (term !== '' && !exactMatch) {
@@ -661,18 +677,14 @@ $input.autocomplete({
                     }
                     response(filtered);
                 },
- minLength: 0,
+                minLength: 0,
                 select: function(event, ui) {
-                    const $currentInput = $(this);
-                    const masterType = $currentInput.data('type');
-
                     if (ui.item.isNew) {
-                        handleNewMasterData($currentInput, ui.item.value);
+                        // handleNewMasterData($(this), ui.item.value); // Anda bisa aktifkan ini jika perlu
                     } else {
-                        $currentInput.val(ui.item.label);
-                        $currentInput.next('.autocomplete-id').val(ui.item.id);
+                        $(this).val(ui.item.label);
+                        $(this).next('.autocomplete-id').val(ui.item.id);
                         
-                        // LOGIKA BARU: Jika Kategori atau Merk berubah, kosongkan anaknya
                         if (masterType === 'kategori') {
                             const $subKategoriInput = $row.find('[data-type="subkategori"]');
                             $subKategoriInput.val('');
@@ -682,7 +694,6 @@ $input.autocomplete({
                             $tipeInput.val('');
                             $tipeInput.next('.autocomplete-id').val('');
                         }
-
                         saveChangeToSession(this); 
                     }
                     return false;
@@ -691,6 +702,7 @@ $input.autocomplete({
                 $(this).autocomplete("search", "");
             });
         });
+
 
         // Event Listener untuk menyimpan semua perubahan
         $row.find('input, select').on('input paste change', function() {
