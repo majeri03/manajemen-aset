@@ -42,6 +42,12 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('scan-cepat', 'StockOpnameController::scanCepat');
     $routes->post('stockopname/process-scan', 'StockOpnameController::processScan');
     $routes->get('api/last-verification/(:num)', 'StockOpnameController::getLastVerificationInfo/$1');
+    $routes->get('api/aset-by-location/(:num)', 'StockOpnameController::getAsetByLocation/$1');
+   
+    //profile
+    $routes->get('profile', 'UserController::profile');
+    $routes->post('user/profile', 'UserController::updateProfileInfo'); // Mengubah info dasar
+    $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
     // ===================================================================
     // RUTE YANG HANYA BISA DIAKSES OLEH ADMIN
     // ===================================================================
@@ -113,11 +119,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->post('user/toggle-so-mode', 'UserController::toggleSoMode');
         $routes->post('user/toggle-so-permission/(:num)', 'UserController::toggleUserSoPermission/$1');
 
-        //profile
-        $routes->get('profile', 'UserController::profile');
-        $routes->post('user/profile', 'UserController::updateProfileInfo'); // Mengubah info dasar
-        $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
 
-        
+        //siklus stock opname baru
+        $routes->post('stockopname/start-cycle', 'StockOpnameController::startCycle');
     });
 });
