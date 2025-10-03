@@ -50,22 +50,43 @@ class Dashboard extends BaseController
         
         // app/Controllers/Dashboard.php
 
-    // --- 3. DATA UNTUK ASET YANG MEMERLUKAN PERHATIAN ---
-    $batasWaktu = date('Y-m-d H:i:s', strtotime('-6 months')); // Batas waktu 6 bulan yang lalu
-
-    $asetPerluPerhatian = $db->table('aset a')
-        
-        ->join('lokasi l', 'l.id = a.lokasi_id', 'left')
-        ->join('(SELECT aset_id, MAX(opname_at) as opname_at FROM stock_opname_history GROUP BY aset_id) as soh', 'soh.aset_id = a.id', 'left')
-        ->where('a.deleted_at', null) // Hanya aset yang aktif
-        ->groupStart()
-            ->where('a.status', 'Rusak')
-            ->orWhere('soh.opname_at <', $batasWaktu)
-            ->orWhere('soh.opname_at IS NULL')
-        ->groupEnd()
+    // --- 3. DATA BARU: LAPORAN KEJANGGALAN DARI STOCK OPNAME ---
+    $laporan_kejanggalan = $db->table('stock_opname_history soh')
+        ->select('soh.opname_at, soh.data_sesudah, a.id as aset_id, a.kode, u.full_name')
+        ->join('aset a', 'a.id = soh.aset_id')
+        ->join('users u', 'u.id = soh.user_id')
+        ->where('soh.ada_perubahan', 1)
+        ->where('a.deleted_at', null)
+        ->orderBy('soh.opname_at', 'DESC')
         ->limit(5)
         ->get()
         ->getResultArray();
+
+    $lokasiModel = new \App\Models\LokasiModel();
+    foreach ($laporan_kejanggalan as &$laporan) { // Tanda '&' penting
+        $perubahan = json_decode($laporan['data_sesudah'], true);
+        if (!is_array($perubahan)) continue;
+
+        $detail_perubahan = [];
+        foreach ($perubahan as $field => $value) {
+            $namaField = ucfirst(str_replace(['_id', '_'], ['', ' '], $field));
+            
+            $nilaiBaru = esc($value);
+
+            if ($field === 'lokasi_id') {
+                $lokasi = $lokasiModel->find($value);
+                $nilaiBaru = $lokasi ? esc($lokasi['nama_lokasi']) : 'ID: ' . esc($value);
+            }
+            
+            $detail_perubahan[$namaField] = $nilaiBaru;
+        }
+        $laporan['detail_perubahan'] = $detail_perubahan; // <- Ini yang membuat variabelnya ada di view
+    }
+    unset($laporan); // Hapus referensi
+    // =================================================================
+
+
+
 
    // --- [FINAL] DATA UNTUK DAFTAR PENANGGUNG JAWAB ---
     $daftarPenanggungJawab = $db->table('aset')
@@ -134,7 +155,7 @@ class Dashboard extends BaseController
             'subkategori_list'        => $subKategoriModel->findAll(),
             'lokasi_list'             => $lokasiModel->findAll(),
             'merk_list'               => $merkModel->orderBy('nama_merk', 'ASC')->findAll(),
-            'aset_perlu_perhatian'    => $asetPerluPerhatian, // <-- Data baru ditambahkan di sini
+            'laporan_kejanggalan'     => $laporan_kejanggalan,
             'daftar_penanggung_jawab' => $daftarPenanggungJawab,
             'lokasiLabels'            => array_column($nilaiPerLokasi, 'nama_lokasi'),
             'lokasiData'              => array_column($nilaiPerLokasi, 'total_nilai'),
@@ -144,4 +165,5 @@ class Dashboard extends BaseController
 
         return view('Dashboard/index', $data);
     }
+    
 }

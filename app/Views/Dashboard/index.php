@@ -182,55 +182,42 @@ Dashboard
 
 
         <div class="table-container shadow-sm mb-4">
-            <h5 class="mb-3">Aset Perlu Perhatian</h5>
-            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                <table class="table table-sm table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Kode Aset</th>
-                            <th>Status</th>
-                            <th>Verifikasi</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($aset_perlu_perhatian)): ?>
-                            <?php foreach ($aset_perlu_perhatian as $aset): ?>
-                                <tr>
-                                    <td>
-                                        <div><?= esc($aset['kode']) ?></div>
-                                        <small class="text-muted"><?= esc($aset['nama_lokasi']) ?></small>
-                                    </td>
-                                    <td>
-                                        <?php if($aset['status'] == 'Rusak'): ?>
-                                            <span class="badge bg-danger">Rusak</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($aset['opname_at']): ?>
-                                            <?= date('d M Y', strtotime($aset['opname_at'])) ?>
-                                        <?php else: ?>
-                                            <span class="badge bg-warning">Belum Pernah</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Lihat & Perbaiki Data">
-                                            <i class="bi bi-pencil-fill"></i>
-                                        </a>
-                                    </td>
-                                </tr>
+    <h5 class="mb-3">Laporan Kejanggalan Stock Opname</h5>
+    <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+        <?php if (!empty($laporan_kejanggalan)): ?>
+            <?php foreach ($laporan_kejanggalan as $laporan): ?>
+                <div class="list-group-item px-1 py-2">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 fw-bold text-primary"><?= esc($laporan['kode']) ?></h6>
+                        <small class="text-muted"><?= date('d M Y', strtotime($laporan['opname_at'])) ?></small>
+                    </div>
+                    <small class="text-muted d-block mb-2">Oleh: <?= esc($laporan['full_name']) ?></small>
+
+                    <div class="mt-1">
+                        <strong class="small">Detail Kejanggalan:</strong>
+                        <?php if (!empty($laporan['detail_perubahan'])): ?>
+                            <?php foreach ($laporan['detail_perubahan'] as $field => $value): ?>
+                                <div class="d-flex justify-content-between border-bottom py-1" style="font-size: 0.85rem;">
+                                    <span class="text-muted"><?= esc($field) ?></span>
+                                    <span class="fw-bold text-dark text-end"><?= esc($value) ?></span>
+                                </div>
                             <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="4" class="text-center p-3">Tidak ada aset yang memerlukan perhatian.</td>
-                            </tr>
                         <?php endif; ?>
-                    </tbody>
-                </table>
+                    </div>
+                    
+                    <a href="<?= base_url('aset/' . $laporan['aset_id'] . '/edit') ?>" class="btn btn-warning btn-sm float-end mt-2" title="Tindak Lanjuti">
+                        <i class="bi bi-pencil-fill"></i> Tindak Lanjuti
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="list-group-item text-center p-4">
+                <i class="bi bi-check2-circle text-success fs-3"></i>
+                <p class="mb-0 mt-2 text-muted">Tidak ada kejanggalan yang dilaporkan.</p>
             </div>
-        </div>
+        <?php endif; ?>
+    </div>
+</div>
 
         <div class="table-container shadow-sm flex-grow-1">
             <h5 class="mb-3">Top Penanggung Jawab</h5>
