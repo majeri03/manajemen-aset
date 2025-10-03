@@ -343,18 +343,20 @@ public function show($id = null)
         $keyword = $this->request->getGet('q');
         
         $query = $this->asetModel
-                        ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori')
+                        ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, m.nama_merk, l.nama_lokasi')
                         ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-                        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left');
+                        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                        ->join('merk m', 'm.id = aset.merk_id', 'left')
+                        ->join('lokasi l', 'l.id = aset.lokasi_id', 'left');
 
         if ($keyword) {
             $query = $query->groupStart()
                         ->like('aset.kode', $keyword)
                         ->orLike('k.nama_kategori', $keyword)
                         ->orLike('sk.nama_sub_kategori', $keyword)
-                        ->orLike('aset.merk', $keyword)
+                        ->orLike('m.nama_merk', $keyword)       
                         ->orLike('aset.serial_number', $keyword)
-                        ->orLike('aset.lokasi', $keyword)
+                        ->orLike('l.nama_lokasi', $keyword)    
                         ->groupEnd();
         }
 

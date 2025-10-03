@@ -570,40 +570,54 @@ Data Aset
     
         // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
         const searchInput = document.getElementById('searchInput');
-        const tableBody = document.getElementById('asetTableBody');
-        
-        if (searchInput && tableBody) {
-            searchInput.addEventListener('keyup', function() {
-                const keyword = this.value;
-                fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        tableBody.innerHTML = '';
-                        if (data.length > 0) {
-                            data.forEach(aset => {
-                                const row = `<tr>
-                                    <td>${aset.kode}</td>
-                                    <td>${aset.nama_kategori}</td>
-                                    <td>${aset.nama_sub_kategori}</td>
-                                    <td>${aset.merk}</td>
-                                    <td>${aset.serial_number || '-'}</td>
-                                    <td><span class="badge bg-light text-dark">${aset.status}</span></td>
-                                    <td>${aset.lokasi}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}"><i class="bi bi-eye-fill"></i></button>
-                                        <a href="<?= base_url('aset/') ?>${aset.id}/edit" class="btn btn-warning btn-sm" title="Edit Aset"><i class="bi bi-pencil-fill"></i></a>
-                                        <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="${aset.id}" data-kode="${aset.kode}" class="btn btn-danger btn-sm" title="Hapus Aset"><i class="bi bi-trash-fill"></i></a>
-                                    </td>
-                                </tr>`;
-                                tableBody.innerHTML += row;
-                            });
-                        } else {
-                            tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
-                        }
-                    })
-                    .catch(error => console.error('Error searching:', error));
-            });
-        }
+const tableBody = document.getElementById('asetTableBody');
+
+if (searchInput && tableBody) {
+    searchInput.addEventListener('keyup', function() {
+        const keyword = this.value;
+        // Pastikan URL fetch sudah benar
+        fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = ''; // Kosongkan tabel sebelum mengisi hasil baru
+                if (data.length > 0) {
+                    data.forEach(aset => {
+                        // Variabel untuk menangani data yang mungkin null
+                        const serialNumber = aset.serial_number || '-';
+                        const penanggungJawab = aset.penanggung_jawab || '-';
+
+                        // Buat baris tabel dengan urutan kolom yang BENAR
+                        const row = `<tr>
+                            <td>${aset.kode}</td>
+                            <td>${aset.nama_sub_kategori}</td>
+                            <td>${aset.nama_merk}</td>
+                            <td>${serialNumber}</td>
+                            <td>${penanggungJawab}</td>
+                            <td>${aset.nama_lokasi}</td>
+                            <td><span class="badge bg-light text-dark">${aset.status}</span></td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}" title="Lihat Detail">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                                <?php if (session()->get('role') === 'admin'): ?>
+                                <a href="<?= base_url('aset/') ?>${aset.id}/edit" class="btn btn-warning btn-sm" title="Edit Aset">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="${aset.id}" data-kode="${aset.kode}" class="btn btn-danger btn-sm" title="Hapus Aset">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
+                }
+            })
+            .catch(error => console.error('Error searching:', error));
+    });
+}
 
          // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
 const detailAsetModal = document.getElementById('detailAsetModal');
