@@ -183,44 +183,39 @@ Dashboard
 <?php endif; ?>
 
 
-        <div class="table-container shadow-sm mb-4">
-    <h5 class="mb-3">Laporan Kejanggalan Stock Opname</h5>
-    <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
-        <?php if (!empty($laporan_kejanggalan)): ?>
-            <?php foreach ($laporan_kejanggalan as $laporan): ?>
-                <div class="list-group-item px-1 py-2">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 fw-bold text-primary"><?= esc($laporan['kode']) ?></h6>
-                        <small class="text-muted"><?= date('d M Y', strtotime($laporan['opname_at'])) ?></small>
-                    </div>
-                    <small class="text-muted d-block mb-2">Oleh: <?= esc($laporan['full_name']) ?></small>
+<div class="table-container shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Progres Stock Opname per Lokasi</h5>
+        
+        <form id="reset-progress-form" action="<?= base_url('dashboard/reset-so-progress') ?>" method="post" onsubmit="return confirmReset(event);">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Progres
+            </button>
+        </form>
+    </div>
 
-                    <div class="mt-1">
-                        <strong class="small">Detail Kejanggalan:</strong>
-                        <?php if (!empty($laporan['detail_perubahan'])): ?>
-                            <?php foreach ($laporan['detail_perubahan'] as $field => $value): ?>
-                                <div class="d-flex justify-content-between border-bottom py-1" style="font-size: 0.85rem;">
-                                    <span class="text-muted"><?= esc($field) ?></span>
-                                    <span class="fw-bold text-dark text-end"><?= esc($value) ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+    <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+        <?php if (!empty($stock_opname_per_lokasi)): ?>
+            <?php foreach ($stock_opname_per_lokasi as $lokasi): ?>
+                <div class="list-group-item px-1 py-3">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 fw-bold"><?= esc($lokasi['nama_lokasi']) ?></h6>
+                        <small class="text-muted"><?= esc($lokasi['sudah_dicek']) ?> / <?= esc($lokasi['total_aset']) ?> Aset</small>
                     </div>
-                    
-                    <a href="<?= base_url('aset/' . $laporan['aset_id'] . '/edit') ?>" class="btn btn-warning btn-sm float-end mt-2" title="Tindak Lanjuti">
-                        <i class="bi bi-pencil-fill"></i> Tindak Lanjuti
-                    </a>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" style="width: <?= round($lokasi['persentase'], 2) ?>%;" aria-valuenow="<?= round($lokasi['persentase'], 2) ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="list-group-item text-center p-4">
-                <i class="bi bi-check2-circle text-success fs-3"></i>
-                <p class="mb-0 mt-2 text-muted">Tidak ada kejanggalan yang dilaporkan.</p>
+                <i class="bi bi-info-circle text-muted fs-3"></i>
+                <p class="mb-0 mt-2 text-muted">Belum ada aktivitas stock opname yang tercatat.</p>
             </div>
         <?php endif; ?>
     </div>
 </div>
-
         <div class="table-container shadow-sm flex-grow-1">
             <h5 class="mb-3">Top Penanggung Jawab</h5>
             <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">

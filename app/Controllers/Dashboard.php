@@ -47,44 +47,46 @@ class Dashboard extends BaseController
         }
         $labelsStatus = array_keys($hasilStatus);
         $dataStatus = array_values($hasilStatus);
-        
-        // app/Controllers/Dashboard.php
 
-    // --- 3. DATA BARU: LAPORAN KEJANGGALAN DARI STOCK OPNAME ---
-    $laporan_kejanggalan = $db->table('stock_opname_history soh')
-        ->select('soh.opname_at, soh.data_sesudah, a.id as aset_id, a.kode, u.full_name')
-        ->join('aset a', 'a.id = soh.aset_id')
-        ->join('users u', 'u.id = soh.user_id')
-        ->where('soh.ada_perubahan', 1)
-        ->where('a.deleted_at', null)
-        ->orderBy('soh.opname_at', 'DESC')
-        ->limit(5)
+
+    // --- [PENGGANTI] DATA BARU: LAPORAN STOCK OPNAME PER LOKASI ---
+    // Langkah 1: Dapatkan ID lokasi yang sudah ada aktivitas SO
+$activeLokasiIds = $db->table('aset')
+    ->distinct()
+    ->select('lokasi_id')
+    ->where('status_verifikasi', 'Sudah Dicek')
+    ->where('deleted_at IS NULL')
+    ->get()
+    ->getResultArray();
+
+// Ubah array hasil menjadi array ID sederhana
+$lokasiIds = array_column($activeLokasiIds, 'lokasi_id');
+
+$stockOpnamePerLokasi = [];
+// Lanjutkan hanya jika ada lokasi yang sudah diproses
+if (!empty($lokasiIds)) {
+    // Langkah 2: Ambil data progres hanya untuk lokasi-lokasi tersebut
+    $stockOpnamePerLokasi = $db->table('lokasi')
+        ->select('lokasi.id as id_lokasi, lokasi.nama_lokasi, COUNT(a.id) as total_aset, COUNT(CASE WHEN a.status_verifikasi = "Sudah Dicek" THEN 1 ELSE NULL END) as sudah_dicek')
+        ->join('aset a', 'a.lokasi_id = lokasi.id', 'left')
+        ->whereIn('lokasi.id', $lokasiIds)
+        ->where('a.deleted_at IS NULL')
+        ->groupBy('lokasi.id, lokasi.nama_lokasi')
+        ->orderBy('lokasi.nama_lokasi', 'ASC')
         ->get()
         ->getResultArray();
+}
 
-    $lokasiModel = new \App\Models\LokasiModel();
-    foreach ($laporan_kejanggalan as &$laporan) { // Tanda '&' penting
-        $perubahan = json_decode($laporan['data_sesudah'], true);
-        if (!is_array($perubahan)) continue;
-
-        $detail_perubahan = [];
-        foreach ($perubahan as $field => $value) {
-            $namaField = ucfirst(str_replace(['_id', '_'], ['', ' '], $field));
-            
-            $nilaiBaru = esc($value);
-
-            if ($field === 'lokasi_id') {
-                $lokasi = $lokasiModel->find($value);
-                $nilaiBaru = $lokasi ? esc($lokasi['nama_lokasi']) : 'ID: ' . esc($value);
-            }
-            
-            $detail_perubahan[$namaField] = $nilaiBaru;
-        }
-        $laporan['detail_perubahan'] = $detail_perubahan; // <- Ini yang membuat variabelnya ada di view
+// === BAGIAN PENTING YANG MUNGKIN TERLEWAT ===
+// Bagian ini bertugas menghitung dan menambahkan 'persentase' ke setiap lokasi
+foreach ($stockOpnamePerLokasi as &$lokasi) { // Gunakan referensi '&'
+    if ($lokasi['total_aset'] > 0) {
+        $lokasi['persentase'] = ($lokasi['sudah_dicek'] / $lokasi['total_aset']) * 100;
+    } else {
+        $lokasi['persentase'] = 0;
     }
-    unset($laporan); // Hapus referensi
-    // =================================================================
-
+}
+unset($lokasi); // Hapus referensi setelah loop selesai
 
 
 
@@ -155,7 +157,7 @@ class Dashboard extends BaseController
             'subkategori_list'        => $subKategoriModel->findAll(),
             'lokasi_list'             => $lokasiModel->findAll(),
             'merk_list'               => $merkModel->orderBy('nama_merk', 'ASC')->findAll(),
-            'laporan_kejanggalan'     => $laporan_kejanggalan,
+            'stock_opname_per_lokasi' => $stockOpnamePerLokasi,
             'daftar_penanggung_jawab' => $daftarPenanggungJawab,
             'lokasiLabels'            => array_column($nilaiPerLokasi, 'nama_lokasi'),
             'lokasiData'              => array_column($nilaiPerLokasi, 'total_nilai'),
@@ -165,5 +167,55 @@ class Dashboard extends BaseController
 
         return view('Dashboard/index', $data);
     }
+
+    public function laporanLokasiDetail($lokasi_id)
+{
+    $db = \Config\Database::connect();
+    $lokasiModel = new \App\Models\LokasiModel();
+    $lokasi = $lokasiModel->find($lokasi_id);
+
+    if (!$lokasi) {
+        return redirect()->to('/dashboard')->with('error', 'Lokasi tidak ditemukan.');
+    }
+
+    // 1. Aset yang seharusnya ada di lokasi ini
+    $asetSeharusnya = $db->table('aset a')
+        ->select('a.kode, sk.nama_sub_kategori, m.nama_merk, a.status_verifikasi')
+        ->join('sub_kategori sk', 'sk.id = a.sub_kategori_id', 'left')
+        ->join('merk m', 'm.id = a.merk_id', 'left')
+        ->where('a.lokasi_id', $lokasi_id)
+        ->where('a.deleted_at IS NULL')
+        ->orderBy('a.kode', 'ASC')
+        ->get()->getResultArray();
+
+    // Pisahkan antara yang sudah dan belum dicek
+    $asetDitemukan = array_filter($asetSeharusnya, fn($aset) => $aset['status_verifikasi'] === 'Sudah Dicek');
+    $asetBelumDitemukan = array_filter($asetSeharusnya, fn($aset) => $aset['status_verifikasi'] === 'Belum Dicek');
+
+    // 2. Aset salah tempat yang ditemukan di lokasi ini
+    // Ambil semua aset yang riwayat scan terakhirnya ada di lokasi ini, tapi seharusnya tidak di sini
+    $asetSalahTempat = $db->table('stock_opname_history soh')
+        ->select('a.kode, sk.nama_sub_kategori, m.nama_merk, l.nama_lokasi as lokasi_seharusnya')
+        ->join('aset a', 'a.id = soh.aset_id')
+        ->join('sub_kategori sk', 'sk.id = a.sub_kategori_id', 'left')
+        ->join('merk m', 'm.id = a.merk_id', 'left')
+        ->join('lokasi l', 'l.id = a.lokasi_id', 'left') // Join untuk mendapatkan lokasi seharusnya
+        ->where('soh.lokasi_scan_id', $lokasi_id) // Filter berdasarkan lokasi scan
+        ->where('a.lokasi_id !=', $lokasi_id)      // Pastikan lokasi aset aslinya BUKAN di sini
+        ->where('a.deleted_at IS NULL')
+        ->groupBy('a.id') // Hindari duplikat jika aset discan berkali-kali
+        ->orderBy('a.kode', 'ASC')
+        ->get()->getResultArray();
+
+    $data = [
+        'title'              => 'Detail Stock Opname: ' . $lokasi['nama_lokasi'],
+        'lokasi'             => $lokasi,
+        'asetDitemukan'      => $asetDitemukan,
+        'asetBelumDitemukan' => $asetBelumDitemukan,
+        'asetSalahTempat'    => $asetSalahTempat,
+    ];
+
+    return view('laporan/detail_lokasi', $data);
+}
     
 }

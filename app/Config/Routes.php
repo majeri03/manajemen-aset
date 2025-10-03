@@ -129,5 +129,6 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
         //siklus stock opname baru
         $routes->post('stockopname/start-cycle', 'StockOpnameController::startCycle');
+        $routes->get('laporan/lokasi/(:num)', 'LaporanController::laporanLokasiDetail/$1');
     });
 });

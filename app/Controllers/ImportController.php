@@ -305,32 +305,33 @@ public function upload()
     }
     
     public function updateSessionData()
-    {
-        if ($this->request->isAJAX()) {
-            $rowIndex    = $this->request->getPost('rowIndex');
-            $fieldName   = $this->request->getPost('fieldName'); // misal: 'kategori_id' atau 'serial_number'
-            $value       = $this->request->getPost('value');     // Teks yang diketik/dipilih
-            $id          = $this->request->getPost('id');         // ID dari master data (jika ada)
+{
+    if ($this->request->isAJAX()) {
+        $rowIndex    = $this->request->getPost('rowIndex');
+        $fieldName   = $this->request->getPost('fieldName'); // misal: 'kategori_id' atau 'serial_number'
+        $value       = $this->request->getPost('value');     // Teks yang diketik/dipilih
+        $id          = $this->request->getPost('id');         // ID dari master data (jika ada)
 
-            $importData = session()->get('import_data');
+        $importData = session()->get('import_data');
 
-            if (isset($importData[$rowIndex])) {
-                $baseFieldName = str_replace('_id', '', $fieldName);
+        if (isset($importData[$rowIndex])) {
+            $baseFieldName = str_replace('_id', '', $fieldName);
 
-                // Selalu simpan teks yang ditampilkan di kolom utama
-                $importData[$rowIndex][$baseFieldName] = $value;
+            // Selalu simpan teks yang ditampilkan di kolom utama
+            $importData[$rowIndex][$baseFieldName] = $value;
 
-                // Jika ada ID yang dikirim (saat memilih dari autocomplete), simpan ID tersebut.
-                // Jika tidak, hapus ID lama karena teks sudah tidak cocok.
-                $importData[$rowIndex][$baseFieldName . '_id'] = $id;
+            // Jika ada ID yang dikirim (saat memilih dari autocomplete), simpan ID tersebut.
+            // Jika tidak, hapus ID lama karena teks sudah tidak cocok.
+            $importData[$rowIndex][$baseFieldName . '_id'] = $id;
 
-                session()->set('import_data', $importData);
-                return $this->response->setJSON(['status' => 'success']);
-            }
-
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Row index not found.']);
+            session()->set('import_data', $importData);
+            return $this->response->setJSON(['status' => 'success']);
         }
+
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Row index not found.']);
     }
+}
+
 
     // ... (di dalam class ImportController)
 
