@@ -12,6 +12,12 @@ $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::processLogin');
 $routes->get('/logout', 'AuthController::logout');
 
+// RUTE BARU UNTUK LUPA PASSWORD
+$routes->get('/forgot-password', 'AuthController::forgotPassword');
+$routes->post('/forgot-password', 'AuthController::processForgotPassword');
+$routes->get('/reset-password/(:hash)', 'AuthController::resetPassword/$1');
+$routes->post('/reset-password/(:hash)', 'AuthController::processResetPassword/$1');
+
 // --- Rute yang Memerlukan Login ---
 $routes->group('', ['filter' => 'auth'], static function ($routes) {
 

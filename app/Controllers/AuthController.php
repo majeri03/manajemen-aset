@@ -105,4 +105,119 @@ class AuthController extends BaseController
 
         return redirect()->to('/dashboard');
     }
+
+    // FUNGSI-FUNGSI BARU UNTUK LUPA PASSWORD
+    
+    public function forgotPassword()
+    {
+        return view('auth/forgot');
+    }
+
+    public function processForgotPassword()
+    {
+        $rules = ['email' => 'required|valid_email'];
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('email', $this->request->getPost('email'))->first();
+
+        if (!$user) {
+            return redirect()->back()->withInput()->with('error', 'Alamat email tidak ditemukan di sistem kami.');
+        }
+
+        // Buat token unik
+        $token = bin2hex(random_bytes(20));
+
+        $db = \Config\Database::connect();
+        $db->table('password_reset_tokens')->where('email', $user->email)->delete(); // Hapus token lama jika ada
+        $db->table('password_reset_tokens')->insert([
+            'email'      => $user->email,
+            'token'      => $token,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Kirim email (simulasi)
+        $email = \Config\Services::email();
+        $email->setTo($user->email);
+        $email->setSubject('Reset Password Akun Anda');
+        $resetLink = base_url('reset-password/' . $token);
+        $message = "Halo " . $user->full_name . ",<br><br>"
+                 . "Anda menerima email ini karena ada permintaan untuk mereset password akun Anda.<br>"
+                 . "Silakan klik tautan di bawah ini untuk melanjutkan:<br>"
+                 . "<a href='" . $resetLink . "'>" . $resetLink . "</a><br><br>"
+                 . "Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan email ini.<br><br>"
+                 . "Terima kasih.";
+        $email->setMessage($message);
+
+        // Untuk sekarang, kita tampilkan pesan sukses karena pengiriman email mungkin belum dikonfigurasi
+        // if ($email->send()) {
+        //  return redirect()->back()->with('success', 'Tautan reset password telah dikirim ke email Anda. Silakan periksa kotak masuk Anda.');
+        // } else {
+        //     return redirect()->back()->with('error', 'Gagal mengirim email. Silakan coba lagi nanti.');
+        // }
+
+
+        // UNTUK PENGUJIAN DI LOCALHOST: Tampilkan link di layar
+        $message = '<strong>[MODE PENGUJIAN]</strong> Tautan reset password telah dibuat. Silakan klik link di bawah ini (salin dan tempel di browser Anda jika tidak bisa diklik):<br><br>'
+                . '<a href="' . $resetLink . '">' . $resetLink . '</a>';
+        return redirect()->back()->with('success', $message);
+    }
+
+    public function resetPassword($token = null)
+    {
+        if (empty($token)) {
+            return redirect()->to('/login')->with('error', 'Token tidak valid atau tidak ada.');
+        }
+
+        $db = \Config\Database::connect();
+        $resetData = $db->table('password_reset_tokens')->where('token', $token)->get()->getRow();
+
+        // Cek apakah token ada dan belum lebih dari 1 jam
+        if (!$resetData || (time() - strtotime($resetData->created_at)) > 3600) {
+            $db->table('password_reset_tokens')->where('token', $token)->delete();
+            return redirect()->to('/forgot-password')->with('error', 'Token reset password tidak valid atau telah kedaluwarsa.');
+        }
+
+        return view('auth/reset', ['token' => $token]);
+    }
+
+    public function processResetPassword($token = null)
+    {
+        if (empty($token)) {
+            return redirect()->to('/login')->with('error', 'Aksi tidak diizinkan.');
+        }
+        
+        $db = \Config\Database::connect();
+        $resetData = $db->table('password_reset_tokens')->where('token', $token)->get()->getRow();
+
+        if (!$resetData || (time() - strtotime($resetData->created_at)) > 3600) {
+            $db->table('password_reset_tokens')->where('token', $token)->delete();
+            return redirect()->to('/forgot-password')->with('error', 'Token reset password tidak valid atau telah kedaluwarsa.');
+        }
+
+        $rules = [
+            'password'         => 'required|min_length[8]',
+            'password_confirm' => 'required|matches[password]',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('email', $resetData->email)->first();
+
+        if (!$user) {
+            return redirect()->to('/login')->with('error', 'Pengguna tidak ditemukan.');
+        }
+
+        $userModel->update($user->id, ['password_hash' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT)]);
+
+        // Hapus token setelah berhasil digunakan
+        $db->table('password_reset_tokens')->where('email', $user->email)->delete();
+
+        return redirect()->to('/login')->with('success', 'Password Anda telah berhasil direset! Silakan login dengan password baru.');
+    }
 }

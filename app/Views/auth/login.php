@@ -34,6 +34,10 @@ Login
                 <input type="password" class="form-control" id="password" name="password" placeholder="Password">
             </div>
 
+            <div class="text-end mb-3">
+                <a href="<?= base_url('forgot-password') ?>" style="text-decoration: none; font-size: 0.9rem;">Lupa Password?</a>
+            </div>
+
             <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-custom-gradient w-100">LOGIN</button>
             </div>
