@@ -854,7 +854,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('detail-status').textContent = data.status;
             })
             .catch(error => console.error('Error fetching detail:', error));
-
+        
+            
         // Fetch Riwayat Verifikasi (Stock Opname)
         fetch(`<?= base_url('aset/stockopname_history/') ?>${currentAsetId}`)
             .then(response => response.json())
@@ -898,17 +899,75 @@ document.addEventListener('DOMContentLoaded', function() {
         
     }
 
-    const kategoriTambahSelect = document.getElementById('kategori_id-tambah');
-    if (kategoriTambahSelect) {
-        kategoriTambahSelect.addEventListener('change', function() {
-            populateSubKategori(this.value, document.getElementById('sub_kategori_id-tambah'));
-            generateKodeAset();
+
+    // --- Inisialisasi Select2 di modal ---
+    $('#tambahAsetModal').on('shown.bs.modal', function () {
+        // Menggunakan satu selector untuk semua dropdown
+        $('#kategori_id-tambah, #sub_kategori_id-tambah, #merk_id-tambah, #tipe_id-tambah, #lokasi-tambah').select2({
+            dropdownParent: $('#tambahAsetModal')
         });
-    }
-    const subKategoriTambahSelect = document.getElementById('sub_kategori_id-tambah');
-    if (subKategoriTambahSelect) {
-        subKategoriTambahSelect.addEventListener('change', generateKodeAset);
-    }
+    });
+
+    // --- KODE BARU UNTUK DROPDOWN DEPENDEN ---
+    const kategoriTambahSelect = $('#kategori_id-tambah');
+    const subKategoriTambahSelect = $('#sub_kategori_id-tambah');
+    const merkTambahSelect = $('#merk_id-tambah');
+    const tipeTambahSelect = $('#tipe_id-tambah');
+
+    // Event untuk Kategori -> Sub Kategori
+    kategoriTambahSelect.on('select2:select', function (e) {
+        const kategoriId = e.params.data.id;
+        
+        subKategoriTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+        generateKodeAset(); // Update kode aset setiap kali ada perubahan
+
+        if (kategoriId) {
+            // Kita gunakan data `allSubKategoris` yang sudah ada di halaman
+            const allSubKategoris = <?= json_encode($subkategori_list) ?>;
+            const filteredSubkategoris = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
+
+            subKategoriTambahSelect.empty().append('<option value="">Pilih Sub Kategori</option>');
+            if (filteredSubkategoris.length > 0) {
+                filteredSubkategoris.forEach(sub => {
+                    const option = new Option(sub.nama_sub_kategori, sub.id, false, false);
+                    subKategoriTambahSelect.append(option);
+                });
+                subKategoriTambahSelect.prop('disabled', false);
+            } else {
+                subKategoriTambahSelect.append('<option value="">Tidak ada sub kategori</option>');
+            }
+            subKategoriTambahSelect.trigger('change');
+        }
+    });
+
+    // Event untuk Merk -> Tipe
+    merkTambahSelect.on('select2:select', function (e) {
+        const merkId = e.params.data.id;
+
+        tipeTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+        generateKodeAset(); // Update kode aset setiap kali ada perubahan
+
+        if (merkId) {
+            fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
+                .then(response => response.json())
+                .then(data => {
+                    tipeTambahSelect.empty().append('<option value="">Pilih Tipe</option>');
+                    if (data.length > 0) {
+                        data.forEach(tipe => {
+                            const option = new Option(tipe.nama_tipe, tipe.id, false, false);
+                            tipeTambahSelect.append(option);
+                        });
+                        tipeTambahSelect.prop('disabled', false);
+                    } else {
+                        tipeTambahSelect.append('<option value="">Tidak ada tipe</option>');
+                    }
+                    tipeTambahSelect.trigger('change');
+                });
+        }
+    });
+    
+    // Panggil generateKodeAset saat dropdown lain juga berubah
+    $('#sub_kategori_id-tambah, #tahun-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
 })
 
 

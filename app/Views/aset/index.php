@@ -499,19 +499,75 @@ Data Aset
             });
         }
 
-        // Event listener untuk dropdown di modal tambah aset
-        const kategoriTambahSelect = document.getElementById('kategori_id-tambah');
-        if (kategoriTambahSelect) {
-            kategoriTambahSelect.addEventListener('change', function() {
-                populateSubKategori(this.value);
-                generateKodeAset();
-            });
-        }
-        const subKategoriTambahSelect = document.getElementById('sub_kategori_id-tambah');
-        if (subKategoriTambahSelect) {
-            subKategoriTambahSelect.addEventListener('change', generateKodeAset);
-        }
+       
 
+         // --- Inisialisasi Select2 di modal ---
+    $('#tambahAsetModal').on('shown.bs.modal', function () {
+        $('#kategori_id-tambah, #sub_kategori_id-tambah, #merk_id-tambah, #tipe_id-tambah, #lokasi-tambah').select2({
+            dropdownParent: $('#tambahAsetModal')
+        });
+    });
+
+    // --- KODE UNTUK DROPDOWN DEPENDEN ---
+    const kategoriTambahSelect = $('#kategori_id-tambah');
+    const subKategoriTambahSelect = $('#sub_kategori_id-tambah');
+    const merkTambahSelect = $('#merk_id-tambah');
+    const tipeTambahSelect = $('#tipe_id-tambah');
+
+        // Event untuk Kategori -> Sub Kategori
+        kategoriTambahSelect.on('change', function () { // Menggunakan 'change' agar lebih umum
+            const kategoriId = $(this).val();
+            
+            subKategoriTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+            generateKodeAset();
+
+            if (kategoriId) {
+                const allSubKategoris = <?= json_encode($subkategori_list) ?>;
+                const filteredSubkategoris = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
+
+                subKategoriTambahSelect.empty().append('<option value="">Pilih Sub Kategori</option>');
+                if (filteredSubkategoris.length > 0) {
+                    filteredSubkategoris.forEach(sub => {
+                        const option = new Option(sub.nama_sub_kategori, sub.id, false, false);
+                        subKategoriTambahSelect.append(option);
+                    });
+                    subKategoriTambahSelect.prop('disabled', false);
+                } else {
+                    subKategoriTambahSelect.append('<option value="">Tidak ada sub kategori</option>');
+                }
+                subKategoriTambahSelect.trigger('change');
+            }
+        });
+
+        // Event untuk Merk -> Tipe
+        merkTambahSelect.on('change', function () { // Menggunakan 'change'
+            const merkId = $(this).val();
+
+            tipeTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+            generateKodeAset();
+
+            if (merkId) {
+                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tipeTambahSelect.empty().append('<option value="">Pilih Tipe</option>');
+                        if (data.length > 0) {
+                            data.forEach(tipe => {
+                                const option = new Option(tipe.nama_tipe, tipe.id, false, false);
+                                tipeTambahSelect.append(option);
+                            });
+                            tipeTambahSelect.prop('disabled', false);
+                        } else {
+                            tipeTambahSelect.append('<option value="">Tidak ada tipe</option>');
+                        }
+                        tipeTambahSelect.trigger('change');
+                    });
+            }
+        });
+
+        // Panggil generateKodeAset saat dropdown lain juga berubah
+        $('#sub_kategori_id-tambah, #tahun-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
+    
         // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
         const searchInput = document.getElementById('searchInput');
         const tableBody = document.getElementById('asetTableBody');
