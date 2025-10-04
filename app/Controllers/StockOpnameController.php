@@ -488,4 +488,181 @@ class StockOpnameController extends BaseController
 
         return redirect()->to('/stockopname')->with('success', 'Siklus Stock Opname baru telah dimulai!');
     }
+
+    public function sessionReport()
+{
+    $postData = $this->request->getPost('scan_session_data');
+    if ($postData) {
+        $sessionData = json_decode($postData, true);
+        session()->set('scan_session_data', $sessionData);
+    } else {
+        $sessionData = session()->get('scan_session_data');
+    }
+
+    if (empty($sessionData)) {
+        return redirect()->to('/scan-cepat')->with('error', 'Tidak ada data sesi untuk dilaporkan.');
+    }
+
+    $allAssetsInLocation = $sessionData['all_assets'] ?? [];
+    $finalizedAssets = $sessionData['finalized_assets'] ?? [];
+
+    $foundInPlace = [];
+    $foundMisplaced = [];
+
+    foreach ($finalizedAssets as $asset) {
+        if ($asset['is_misplaced']) {
+            $foundMisplaced[] = $asset;
+        } else {
+            $foundInPlace[] = $asset;
+        }
+    }
+    
+    $finalizedIds = array_keys($finalizedAssets);
+    $allAssetIds = array_keys($allAssetsInLocation);
+    $notFoundAssetIds = array_diff($allAssetIds, $finalizedIds);
+    
+    $notFoundAssets = [];
+    if (!empty($notFoundAssetIds)) {
+        $asetModel = new \App\Models\AsetModel();
+        // [MODIFIKASI] Query untuk mengambil data lengkap aset yang tidak ditemukan
+        $notFoundAssets = $asetModel
+            ->select('aset.kode, sk.nama_sub_kategori, m.nama_merk, aset.serial_number')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left')
+            ->whereIn('aset.id', $notFoundAssetIds)
+            ->findAll();
+    }
+
+    $data = [
+        'title'              => 'Laporan Sesi Stock Opname',
+        'lokasi_nama'        => $sessionData['lokasi_nama'],
+        'found_in_place'     => $foundInPlace,
+        'found_misplaced'    => $foundMisplaced,
+        'not_found_assets'   => $notFoundAssets,
+    ];
+    
+    session()->set('report_data_for_submission', $data);
+
+    return view('stock_opname/session_report', $data);
+}
+
+
+    public function processScanReport()
+{
+    $reportData = session()->get('report_data_for_submission');
+
+    if (empty($reportData)) {
+        return redirect()->to('/dashboard')->with('error', 'Tidak ada data laporan untuk diproses atau sesi telah berakhir.');
+    }
+
+    $db = \Config\Database::connect();
+    $asetModel = new AsetModel();
+    $userId = session()->get('user_id');
+    $now = date('Y-m-d H:i:s');
+    $processedCount = 0;
+    
+    $finalizedAssets = array_merge($reportData['found_in_place'], $reportData['found_misplaced']);
+
+    foreach ($finalizedAssets as $asetData) {
+        $asetId = $asetData['id'];
+        $asetAsli = $asetModel->find($asetId);
+
+        if (!$asetAsli) {
+            continue;
+        }
+
+        if ($asetAsli['status_verifikasi'] === 'Belum Dicek') {
+            
+            // [MODIFIKASI UTAMA] Menggunakan Query Builder untuk update paksa
+            $db->table('aset')->where('id', $asetId)->update(['status_verifikasi' => 'Sudah Dicek']);
+
+            // Cek apakah ada perubahan data yang diajukan
+            $perubahan = [];
+            if ($asetAsli['lokasi_id'] != $asetData['lokasi_id']) {
+                $perubahan['lokasi_id'] = $asetData['lokasi_id'];
+            }
+            if ($asetAsli['status'] != $asetData['status']) {
+                $perubahan['status'] = $asetData['status'];
+            }
+            if (($asetData['keterangan'] !== null) && ($asetAsli['keterangan'] != $asetData['keterangan'])) {
+                $perubahan['keterangan'] = $asetData['keterangan'];
+            }
+            $adaPerubahan = !empty($perubahan);
+
+            // Catat ke riwayat stock opname
+            $db->table('stock_opname_history')->insert([
+                'aset_id'       => $asetId,
+                'user_id'       => $userId,
+                'opname_at'     => $now,
+                'catatan'       => "Diverifikasi via Scan Cepat. " . ($asetData['keterangan'] ?? ''),
+                'ada_perubahan' => $adaPerubahan,
+            ]);
+
+            // Jika ada perubahan, buat request untuk admin
+            if ($adaPerubahan) {
+                $db->table('aset_update_requests')->insert([
+                    'aset_id'       => $asetId,
+                    'user_id'       => $userId,
+                    'proposed_data' => json_encode($perubahan),
+                    'status'        => 'pending',
+                    'created_at'    => $now,
+                ]);
+            }
+            $processedCount++;
+        }
+    }
+
+    // Hapus data sesi setelah diproses
+    session()->remove('scan_session_data');
+    session()->remove('report_data_for_submission');
+
+    $message = $processedCount > 0
+        ? "Laporan berhasil dikirim. {$processedCount} aset telah berhasil diverifikasi."
+        : "Tidak ada aset baru yang perlu diverifikasi dalam sesi ini.";
+
+    return redirect()->to('/dashboard')->with('success', $message);
+}
+public function updateSessionReportData()
+{
+    // Pastikan ini adalah request AJAX
+    if ($this->request->isAJAX()) {
+        $assetId = $this->request->getPost('asset_id');
+        $type = $this->request->getPost('type'); // 'found' atau 'misplaced'
+        $newStatus = $this->request->getPost('status');
+        $newKeterangan = $this->request->getPost('keterangan');
+
+        // Ambil data laporan dari session
+        $reportData = session()->get('report_data_for_submission');
+        if (empty($reportData) || !$assetId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Sesi tidak ditemukan atau ID aset kosong.']);
+        }
+
+        // Tentukan di mana data aset berada (found_in_place atau found_misplaced)
+        $keyToUpdate = ($type === 'found') ? 'found_in_place' : 'found_misplaced';
+
+        // Cari dan perbarui data aset yang sesuai
+        $found = false;
+        foreach ($reportData[$keyToUpdate] as $index => &$aset) {
+            if ($aset['id'] == $assetId) {
+                $aset['status'] = $newStatus;
+                $aset['keterangan'] = $newKeterangan;
+                $found = true;
+                break;
+            }
+        }
+
+        if ($found) {
+            // Simpan kembali data yang sudah diperbarui ke session
+            session()->set('report_data_for_submission', $reportData);
+            return $this->response->setJSON(['status' => 'success', 'message' => 'Perubahan berhasil disimpan di sesi.']);
+        }
+
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Aset tidak ditemukan dalam data laporan.']);
+    }
+
+    // Tolak akses jika bukan AJAX
+    return redirect()->to('/dashboard');
+}
+
+
 }

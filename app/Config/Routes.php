@@ -84,6 +84,12 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->get('laporan/download/(:num)', 'LaporanController::download/$1');
         $routes->get('laporan/stockopname', 'LaporanController::stockOpnameReport');
         $routes->get('laporan/stockopname/export/(:num)', 'LaporanController::exportStockOpnameReport/$1');
+
+        $routes->match(['get', 'post'], 'stockopname/session-report', 'StockOpnameController::sessionReport');
+        $routes->post('stockopname/process-scan-report', 'StockOpnameController::processScanReport'); // Kita akan buat fungsi ini nanti
+        $routes->post('stockopname/update-session-report', 'StockOpnameController::updateSessionReportData');
+
+
         // Data Master
         $routes->get('master-data', 'MasterDataController::index');
         $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
