@@ -69,6 +69,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->put('aset/(:num)', 'AsetController::update/$1');
         $routes->post('aset/(:num)', 'AsetController::update/$1'); // Fallback untuk form tanpa PUT
         $routes->delete('aset/(:num)', 'AsetController::delete/$1');
+        $routes->post('aset/delete-document/(:num)', 'AsetController::deleteDocument/$1');
         $routes->get('aset/barcodes', 'AsetController::barcodes');
         $routes->get('aset/laporan/export', 'AsetController::export');
 

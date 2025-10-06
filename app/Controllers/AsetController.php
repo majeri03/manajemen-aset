@@ -6,8 +6,9 @@ use App\Models\AsetModel;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
-use App\Models\MerkModel; // TAMBAHKAN
-use App\Models\TipeModel; // TAMBAHKAN
+use App\Models\MerkModel; 
+use App\Models\TipeModel; 
+use App\Models\DokumentasiAsetModel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -26,6 +27,7 @@ class AsetController extends ResourceController
     protected $lokasiModel; // Deklarasikan
     protected $merkModel; // TAMBAHKAN
     protected $tipeModel; // TAMBAHKAN
+    protected $dokumentasiAsetModel;
     protected $modelName = 'App\Models\AsetModel';
     
     public function __construct()
@@ -36,6 +38,7 @@ class AsetController extends ResourceController
         $this->lokasiModel = new LokasiModel();
         $this->merkModel = new MerkModel(); // TAMBAHKAN
         $this->tipeModel = new TipeModel(); // TAMBAHKAN
+        $this->dokumentasiAsetModel = new DokumentasiAsetModel();
     }
 
     private function generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId)
@@ -147,6 +150,8 @@ public function show($id = null)
                 ->find($id);
 
         if ($aset) {
+            $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
+            $aset['dokumentasi'] = $dokumentasi;
             $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
             return $this->response->setJSON($aset);
         }
@@ -212,7 +217,29 @@ public function show($id = null)
 
         if ($this->asetModel->save($data)) {
             $newAsetId = $this->asetModel->getInsertID();
+            // --- AWAL KODE BARU UNTUK PROSES UPLOAD ---
+            $files = $this->request->getFiles('bukti_aset');
+            $uploadedFilesCount = 0; // Menghitung file yang berhasil diupload
 
+            if (isset($files['bukti_aset'])) {
+                foreach ($files['bukti_aset'] as $file) {
+                    if ($file->isValid() && !$file->hasMoved() && $uploadedFilesCount < 2) {
+                        // Validasi ukuran dan tipe
+                        if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
+                            $newName = $file->getRandomName();
+                            $file->move(FCPATH . 'uploads/aset_bukti', $newName);
+                            
+                            $this->dokumentasiAsetModel->save([
+                                'aset_id'        => $newAsetId,
+                                'path_file'      => 'uploads/aset_bukti/' . $newName,
+                                'nama_asli_file' => $file->getClientName(),
+                                'tipe_file'      => $file->getClientMimeType(),
+                            ]);
+                            $uploadedFilesCount++;
+                        }
+                    }
+                }
+            }
             $url = base_url('stockopname/aset/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
@@ -271,7 +298,7 @@ public function show($id = null)
         if (!$aset) {
             return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
-
+        $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
         $data = [
             'title'            => 'Edit Aset',
             'aset'             => $aset,
@@ -280,6 +307,7 @@ public function show($id = null)
             'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
             'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
             'tipe_list'        => $this->tipeModel->where('merk_id', $aset['merk_id'])->findAll(),
+            'dokumentasi'      => $dokumentasi, 
         ];
 
         return view('aset/edit', $data);
@@ -309,7 +337,29 @@ public function show($id = null)
         ];
 
         $data = $this->request->getPost($allowedFields);
+        // --- AWAL KODE BARU UNTUK PROSES UPLOAD SAAT UPDATE ---
+        $existingDocsCount = $this->dokumentasiAsetModel->where('aset_id', $id)->countAllResults();
+        $files = $this->request->getFiles('bukti_aset');
+        $uploadedFilesCount = 0;
 
+        if (isset($files['bukti_aset'])) {
+            foreach ($files['bukti_aset'] as $file) {
+                if ($file->isValid() && !$file->hasMoved() && ($existingDocsCount + $uploadedFilesCount) < 2) {
+                    if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
+                        $newName = $file->getRandomName();
+                        $file->move(FCPATH . 'uploads/aset_bukti', $newName);
+                        
+                        $this->dokumentasiAsetModel->save([
+                            'aset_id'        => $id,
+                            'path_file'      => 'uploads/aset_bukti/' . $newName,
+                            'nama_asli_file' => $file->getClientName(),
+                            'tipe_file'      => $file->getClientMimeType(),
+                        ]);
+                        $uploadedFilesCount++;
+                    }
+                }
+            }
+        }
         if (!empty($data['entitas_pembelian'])) {
             $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
         }
@@ -728,4 +778,25 @@ public function barcodes()
 
     return view('aset/barcodes', $data);
 }
+    public function deleteDocument($docId = null)
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(403);
+        }
+
+        $doc = $this->dokumentasiAsetModel->find($docId);
+
+        if ($doc) {
+            // Hapus file fisik dari server
+            if (file_exists(FCPATH . $doc['path_file'])) {
+                unlink(FCPATH . $doc['path_file']);
+            }
+            // Hapus record dari database
+            $this->dokumentasiAsetModel->delete($docId);
+            
+            return $this->response->setJSON(['success' => true]);
+        }
+        
+        return $this->response->setJSON(['success' => false]);
+    }
 }
