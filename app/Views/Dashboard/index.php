@@ -419,10 +419,11 @@ Dashboard
                                 <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
                                 <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                                 <option value="Rusak">Rusak</option>
+                                <option value="Perbaikan" <?= $aset['status'] == 'Perbaikan' ? 'selected' : '' ?>>Perbaikan</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="user_pengguna-tambah" class="form-label">USER PENGGUNA</label>
+                            <label for="user_pengguna-tambah" class="form-label">User Pengguna</label>
                             <input type="text" class="form-control" id="user_pengguna-tambah" name="user_pengguna" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">

@@ -45,7 +45,7 @@ Data Aset
                         <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>tahun_beli Beli:</strong> <span id="detail-tahun_beli"></span></p>
+                        <p><strong>tahun Beli:</strong> <span id="detail-tahun_beli"></span></p>
                         <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                         <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
                         <p><strong>User Pengguna:</strong> <span id="detail-user_pengguna"></span></p>
@@ -107,6 +107,7 @@ Data Aset
             <option value="Baik Terpakai" <?= ($filters['status'] ?? '') == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
             <option value="Baik Tidak Terpakai" <?= ($filters['status'] ?? '') == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
             <option value="Rusak" <?= ($filters['status'] ?? '') == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
+    
         </select>
     </div>
     <div class="col-lg-6 col-md-12">
@@ -285,7 +286,7 @@ Data Aset
                             <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">
-                            <label for="tahun_beli-tambah" class="form-label">tahun_beli Beli</label>
+                            <label for="tahun_beli-tambah" class="form-label">Tahun Beli</label>
                             <input type="number" class="form-control" id="tahun_beli-tambah" name="tahun_beli" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
                         </div>
                         <div class="col-md-6">
