@@ -41,7 +41,7 @@ class AsetController extends ResourceController
         $this->dokumentasiAsetModel = new DokumentasiAsetModel();
     }
 
-    private function generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId)
+    private function generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId)
     {
         // 1. Ambil data terakhir berdasarkan kata kunci
         $lastAsset = $this->asetModel
@@ -71,7 +71,7 @@ class AsetController extends ResourceController
     
     
         // 4. Gabungkan menjadi kode aset final
-        $newCode = "BTR/{$entitasCode}/{$tahun}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
+        $newCode = "BTR/{$entitasCode}/{$tahun_beli}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
     
         return $newCode;
     }
@@ -89,7 +89,7 @@ class AsetController extends ResourceController
             'keyword'     => $this->request->getGet('keyword'),
         ];
     
-        // [MODIFIKASI] Tambahkan 'penanggung_jawab' dan 'entitas_pembelian' ke SELECT dan pencarian
+        // [MODIFIKASI] Tambahkan 'user_pengguna' dan 'entitas_pembelian' ke SELECT dan pencarian
         $query = $this->asetModel
             ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
@@ -110,7 +110,7 @@ class AsetController extends ResourceController
                 ->orLike('m.nama_merk', $filters['keyword']) // Menggunakan alias tabel
                 ->orLike('aset.serial_number', $filters['keyword'])
                 ->orLike('l.nama_lokasi', $filters['keyword'])
-                ->orLike('aset.penanggung_jawab', $filters['keyword']) // Pencarian berdasarkan penanggung jawab
+                ->orLike('aset.user_pengguna', $filters['keyword'])
                 ->orLike('aset.entitas_pembelian', $filters['keyword']) // Pencarian berdasarkan entitas
                 ->groupEnd();
         }
@@ -192,11 +192,11 @@ public function show($id = null)
         }
         
         $entitas = $this->request->getPost('entitas_pembelian');
-        $tahun = $this->request->getPost('tahun');
+        $tahun_beli = $this->request->getPost('tahun_beli');
         $subKategoriId = $this->request->getPost('sub_kategori_id');
         $merkId = $this->request->getPost('merk_id');
     
-        $newAssetCode = $this->generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId);
+        $newAssetCode = $this->generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId);
 
         $data = [
             'kode'              => $newAssetCode,
@@ -205,13 +205,13 @@ public function show($id = null)
             'merk_id'           => $merkId,
             'tipe_id'           => $this->request->getPost('tipe_id'),
             'serial_number'     => $this->request->getPost('serial_number'),
-            'tahun'             => $tahun,
+            'tahun_beli'             => $tahun_beli,
             'lokasi_id'         => $this->request->getPost('lokasi_id'), 
             'status'            => $this->request->getPost('status'),
             'keterangan'        => $this->request->getPost('keterangan'),
             'harga_beli'        => $this->request->getPost('harga_beli'),
             'entitas_pembelian' => strtoupper($entitas),
-            'penanggung_jawab'  => strtoupper($this->request->getPost('penanggung_jawab')),
+            'user_pengguna'  => strtoupper($this->request->getPost('user_pengguna'))
         ];
 
 
@@ -327,13 +327,13 @@ public function show($id = null)
             'sub_kategori_id',
             'merk_id',
             'tipe_id',
-            'tahun',
+            'tahun_beli',
             'lokasi_id', 
             'status',
             'keterangan',
             'harga_beli',
             'entitas_pembelian',
-            'penanggung_jawab',
+            'user_pengguna',
         ];
 
         $data = $this->request->getPost($allowedFields);
@@ -363,10 +363,12 @@ public function show($id = null)
         if (!empty($data['entitas_pembelian'])) {
             $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
         }
+        
 
         if ($this->asetModel->update($id, $data)) {
             return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
         }
+        
 
         return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
 
@@ -452,8 +454,8 @@ public function export()
         // Query yang sudah diperbaiki dengan join ke semua tabel yang relevan
         $query = $this->asetModel
             ->select('
-                aset.kode, aset.serial_number, aset.tahun, aset.status, aset.keterangan,
-                aset.harga_beli, aset.entitas_pembelian, aset.penanggung_jawab, aset.updated_at,
+                aset.kode, aset.serial_number, aset.tahun_beli, aset.status, aset.keterangan,
+                aset.harga_beli, aset.entitas_pembelian, aset.user_pengguna, aset.updated_at,
                 k.nama_kategori,
                 sk.nama_sub_kategori,
                 m.nama_merk,
@@ -478,7 +480,7 @@ public function export()
                 ->orLike('m.nama_merk', $filters['keyword'])
                 ->orLike('l.nama_lokasi', $filters['keyword'])
                 ->orLike('sk.nama_sub_kategori', $filters['keyword'])
-                ->orLike('aset.penanggung_jawab', $filters['keyword'])
+                ->orLike('aset.user_pengguna', $filters['keyword'])
                 ->groupEnd();
         }
 
@@ -497,7 +499,7 @@ public function export()
         $sheet->setCellValue('G1', 'Tahun');
         $sheet->setCellValue('H1', 'Lokasi');
         $sheet->setCellValue('I1', 'Status');
-        $sheet->setCellValue('J1', 'Penanggung Jawab');
+        $sheet->setCellValue('J1', 'User Pengguna');
         $sheet->setCellValue('K1', 'Harga Beli');
         $sheet->setCellValue('L1', 'Entitas Pembelian');
         $sheet->setCellValue('M1', 'Keterangan');
@@ -517,10 +519,10 @@ public function export()
             $sheet->setCellValue('D' . $row, $aset['nama_merk']);
             $sheet->setCellValue('E' . $row, $aset['nama_tipe']);
             $sheet->setCellValue('F' . $row, $aset['serial_number']);
-            $sheet->setCellValue('G' . $row, $aset['tahun']);
+            $sheet->setCellValue('G' . $row, $aset['tahun_beli']);
             $sheet->setCellValue('H' . $row, $aset['nama_lokasi']);
             $sheet->setCellValue('I' . $row, $aset['status']);
-            $sheet->setCellValue('J' . $row, $aset['penanggung_jawab']);
+            $sheet->setCellValue('J' . $row, $aset['user_pengguna']);
             $sheet->setCellValue('K' . $row, $aset['harga_beli']);
             $sheet->setCellValue('L' . $row, $aset['entitas_pembelian']);
             $sheet->setCellValue('M' . $row, $aset['keterangan']);
@@ -643,7 +645,7 @@ public function export()
         $sheet->setCellValue('D' . $row, $aset['nama_merk']);
         $sheet->setCellValue('E' . $row, $aset['nama_tipe']);
         $sheet->setCellValue('F' . $row, $aset['serial_number']);
-        $sheet->setCellValue('G' . $row, $aset['tahun']);
+        $sheet->setCellValue('G' . $row, $aset['tahun_beli']);
         $sheet->setCellValue('H' . $row, $aset['nama_lokasi']);
         $sheet->setCellValue('I' . $row, $aset['status']);
         $sheet->setCellValue('J' . $row, $aset['keterangan']);
@@ -690,11 +692,6 @@ public function export()
         return $this->response->setJSON($history);
     }
 
-    // app/Controllers/AsetController.php
-
-// app/Controllers/AsetController.php
-
-// app/Controllers/AsetController.php
 
 public function barcodes()
 {
@@ -708,8 +705,8 @@ public function barcodes()
         'kategori_id'       => $this->request->getGet('kategori_id'),
         'lokasi_id'         => $this->request->getGet('lokasi_id'),
         'merk_id'           => $this->request->getGet('merk_id'),
-        'tahun'             => $this->request->getGet('tahun'),
-        'penanggung_jawab'  => $this->request->getGet('penanggung_jawab'),
+        'tahun_beli'             => $this->request->getGet('tahun_beli'),
+        'user_pengguna'  => $this->request->getGet('user_pengguna'),
         'keyword'           => $this->request->getGet('keyword'),
     ];
 
@@ -718,7 +715,7 @@ public function barcodes()
     $builder = $db->table('aset');
 
     $builder->select('
-        aset.kode, aset.qrcode, aset.tahun, aset.penanggung_jawab, aset.entitas_pembelian, 
+        aset.kode, aset.qrcode, aset.tahun_beli, aset.user_pengguna, aset.entitas_pembelian, 
         k.nama_kategori, 
         sk.nama_sub_kategori, 
         l.nama_lokasi, 
@@ -744,11 +741,11 @@ public function barcodes()
     if (!empty($filters['merk_id'])) {
         $builder->where('aset.merk_id', $filters['merk_id']);
     }
-    if (!empty($filters['tahun'])) {
-        $builder->where('aset.tahun', $filters['tahun']);
+    if (!empty($filters['tahun_beli'])) {
+        $builder->where('aset.tahun_beli', $filters['tahun_beli']);
     }
-    if (!empty($filters['penanggung_jawab'])) {
-        $builder->where('aset.penanggung_jawab', $filters['penanggung_jawab']);
+    if (!empty($filters['user_pengguna'])) {
+    $builder->where('aset.user_pengguna', $filters['user_pengguna']);
     }
     if (!empty($filters['keyword'])) {
         $keyword = strtoupper($filters['keyword']);
@@ -764,7 +761,7 @@ public function barcodes()
     $asets = $builder->orderBy('aset.kode', 'ASC')->get()->getResultArray();
 
     // Ambil data untuk dropdown filter
-    $penanggungJawabList = $this->asetModel->distinct()->select('penanggung_jawab')->where('penanggung_jawab IS NOT NULL AND penanggung_jawab != ""')->orderBy('penanggung_jawab', 'ASC')->findAll();
+    $penanggungJawabList = $this->asetModel->distinct()->select('user_pengguna')->where('user_pengguna IS NOT NULL AND user_pengguna != ""')->orderBy('user_pengguna', 'ASC')->findAll();
 
     $data = [
         'title'               => 'Cetak Barcode Aset',

@@ -149,9 +149,9 @@
                         <th>Tipe</th>
                         <th>Serial Number</th>
                         <th>Entitas Pembelian</th>
-                        <th>Tahun</th>
+                        <th>tahun beli</th>
                         <th>Harga Beli</th>
-                        <th>Penanggung Jawab</th>
+                        <th>user pengguna</th>
                         <th>Lokasi</th>
                         <th>Status</th>
                         <th>Keterangan</th>
@@ -195,9 +195,9 @@
                                 <?php endif; ?>
                             </td>
                             <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" required></td>
-                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun]" value="<?= esc($row['tahun']) ?>" required></td>
+                            <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun_beli]" value="<?= esc($row['tahun_beli']) ?>" required></td>
                             <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][penanggung_jawab]" value="<?= esc($row['penanggung_jawab']) ?>"></td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][user_pengguna]" value="<?= esc($row['user_pengguna']) ?>"></td>
                             <td>
                                 <input type="text" class="form-control autocomplete-master" data-type="lokasi" value="<?= esc($row['lokasi']) ?>" required>
                                 <input type="hidden" class="autocomplete-id" name="aset[<?= $index ?>][lokasi_id]">
@@ -353,9 +353,9 @@ $(document).ready(function() {
                 <td><input type="text" class="form-control autocomplete-master" data-type="tipe" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][tipe_id]"></td>
                 <td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td>
                 <td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]" required></td>
-                <td><input type="number" class="form-control" name="aset[${newIndex}][tahun]" required></td>
+                <td><input type="number" class="form-control" name="aset[${newIndex}][tahun_beli]" required></td>
                 <td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][penanggung_jawab]"></td>
+                <td><input type="text" class="form-control" name="aset[${newIndex}][user_pengguna]"></td>
                 <td><input type="text" class="form-control autocomplete-master" data-type="lokasi" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][lokasi_id]"></td>
                 <td><select class="form-select" name="aset[${newIndex}][status]"><option value="Baik Terpakai">Baik Terpakai</option><option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option><option value="Rusak">Rusak</option></select></td>
                 <td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td>

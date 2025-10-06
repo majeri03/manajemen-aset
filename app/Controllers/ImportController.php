@@ -81,9 +81,9 @@ public function upload()
                     'tipe'              => strtoupper(trim($sheet[$i]['D'])),
                     'serial_number'     => $serialNumber,
                     'entitas_pembelian' => strtoupper(trim($sheet[$i]['F'])), // Kolom Entitas 'F'
-                    'tahun'             => trim($sheet[$i]['G']),             // Kolom Tahun 'G'
+                    'tahun_beli'             => trim($sheet[$i]['G']),             // Kolom tahun_beli 'G'
                     'harga_beli'        => trim($sheet[$i]['H']),             // Kolom Harga Beli 'H'
-                    'penanggung_jawab'  => strtoupper(trim($sheet[$i]['I'])), // Kolom Penanggung Jawab 'I'
+                    'user_pengguna'  => strtoupper(trim($sheet[$i]['I'])), // Kolom USER PENGGUNA 'I'
                     'lokasi'            => strtoupper(trim($sheet[$i]['J'])), // Kolom Lokasi 'J'
                     'status'            => $statusFinal,
                     'keterangan'        => strtoupper(trim($sheet[$i]['L'])), // Kolom Keterangan 'L'
@@ -104,7 +104,7 @@ public function upload()
         return redirect()->to('/import')->with('success', 'File berhasil diunggah. Silakan validasi data di bawah.');
     }
     
-    private function generateUniqueAssetCode($entitas, $tahun, $subKategoriId, $merkId)
+    private function generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId)
     {
         $asetModel = new AsetModel();
         $subKategoriModel = new SubKategoriModel();
@@ -133,7 +133,7 @@ public function upload()
         $merkCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $merkInfo['nama_merk'] ?? 'MRK'), 0, 3));
         $entitasCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entitas), 0, 5));
         
-        $newCode = "BTR/{$entitasCode}/{$tahun}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
+        $newCode = "BTR/{$entitasCode}/{$tahun_beli}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
         return $newCode;
     }
 
@@ -162,7 +162,7 @@ public function upload()
         $errors = [];
         $requiredFields = [
             'kategori_id' => 'Kategori', 'sub_kategori_id' => 'Sub Kategori',
-            'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun' => 'Tahun',
+            'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun_beli' => 'tahun_beli',
             'entitas_pembelian' => 'Entitas Pembelian', 'lokasi_id' => 'Lokasi', 'status' => 'Status'
         ];
 
@@ -207,7 +207,7 @@ public function upload()
     $newlyCreatedAssets = [];
     foreach ($validatedData as $data) {
         $kode = $this->generateUniqueAssetCode(
-            $data['entitas_pembelian'], $data['tahun'],
+            $data['entitas_pembelian'], $data['tahun_beli'],
             $data['sub_kategori_id'], $data['merk_id']
         );
 
@@ -218,10 +218,10 @@ public function upload()
             'merk_id'           => $data['merk_id'],
             'tipe_id'           => $data['tipe_id'],
             'serial_number'     => $data['serial_number'],
-            'tahun'             => $data['tahun'],
+            'tahun_beli'             => $data['tahun_beli'],
             'harga_beli'        => $data['harga_beli'],
             'entitas_pembelian' => $data['entitas_pembelian'],
-            'penanggung_jawab'  => $data['penanggung_jawab'],
+            'user_pengguna'     => $data['user_pengguna'],
             'lokasi_id'         => $data['lokasi_id'],
             'status'            => $data['status'],
             'keterangan'        => $data['keterangan'],
@@ -465,7 +465,7 @@ public function downloadTemplate()
     $masterSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
     // 4. Tulis header dan terapkan validasi ke semua baris
-    $headers = ['A1'=>'KATEGORI', 'B1'=>'SUB KATEGORI', 'C1'=>'MERK', 'D1'=>'TIPE', 'E1'=>'SERIAL NUMBER', 'F1'=>'ENTITAS PEMBELIAN', 'G1'=>'TAHUN', 'H1'=>'HARGA BELI', 'I1'=>'PENANGGUNG JAWAB', 'J1'=>'LOKASI', 'K1'=>'STATUS', 'L1'=>'KETERANGAN'];
+    $headers = ['A1'=>'KATEGORI', 'B1'=>'SUB KATEGORI', 'C1'=>'MERK', 'D1'=>'TIPE', 'E1'=>'SERIAL NUMBER', 'F1'=>'ENTITAS PEMBELIAN', 'G1'=>'TAHUN BELI', 'H1'=>'HARGA BELI', 'I1'=>'USER PENGGUNA', 'J1'=>'LOKASI', 'K1'=>'STATUS', 'L1'=>'KETERANGAN'];
     foreach ($headers as $cell => $value) { $sheet->setCellValue($cell, $value); }
 
     $rowCount = 1001;

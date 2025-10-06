@@ -73,8 +73,8 @@ Edit Aset
                 </select>
             </div>
             <div class="col-md-6">
-                <label for="tahun" class="form-label">Tahun</label>
-                <input type="number" class="form-control" id="tahun" name="tahun" value="<?= esc($aset['tahun']) ?>" required>
+                <label for="tahun_beli" class="form-label">Tahun Beli</label>
+                <input type="number" class="form-control" id="tahun_beli" name="tahun_beli" value="<?= esc($aset['tahun_beli']) ?>" required>
             </div>
             <div class="col-md-6">
                 <label for="harga_beli" class="form-label">Harga Beli</label>
@@ -85,8 +85,8 @@ Edit Aset
                 <input type="text" class="form-control" id="entitas_pembelian" name="entitas_pembelian" value="<?= esc($aset['entitas_pembelian']) ?>">
             </div>
             <div class="col-md-6">
-                <label for="penanggung_jawab" class="form-label">Penanggung Jawab</label>
-                <input type="text" class="form-control" id="penanggung_jawab" name="penanggung_jawab" value="<?= esc($aset['penanggung_jawab']) ?>" oninput="this.value = this.value.toUpperCase()">
+                <label for="user_pengguna" class="form-label">USER PENGGUNA</label>
+                <input type="text" class="form-control" id="user_pengguna" name="user_pengguna" value="<?= esc($aset['user_pengguna']) ?>" oninput="this.value = this.value.toUpperCase()">
             </div>
             <div class="col-md-6">
                 <label for="lokasi_id" class="form-label">Lokasi</label>

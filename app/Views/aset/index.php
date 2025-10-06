@@ -45,10 +45,10 @@ Data Aset
                         <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                        <p><strong>tahun_beli Beli:</strong> <span id="detail-tahun_beli"></span></p>
                         <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                         <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
-                        <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
+                        <p><strong>User Pengguna:</strong> <span id="detail-user_pengguna"></span></p>
                         <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                         <p><strong>Status:</strong> <span id="detail-status"></span></p>
                     </div>
@@ -164,7 +164,7 @@ Data Aset
                     <th scope="col">SUB KATEGORI</th>
                     <th scope="col">MERK</th>
                     <th scope="col">SERIAL NUMBER</th>
-                    <th scope="col">PENANGGUNG JAWAB</th>
+                    <th scope="col">USER PENGGUNA</th>
                     <th scope="col">LOKASI</th>
                     <th scope="col">STATUS</th>
                     <th scope="col">AKSI</th>
@@ -178,7 +178,7 @@ Data Aset
                             <td><?= esc($aset['nama_sub_kategori']) ?></td>
                             <td><?= esc($aset['nama_merk']) ?></td>
                             <td><?= esc($aset['serial_number']) ?></td>
-                            <td><?= esc($aset['penanggung_jawab']) ?></td>
+                            <td><?= esc($aset['user_pengguna']) ?></td>
                             <td><?= esc($aset['nama_lokasi']) ?></td>
                             <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
                             <td>
@@ -224,10 +224,10 @@ Data Aset
                 <p><strong>Merk:</strong> <span id="detail-merk"></span></p>
                 <p><strong>Type:</strong> <span id="detail-type"></span></p>
                 <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
-                <p><strong>Tahun:</strong> <span id="detail-tahun"></span></p>
+                <p><strong>tahun_beli:</strong> <span id="detail-tahun_beli"></span></p>
                 <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                 <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
-                <p><strong>Penanggung Jawab:</strong> <span id="detail-penanggung_jawab"></span></p>
+                <p><strong>User Pengguna:</strong> <span id="detail-user_pengguna"></span></p>
                 <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                 <p><strong>Status:</strong> <span id="detail-status"></span></p>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
@@ -285,8 +285,8 @@ Data Aset
                             <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">
-                            <label for="tahun-tambah" class="form-label">Tahun</label>
-                            <input type="number" class="form-control" id="tahun-tambah" name="tahun" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
+                            <label for="tahun_beli-tambah" class="form-label">tahun_beli Beli</label>
+                            <input type="number" class="form-control" id="tahun_beli-tambah" name="tahun_beli" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
                         </div>
                         <div class="col-md-6">
                             <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
@@ -305,8 +305,8 @@ Data Aset
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="penanggung_jawab-tambah" class="form-label">Penanggung Jawab</label>
-                            <input type="text" class="form-control" id="penanggung_jawab-tambah" name="penanggung_jawab" oninput="this.value = this.value.toUpperCase();">
+                            <label for="user_pengguna-tambah" class="form-label">User Pengguna</label>
+                            <input type="text" class="form-control" id="user_pengguna-tambah" name="user_pengguna" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">
                             <label for="lokasi-tambah" class="form-label">Lokasi</label>
@@ -397,21 +397,21 @@ Data Aset
     function generateKodeAset() {
         // Ambil elemen dari form
         const entitasInput = document.getElementById('entitas_pembelian-tambah');
-        const tahunInput = document.getElementById('tahun-tambah');
+        const tahunInput = document.getElementById('tahun_beli-tambah');
         const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
         const merkSelect = document.getElementById('merk_id-tambah');
         const kodeInput = document.getElementById('kode-tambah');
 
         // Ambil nilai dan format
         const entitas = entitasInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
-        const tahun = tahunInput.value;
+        const tahun_beli = tahunInput.value;
         const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'SUB';
         const merkNama = merkSelect.options[merkSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'MRK';
 
         // Tampilkan preview jika semua data kunci sudah diisi
-        if (entitas && tahun && subKategoriSelect.value && merkSelect.value) {
+        if (entitas && tahun_beli && subKategoriSelect.value && merkSelect.value) {
             // "XX" adalah placeholder untuk nomor unik yang akan dibuat di server
-            kodeInput.value = `BTR/${entitas}/${tahun}/${subKategoriNama}/${merkNama}/XX`;
+            kodeInput.value = `BTR/${entitas}/${tahun_beli}/${subKategoriNama}/${merkNama}/XX`;
         } else {
             kodeInput.value = '';
         }
@@ -574,7 +574,7 @@ Data Aset
         });
 
         // Panggil generateKodeAset saat dropdown lain juga berubah
-        $('#sub_kategori_id-tambah, #tahun-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
+        $('#sub_kategori_id-tambah, #tahun_beli-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
     
         // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
         const searchInput = document.getElementById('searchInput');
@@ -592,7 +592,7 @@ if (searchInput && tableBody) {
                     data.forEach(aset => {
                         // Variabel untuk menangani data yang mungkin null
                         const serialNumber = aset.serial_number || '-';
-                        const penanggungJawab = aset.penanggung_jawab || '-';
+                        const penanggungJawab = aset.user_pengguna || '-';
 
                         // Buat baris tabel dengan urutan kolom yang BENAR
                         const row = `<tr>
@@ -652,10 +652,10 @@ const detailAsetModal = document.getElementById('detailAsetModal');
                         document.getElementById('detail-merk').textContent = data.nama_merk || '-';
                         document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun').textContent = data.tahun;
+                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
-                        document.getElementById('detail-penanggung_jawab').textContent = data.penanggung_jawab || '-';
+                        document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
                         document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                         document.getElementById('detail-status').textContent = data.status;

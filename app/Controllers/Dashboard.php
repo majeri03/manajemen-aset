@@ -92,11 +92,11 @@ unset($lokasi); // Hapus referensi setelah loop selesai
 
    // --- [FINAL] DATA UNTUK DAFTAR PENANGGUNG JAWAB ---
     $daftarPenanggungJawab = $db->table('aset')
-        ->select('penanggung_jawab, COUNT(id) as jumlah_aset')
+        ->select('user_pengguna, COUNT(id) as jumlah_aset')
         ->where('deleted_at', null) // Tetap filter aset yang aktif
-        ->where('penanggung_jawab IS NOT NULL')
-        ->where('penanggung_jawab !=', '')
-        ->groupBy('penanggung_jawab')
+        ->where('user_pengguna IS NOT NULL')
+        ->where('user_pengguna !=', '')
+        ->groupBy('user_pengguna')
         ->orderBy('jumlah_aset', 'DESC')
         ->get()
         ->getResultArray();
