@@ -11,7 +11,7 @@ Edit Aset
 </div>
 
 <div class="table-container shadow-sm">
-    <form action="<?= base_url('aset/' . $aset['id']) ?>" method="post">
+    <form action="<?= base_url('aset/' . $aset['id']) ?>" method="post" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="_method" value="PUT">
 
@@ -112,6 +112,40 @@ Edit Aset
                 <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
                 <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
             </div>
+            <div class="col-12">
+                <label for="bukti_aset" class="form-label">Tambah Dok. Aset Baru (Maks. 2 File)</label>
+                <input type="file" class="form-control" id="bukti_aset" name="bukti_aset[]" multiple accept="image/png, image/jpeg, image/jpg, application/pdf">
+                <div class="form-text">Anda dapat menambahkan hingga 2 file bukti. Mengunggah file baru tidak akan menghapus file lama.</div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Dok. Aset Tersimpan</label>
+                <div class="row g-2" id="existing-proofs">
+                    <?php if (!empty($dokumentasi)): ?>
+                        <?php foreach ($dokumentasi as $doc): ?>
+                            <div class="col-auto" id="doc-<?= $doc['id'] ?>">
+                                <div class="position-relative">
+                                    <?php if (str_starts_with($doc['tipe_file'], 'image/')): ?>
+                                        <a href="<?= base_url($doc['path_file']) ?>" target="_blank">
+                                            <img src="<?= base_url($doc['path_file']) ?>" alt="Bukti Aset" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                        </a>
+                                    <?php else: // Jika bukan gambar (misal: PDF) ?>
+                                        <a href="<?= base_url($doc['path_file']) ?>" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 100px; height: 100px; text-decoration: none;">
+                                            <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2.5rem; color: #d33;"></i>
+                                            <small class="text-muted mt-1">PDF</small>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="margin: 2px;" onclick="hapusDokumen(<?= $doc['id'] ?>)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-muted small">Belum ada bukti aset yang diunggah.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
 
         <div class="mt-4 d-flex justify-content-end">
@@ -162,5 +196,38 @@ Edit Aset
             populateSubKategori(kategoriSelect.value, "<?= esc($aset['sub_kategori_id']) ?>");
         }
     });
+</script>
+<script>
+    function hapusDokumen(id) {
+        Swal.fire({
+            title: 'Anda Yakin?',
+            text: "File bukti ini akan dihapus secara permanen!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Kita akan membuat rute dan fungsi ini di langkah berikutnya
+                fetch(`<?= base_url('aset/delete-document/') ?>${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                    }
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`doc-${id}`).remove();
+                        Swal.fire('Terhapus!', 'File bukti telah dihapus.', 'success');
+                    } else {
+                        Swal.fire('Gagal!', 'Gagal menghapus file.', 'error');
+                    }
+                });
+            }
+        });
+    }
 </script>
 <?= $this->endSection() ?>

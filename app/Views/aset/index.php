@@ -326,7 +326,7 @@ Data Aset
                             <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
                         </div>
                         <div class="col-12">
-                            <label for="bukti_aset" class="form-label">Dok. Aset (Maks. 2 Foto)</label>
+                            <label for="bukti_aset" class="form-label">Dok. Aset (Maks. 2 File)</label>
                             <input type="file" class="form-control" id="bukti_aset" name="bukti_aset[]" multiple accept="image/png, image/jpeg, image/jpg, application/pdf">
                             <div class="form-text">Pilih hingga 2 file (jpg, png, pdf). Ukuran maks. 2MB per file.</div>
                         </div>
