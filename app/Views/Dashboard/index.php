@@ -326,7 +326,10 @@ Dashboard
                 </div>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-
+                <h6 class="mt-4">Dok. Aset</h6>
+                <div class="row g-2" id="detail-dokumentasi">
+                    </div>
+                <hr>
                 <ul class="nav nav-tabs" id="historyTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="verifikasi-tab" data-bs-toggle="tab" data-bs-target="#verifikasi-content" type="button" role="tab">Riwayat Verifikasi</button>
@@ -363,7 +366,7 @@ Dashboard
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="<?= base_url('aset') ?>" method="post">
+                <form action="<?= base_url('aset') ?>" method="post" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <input type="hidden" name="redirect_to" value="dashboard">
                     <div class="row g-3">
@@ -441,6 +444,11 @@ Dashboard
                         <div class="col-12">
                             <label for="keterangan-tambah" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="bukti_aset" class="form-label">Dok. Aset (Maks. 2 Foto)</label>
+                            <input type="file" class="form-control" id="bukti_aset" name="bukti_aset[]" multiple accept="image/png, image/jpeg, image/jpg">
+                            <div class="form-text">Pilih hingga 2 file gambar (jpg, jpeg, png). Ukuran maks. 2MB per file.</div>
                         </div>
                     </div>
                     <div class="modal-footer mt-4">
@@ -847,6 +855,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                 document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                 document.getElementById('detail-status').textContent = data.status;
+                // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
+                        const dokumentasiContainer = document.getElementById('detail-dokumentasi');
+                        dokumentasiContainer.innerHTML = ''; // Kosongkan dulu
+
+                        if (data.dokumentasi && data.dokumentasi.length > 0) {
+                            data.dokumentasi.forEach(doc => {
+                                let docItem = '';
+                                const fileUrl = `<?= base_url() ?>/${doc.path_file}`;
+
+                                if (doc.tipe_file.startsWith('image/')) {
+                                    docItem = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank">
+                                                <img src="${fileUrl}" alt="Bukti" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </a>
+                                        </div>
+                                    `;
+                                } else {
+                                    docItem = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
+                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
+                                                <small class="text-muted mt-1">PDF</small>
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                                dokumentasiContainer.innerHTML += docItem;
+                            });
+                        } else {
+                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset yang diunggah.</p>';
+                        }
+                        // --- AKHIR KODE BARU ---
             })
             .catch(error => console.error('Error fetching detail:', error));
         
