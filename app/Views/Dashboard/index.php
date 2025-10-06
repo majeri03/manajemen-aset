@@ -217,7 +217,7 @@ Dashboard
     </div>
 </div>
         <div class="table-container shadow-sm flex-grow-1">
-            <h5 class="mb-3">Top User Pengguna</h5>
+            <h5 class="mb-3">Top user pengguna</h5>
             <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                 <table class="table table-sm table-hover align-middle">
                      <thead>
@@ -238,7 +238,7 @@ Dashboard
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="2" class="text-center p-3">Belum ada User Pengguna.</td>
+                                <td colspan="2" class="text-center p-3">Belum ada user pengguna.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -316,20 +316,17 @@ Dashboard
                         <p><strong>Serial Number:</strong> <span id="detail-serial_number"></span></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Tahun Beli:</strong> <span id="detail-tahun_beli"></span></p>
+                        <p><strong>TAHUN BELI:</strong> <span id="detail-tahun_beli"></span></p>
                         <p><strong>Harga Beli:</strong> <span id="detail-harga_beli"></span></p>
                         <p><strong>Entitas Pembelian:</strong> <span id="detail-entitas_pembelian"></span></p>
-                        <p><strong>User Pengguna:</strong> <span id="detail-user_pengguna"></span></p>
+                        <p><strong>USER PENGGUNA:</strong> <span id="detail-user_pengguna"></span></p>
                         <p><strong>Lokasi:</strong> <span id="detail-lokasi"></span></p>
                         <p><strong>Status:</strong> <span id="detail-status"></span></p>
                     </div>
                 </div>
                 <p><strong>Keterangan:</strong> <span id="detail-keterangan"></span></p>
                 <hr>
-                <h6 class="mt-4">Dok. Aset</h6>
-                <div class="row g-2" id="detail-dokumentasi">
-                    </div>
-                <hr>
+
                 <ul class="nav nav-tabs" id="historyTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="verifikasi-tab" data-bs-toggle="tab" data-bs-target="#verifikasi-content" type="button" role="tab">Riwayat Verifikasi</button>
@@ -366,7 +363,7 @@ Dashboard
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="<?= base_url('aset') ?>" method="post" enctype="multipart/form-data">
+                <form action="<?= base_url('aset') ?>" method="post">
                     <?= csrf_field() ?>
                     <input type="hidden" name="redirect_to" value="dashboard">
                     <div class="row g-3">
@@ -405,7 +402,7 @@ Dashboard
                             <input type="text" class="form-control" id="serial_number-tambah" name="serial_number" placeholder="Contoh: XBN4503766" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">
-                            <label for="tahun_beli-tambah" class="form-label">Tahun Beli Beli Beli Beli Beli</label>
+                            <label for="tahun_beli-tambah" class="form-label">Tahun Beli</label>
                             <input type="number" class="form-control" id="tahun_beli-tambah" name="tahun_beli" placeholder="Contoh: 2025" oninput="generateKodeAset();" required>
                         </div>
                         <div class="col-md-6">
@@ -425,7 +422,7 @@ Dashboard
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="user_pengguna-tambah" class="form-label">Penanggung Jawab</label>
+                            <label for="user_pengguna-tambah" class="form-label">USER PENGGUNA</label>
                             <input type="text" class="form-control" id="user_pengguna-tambah" name="user_pengguna" oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-md-6">
@@ -444,11 +441,6 @@ Dashboard
                         <div class="col-12">
                             <label for="keterangan-tambah" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="keterangan-tambah" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase();"></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label for="bukti_aset" class="form-label">Dok. Aset (Maks. 2 Foto)</label>
-                            <input type="file" class="form-control" id="bukti_aset" name="bukti_aset[]" multiple accept="image/png, image/jpeg, image/jpg">
-                            <div class="form-text">Pilih hingga 2 file gambar (jpg, jpeg, png). Ukuran maks. 2MB per file.</div>
                         </div>
                     </div>
                     <div class="modal-footer mt-4">
@@ -855,39 +847,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
                 document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                 document.getElementById('detail-status').textContent = data.status;
-                // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
-                        const dokumentasiContainer = document.getElementById('detail-dokumentasi');
-                        dokumentasiContainer.innerHTML = ''; // Kosongkan dulu
-
-                        if (data.dokumentasi && data.dokumentasi.length > 0) {
-                            data.dokumentasi.forEach(doc => {
-                                let docItem = '';
-                                const fileUrl = `<?= base_url() ?>/${doc.path_file}`;
-
-                                if (doc.tipe_file.startsWith('image/')) {
-                                    docItem = `
-                                        <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank">
-                                                <img src="${fileUrl}" alt="Bukti" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
-                                            </a>
-                                        </div>
-                                    `;
-                                } else {
-                                    docItem = `
-                                        <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
-                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
-                                                <small class="text-muted mt-1">PDF</small>
-                                            </a>
-                                        </div>
-                                    `;
-                                }
-                                dokumentasiContainer.innerHTML += docItem;
-                            });
-                        } else {
-                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset yang diunggah.</p>';
-                        }
-                        // --- AKHIR KODE BARU ---
             })
             .catch(error => console.error('Error fetching detail:', error));
         

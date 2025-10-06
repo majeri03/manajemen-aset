@@ -88,7 +88,7 @@
                 </select>
             </div>
             <div class="col-6 col-md-3">
-                <label for="tahun_beli" class="form-label">Tahun Beli Beli</label>
+                <label for="tahun_beli" class="form-label">Tahun Beli</label>
                 <input type="number" name="tahun_beli" id="tahun_beli" class="form-control" placeholder="Contoh: 2024" value="<?= esc($filters['tahun_beli'] ?? '') ?>">
             </div>
             <div class="col-12">
