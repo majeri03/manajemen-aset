@@ -66,12 +66,12 @@
                 </select>
             </div>
             <div class="col-6 col-md-3">
-                <label for="filter-penanggung-jawab" class="form-label">Penanggung Jawab</label>
-                <select name="penanggung_jawab" id="filter-penanggung-jawab" class="form-select">
+                <label for="filter-penanggung-jawab" class="form-label">USER PENGGUNA</label>
+                <select name="user_pengguna" id="filter-penanggung-jawab" class="form-select">
                     <option value="">SEMUA</option>
                     <?php foreach ($penanggung_jawab_list as $pj) : ?>
-                        <option value="<?= esc($pj['penanggung_jawab']) ?>" <?= ($filters['penanggung_jawab'] ?? '') == $pj['penanggung_jawab'] ? 'selected' : '' ?>>
-                            <?= esc($pj['penanggung_jawab']) ?>
+                        <option value="<?= esc($pj['user_pengguna']) ?>" <?= ($filters['user_pengguna'] ?? '') == $pj['user_pengguna'] ? 'selected' : '' ?>>
+                            <?= esc($pj['user_pengguna']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -88,8 +88,8 @@
                 </select>
             </div>
             <div class="col-6 col-md-3">
-                <label for="tahun" class="form-label">Tahun Beli</label>
-                <input type="number" name="tahun" id="tahun" class="form-control" placeholder="Contoh: 2024" value="<?= esc($filters['tahun'] ?? '') ?>">
+                <label for="tahun_beli" class="form-label">Tahun Beli Beli</label>
+                <input type="number" name="tahun_beli" id="tahun_beli" class="form-control" placeholder="Contoh: 2024" value="<?= esc($filters['tahun_beli'] ?? '') ?>">
             </div>
             <div class="col-12">
                 <label for="keyword" class="form-label">Kata Kunci</label>
@@ -136,12 +136,12 @@
                             </td>
                             <td class="fw-bold"><?= esc($aset['kode'] ?? 'N/A') ?></td>
                             <td><?= esc($aset['entitas_pembelian'] ?? 'N/A') ?></td>
-                            <td><?= esc($aset['tahun'] ?? 'N/A') ?></td>
+                            <td><?= esc($aset['tahun_beli'] ?? 'N/A') ?></td>
                             <td>
                                 <div><?= esc($aset['nama_kategori'] ?? 'N/A') ?></div>
                                 <small class="text-muted"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></small>
                             </td>
-                            <td><?= esc($aset['penanggung_jawab'] ?? 'N/A') ?></td>
+                            <td><?= esc($aset['user_pengguna'] ?? 'N/A') ?></td>
                             <td><?= esc($aset['nama_lokasi'] ?? 'N/A') ?></td>
                         </tr>
                     <?php endforeach; ?>

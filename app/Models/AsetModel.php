@@ -21,13 +21,13 @@ class AsetModel extends Model
         'merk_id',
         'tipe_id',
         'serial_number',
-        'tahun',
+        'tahun_beli',
         'lokasi_id',
         'keterangan',
         'status',
         'harga_beli',
         'entitas_pembelian',
-        'penanggung_jawab', // <-- TAMBAHKAN INI
+        'user_pengguna', // <-- TAMBAHKAN INI
         'qrcode',
     ];
    
