@@ -227,11 +227,11 @@ public function show($id = null)
                         // Validasi ukuran dan tipe
                         if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
                             $newName = $file->getRandomName();
-                            $file->move(FCPATH . 'uploads/aset_bukti', $newName);
-                            
+                            $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+
                             $this->dokumentasiAsetModel->save([
                                 'aset_id'        => $newAsetId,
-                                'path_file'      => 'uploads/aset_bukti/' . $newName,
+                                'path_file'      => $newName, // Hanya simpan nama file
                                 'nama_asli_file' => $file->getClientName(),
                                 'tipe_file'      => $file->getClientMimeType(),
                             ]);
@@ -347,11 +347,11 @@ public function show($id = null)
                 if ($file->isValid() && !$file->hasMoved() && ($existingDocsCount + $uploadedFilesCount) < 2) {
                     if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
                         $newName = $file->getRandomName();
-                        $file->move(FCPATH . 'uploads/aset_bukti', $newName);
-                        
+                        $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+
                         $this->dokumentasiAsetModel->save([
                             'aset_id'        => $id,
-                            'path_file'      => 'uploads/aset_bukti/' . $newName,
+                            'path_file'      => $newName, // Hanya simpan nama file
                             'nama_asli_file' => $file->getClientName(),
                             'tipe_file'      => $file->getClientMimeType(),
                         ]);
@@ -795,5 +795,32 @@ public function barcodes()
         }
         
         return $this->response->setJSON(['success' => false]);
+    }
+
+    public function serveDocument($fileName = null)
+    {
+        if (empty($fileName)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        // Tentukan path file di dalam folder writable
+        $path = WRITEPATH . 'uploads/aset_bukti/' . $fileName;
+
+        if (!file_exists($path) || !is_file($path)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        // Baca file dan kirimkan ke browser
+        $fileContent = file_get_contents($path);
+        
+        // Dapatkan tipe mime dari database untuk akurasi
+        $docInfo = $this->dokumentasiAsetModel->where('path_file', $fileName)->first();
+        $mimeType = $docInfo['tipe_file'] ?? mime_content_type($path);
+
+        return $this->response
+            ->setStatusCode(200)
+            ->setContentType($mimeType)
+            ->setBody($fileContent)
+            ->setHeader('Content-Disposition', 'inline; filename="' . $docInfo['nama_asli_file'] . '"'); // Menampilkan file, bukan download paksa
     }
 }

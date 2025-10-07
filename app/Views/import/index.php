@@ -128,7 +128,7 @@
 
 <?php if ($import_data): ?>
 <div class="table-container shadow-sm">
-    <form id="save-form" action="<?= base_url('import/save') ?>" method="post">
+    <form id="save-form" action="<?= base_url('import/save') ?>" method="post" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Data Preview (<?= count($import_data) ?> baris)</h5>
@@ -155,6 +155,7 @@
                         <th>Lokasi</th>
                         <th>Status</th>
                         <th>Keterangan</th>
+                        <th>Dok. Aset (Opsional)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -210,10 +211,13 @@
                                 </select>
                             </td>
                             <td><input type="text" class="form-control" name="aset[<?= $index ?>][keterangan]" value="<?= esc($row['keterangan']) ?>"></td>
+                            <td>
+                                <input type="file" class="form-control" name="bukti_aset[<?= $index ?>][]" multiple accept="image/png, image/jpeg, image/jpg, application/pdf">
+                            </td>
                         </tr>
                         <?php if ($hasError): ?>
                             <tr class="table-danger-light">
-                                <td colspan="13">
+                                <td colspan="14">
                                     <div class="px-3 py-1 text-danger-emphasis">
                                         <strong><i class="bi bi-exclamation-circle-fill me-2"></i>Kesalahan:</strong>
                                         <ul class="mb-0 ps-4">
