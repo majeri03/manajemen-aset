@@ -863,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (data.dokumentasi && data.dokumentasi.length > 0) {
                             data.dokumentasi.forEach(doc => {
                                 let docItem = '';
-                                const fileUrl = `<?= base_url() ?>/${doc.path_file}`;
+                                const fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
 
                                 if (doc.tipe_file.startsWith('image/')) {
                                     docItem = `

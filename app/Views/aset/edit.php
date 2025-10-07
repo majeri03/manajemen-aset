@@ -142,11 +142,11 @@ Edit Aset
                             <div class="col-auto" id="doc-<?= $doc['id'] ?>">
                                 <div class="position-relative">
                                     <?php if (str_starts_with($doc['tipe_file'], 'image/')): ?>
-                                        <a href="<?= base_url($doc['path_file']) ?>" target="_blank">
-                                            <img src="<?= base_url($doc['path_file']) ?>" alt="Bukti Aset" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                        <a href="<?= base_url('files/bukti/' . $doc['path_file']) ?>" target="_blank">
+                                            <img src="<?= base_url('files/bukti/' . $doc['path_file']) ?>" alt="Bukti Aset" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
                                         </a>
                                     <?php else: // Jika bukan gambar (misal: PDF) ?>
-                                        <a href="<?= base_url($doc['path_file']) ?>" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 100px; height: 100px; text-decoration: none;">
+                                        <a href="<?= base_url('files/bukti/' . $doc['path_file']) ?>" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 100px; height: 100px; text-decoration: none;">
                                             <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2.5rem; color: #d33;"></i>
                                             <small class="text-muted mt-1">PDF</small>
                                         </a>

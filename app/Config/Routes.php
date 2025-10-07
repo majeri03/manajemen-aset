@@ -54,6 +54,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('profile', 'UserController::profile');
     $routes->post('user/profile', 'UserController::updateProfileInfo'); // Mengubah info dasar
     $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
+
+    $routes->get('files/bukti/(:segment)', 'AsetController::serveDocument/$1');
     // ===================================================================
     // RUTE YANG HANYA BISA DIAKSES OLEH ADMIN
     // ===================================================================

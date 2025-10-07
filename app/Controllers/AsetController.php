@@ -231,11 +231,11 @@ public function show($id = null)
                         // Validasi ukuran dan tipe
                         if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
                             $newName = $file->getRandomName();
-                            $file->move(FCPATH . 'uploads/aset_bukti', $newName);
-                            
+                            $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+
                             $this->dokumentasiAsetModel->save([
                                 'aset_id'        => $newAsetId,
-                                'path_file'      => 'uploads/aset_bukti/' . $newName,
+                                'path_file'      => $newName, // Hanya simpan nama file
                                 'nama_asli_file' => $file->getClientName(),
                                 'tipe_file'      => $file->getClientMimeType(),
                             ]);
@@ -344,7 +344,34 @@ public function show($id = null)
             'user_pengguna',
         ];
 
-            $data = $this->request->getPost($allowedFields);
+        $data = $this->request->getPost($allowedFields);
+        // --- AWAL KODE BARU UNTUK PROSES UPLOAD SAAT UPDATE ---
+        $existingDocsCount = $this->dokumentasiAsetModel->where('aset_id', $id)->countAllResults();
+        $files = $this->request->getFiles('bukti_aset');
+        $uploadedFilesCount = 0;
+
+        if (isset($files['bukti_aset'])) {
+            foreach ($files['bukti_aset'] as $file) {
+                if ($file->isValid() && !$file->hasMoved() && ($existingDocsCount + $uploadedFilesCount) < 2) {
+                    if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
+                        $newName = $file->getRandomName();
+                        $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+
+                        $this->dokumentasiAsetModel->save([
+                            'aset_id'        => $id,
+                            'path_file'      => $newName, // Hanya simpan nama file
+                            'nama_asli_file' => $file->getClientName(),
+                            'tipe_file'      => $file->getClientMimeType(),
+                        ]);
+                        $uploadedFilesCount++;
+                    }
+                }
+            }
+        }
+        if (!empty($data['entitas_pembelian'])) {
+            $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
+        }
+        
 
     // Ambil data aset sebelum diubah untuk perbandingan
     $asetSebelumnya = $this->asetModel->find($id);
@@ -797,6 +824,7 @@ public function barcodes()
         return $this->response->setJSON(['success' => false]);
     }
 
+
     public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
     {
         $karyawanModel = new KaryawanModel();
@@ -836,6 +864,34 @@ public function barcodes()
         $dompdf->stream($filename);
 
         return;
+    }
+
+
+    public function serveDocument($fileName = null)
+    {
+        if (empty($fileName)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        // Tentukan path file di dalam folder writable
+        $path = WRITEPATH . 'uploads/aset_bukti/' . $fileName;
+
+        if (!file_exists($path) || !is_file($path)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
+        // Baca file dan kirimkan ke browser
+        $fileContent = file_get_contents($path);
+        
+        // Dapatkan tipe mime dari database untuk akurasi
+        $docInfo = $this->dokumentasiAsetModel->where('path_file', $fileName)->first();
+        $mimeType = $docInfo['tipe_file'] ?? mime_content_type($path);
+
+        return $this->response
+            ->setStatusCode(200)
+            ->setContentType($mimeType)
+            ->setBody($fileContent)
+            ->setHeader('Content-Disposition', 'inline; filename="' . $docInfo['nama_asli_file'] . '"'); // Menampilkan file, bukan download paksa
     }
 
 }
