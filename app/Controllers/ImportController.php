@@ -18,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use App\Models\DokumentasiAsetModel;
 
 class ImportController extends BaseController
 {
@@ -141,6 +142,8 @@ public function upload()
 {
     $importedData = $this->request->getPost('aset');
     $asetModel = new AsetModel();
+    $dokumentasiAsetModel = new DokumentasiAsetModel(); 
+    $uploadedFiles = $this->request->getFiles();
     $allRowsAreValid = true; // Anggap semua data valid pada awalnya
     $validatedData = [];   // Untuk menampung data yang sudah divalidasi
     $originalDataWithErrors = []; // Untuk menampung data asli jika ada error
@@ -205,7 +208,7 @@ public function upload()
     // TAHAP 3: SIMPAN SEMUA DATA & BUAT QR CODE (Hanya jika semua valid)
     // =============================================================
     $newlyCreatedAssets = [];
-    foreach ($validatedData as $data) {
+    foreach ($validatedData as $index => $data) {
         $kode = $this->generateUniqueAssetCode(
             $data['entitas_pembelian'], $data['tahun_beli'],
             $data['sub_kategori_id'], $data['merk_id']
@@ -227,7 +230,29 @@ public function upload()
             'keterangan'        => $data['keterangan'],
         ])) {
             $newAsetId = $asetModel->getInsertID();
+            // --- AWAL KODE BARU UNTUK PROSES UPLOAD PER BARIS ---
+                if (isset($uploadedFiles['bukti_aset'][$index])) {
+                    $filesForRow = $uploadedFiles['bukti_aset'][$index];
+                    $fileCount = 0;
 
+                    foreach ($filesForRow as $file) {
+                        if ($file->isValid() && !$file->hasMoved() && $fileCount < 2) {
+                            // Validasi ukuran (2MB) dan tipe file
+                            if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
+                                $newName = $file->getRandomName();
+                                $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+                                
+                                $dokumentasiAsetModel->save([
+                                    'aset_id'        => $newAsetId,
+                                    'path_file'      => $newName,
+                                    'nama_asli_file' => $file->getClientName(),
+                                    'tipe_file'      => $file->getClientMimeType(),
+                                ]);
+                                $fileCount++;
+                            }
+                        }
+                    }
+                }
             $url = base_url('stockopname/aset/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
