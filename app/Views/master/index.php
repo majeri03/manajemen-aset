@@ -40,6 +40,11 @@
                 <i class="bi bi-bookmark-star-fill"></i> Merk & Tipe
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="karyawan-tab" data-bs-toggle="tab" data-bs-target="#karyawan-content" type="button" role="tab">
+                <i class="bi bi-people-fill"></i> Karyawan
+            </button>
+        </li>
     </ul>
 </div>
 
@@ -53,6 +58,9 @@
     </div>
     <div class="tab-pane fade" id="merk-content" role="tabpanel" aria-labelledby="merk-tab">
         <?= $this->include('master/_merk_tipe_content') ?>
+    </div>
+    <div class="tab-pane fade" id="karyawan-content" role="tabpanel">
+        <?= $this->include('master/_karyawan_content') ?>
     </div>
 </div>
 

@@ -16,6 +16,10 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+use Dompdf\Dompdf;
+use App\Models\KaryawanModel;
+
+
 /**
  * @property \CodeIgniter\HTTP\IncomingRequest $request
  */
@@ -298,6 +302,9 @@ public function show($id = null)
         if (!$aset) {
             return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
+
+        $karyawanModel = new KaryawanModel();
+
         $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
         $data = [
             'title'            => 'Edit Aset',
@@ -307,7 +314,8 @@ public function show($id = null)
             'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
             'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
             'tipe_list'        => $this->tipeModel->where('merk_id', $aset['merk_id'])->findAll(),
-            'dokumentasi'      => $dokumentasi, 
+            'dokumentasi'      => $dokumentasi,
+            'karyawan_list'    => $karyawanModel->orderBy('nama_karyawan', 'ASC')->findAll(), 
         ];
 
         return view('aset/edit', $data);
@@ -336,43 +344,35 @@ public function show($id = null)
             'user_pengguna',
         ];
 
-        $data = $this->request->getPost($allowedFields);
-        // --- AWAL KODE BARU UNTUK PROSES UPLOAD SAAT UPDATE ---
-        $existingDocsCount = $this->dokumentasiAsetModel->where('aset_id', $id)->countAllResults();
-        $files = $this->request->getFiles('bukti_aset');
-        $uploadedFilesCount = 0;
+            $data = $this->request->getPost($allowedFields);
 
-        if (isset($files['bukti_aset'])) {
-            foreach ($files['bukti_aset'] as $file) {
-                if ($file->isValid() && !$file->hasMoved() && ($existingDocsCount + $uploadedFilesCount) < 2) {
-                    if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
-                        $newName = $file->getRandomName();
-                        $file->move(FCPATH . 'uploads/aset_bukti', $newName);
-                        
-                        $this->dokumentasiAsetModel->save([
-                            'aset_id'        => $id,
-                            'path_file'      => 'uploads/aset_bukti/' . $newName,
-                            'nama_asli_file' => $file->getClientName(),
-                            'tipe_file'      => $file->getClientMimeType(),
-                        ]);
-                        $uploadedFilesCount++;
-                    }
-                }
-            }
+    // Ambil data aset sebelum diubah untuk perbandingan
+    $asetSebelumnya = $this->asetModel->find($id);
+    $statusSebelumnya = $asetSebelumnya['status'] ?? null;
+    $statusSekarang = $data['status'] ?? null;
+
+    // Ambil ID pihak kedua dari form
+    $pihakKeduaId = $this->request->getPost('pihak_kedua_id');
+
+    // --- LOGIKA BARU UNTUK UPDATE USER PENGGUNA ---
+    // Cek jika status berubah dari 'Baik Tidak Terpakai' ke 'Baik Terpakai' DAN pihak kedua dipilih
+    if ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai' && !empty($pihakKeduaId)) {
+        $karyawanModel = new KaryawanModel();
+        $pihakKedua = $karyawanModel->find($pihakKeduaId);
+
+        if ($pihakKedua) {
+            // Ganti nilai 'user_pengguna' di data yang akan disimpan
+            $data['user_pengguna'] = $pihakKedua['nama_karyawan'];
         }
-        if (!empty($data['entitas_pembelian'])) {
-            $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
-        }
-        
-
-        if ($this->asetModel->update($id, $data)) {
-            return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
-        }
-        
-
-        return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
-
     }
+    // --- AKHIR LOGIKA BARU ---
+
+    if ($this->asetModel->update($id, $data)) {
+        return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
+    }
+
+    return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
+}
 
     /**
      * Delete the designated resource object from the model.
@@ -796,4 +796,46 @@ public function barcodes()
         
         return $this->response->setJSON(['success' => false]);
     }
+
+    public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
+    {
+        $karyawanModel = new KaryawanModel();
+
+        // Ambil data Pihak Pertama (user_pengguna saat ini)
+        $pihakPertama = $this->asetModel->find($id);
+
+        // Ambil data Pihak Kedua dari master data
+        $pihakKedua = $karyawanModel->find($pihakKeduaId);
+
+        // Ambil data lengkap aset untuk detail
+        $asetData = $this->asetModel
+            ->select('aset.*, sk.nama_sub_kategori, m.nama_merk, t.nama_tipe')
+            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+            ->join('merk m', 'm.id = aset.merk_id', 'left')
+            ->join('tipe t', 't.id = aset.tipe_id', 'left')
+            ->find($id);
+
+        if (!$asetData || !$pihakKedua) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Data aset atau karyawan tidak ditemukan.');
+        }
+
+        $filename = 'Berita_Acara_Serah_Terima_' . str_replace('/', '_', $asetData['kode']) . '.pdf';
+
+        $dompdf = new Dompdf();
+
+        // Kirim data Pihak Pertama dan Pihak Kedua ke view
+        $viewData = [
+            'aset' => $asetData,
+            'pihak_pertama' => $pihakPertama,
+            'pihak_kedua' => $pihakKedua,
+        ];
+        $dompdf->loadHtml(view('aset/serah_terima_pdf', $viewData));
+
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream($filename);
+
+        return;
+    }
+
 }

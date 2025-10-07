@@ -90,7 +90,6 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->post('stockopname/process-scan-report', 'StockOpnameController::processScanReport'); // Kita akan buat fungsi ini nanti
         $routes->post('stockopname/update-session-report', 'StockOpnameController::updateSessionReportData');
 
-
         // Data Master
         $routes->get('master-data', 'MasterDataController::index');
         $routes->post('master-data/kategori/create', 'MasterDataController::createKategori');
@@ -109,6 +108,10 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->post('master-data/tipe/update/(:num)', 'MasterDataController::updateTipe/$1');
         $routes->get('master-data/tipe/delete/(:num)', 'MasterDataController::deleteTipe/$1');
 
+        // TAMBAHKAN RUTE KARYAWAN DI SINI
+        $routes->post('master-data/karyawan/create', 'MasterDataController::createKaryawan');
+        $routes->get('master-data/karyawan/delete/(:num)', 'MasterDataController::deleteKaryawan/$1');
+
         // Fitur Import
         $routes->get('import', 'ImportController::index');
         $routes->post('import/upload', 'ImportController::upload');
@@ -119,6 +122,9 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->get('import/template', 'ImportController::downloadTemplate');
         $routes->post('import/update-session', 'ImportController::updateSessionData');
         $routes->post('import/delete-master', 'ImportController::deleteMasterData');
+        
+        //download serah terima pdf
+        $routes->get('aset/generate-pdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
 
         // Manajemen Akun
         $routes->get('user', 'UserController::index');

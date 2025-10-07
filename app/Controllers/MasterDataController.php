@@ -8,6 +8,7 @@ use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
 use App\Models\MerkModel; // <-- TAMBAHKAN
 use App\Models\TipeModel; // <-- TAMBAHKAN
+use App\Models\KaryawanModel;
 
 
 class MasterDataController extends BaseController
@@ -17,6 +18,7 @@ class MasterDataController extends BaseController
     protected $lokasiModel;
     protected $merkModel; // <-- TAMBAHKAN
     protected $tipeModel; // <-- TAMBAHKAN
+    protected $karyawanModel;
     protected $helpers = ['form', 'url'];
 
     public function __construct()
@@ -26,6 +28,7 @@ class MasterDataController extends BaseController
         $this->lokasiModel = new LokasiModel();
         $this->merkModel = new MerkModel(); // <-- TAMBAHKAN
         $this->tipeModel = new TipeModel(); // <-- TAMBAHKAN
+         $this->karyawanModel = new KaryawanModel();
     }
 
     /**
@@ -38,6 +41,7 @@ class MasterDataController extends BaseController
             'kategoris'  => $this->kategoriModel->findAll(),
             'lokasis'    => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
             'merks'      => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(), // <-- TAMBAHKAN
+            'karyawan_list'   => $this->karyawanModel->orderBy('nama_karyawan', 'ASC')->findAll(),
             'validation' => \Config\Services::validation(),
         ];
         
@@ -260,6 +264,31 @@ class MasterDataController extends BaseController
         // Jika aman, lanjutkan penghapusan
         $this->lokasiModel->delete($id);
         return redirect()->to('/master-data?tab=lokasi')->with('success', 'Lokasi berhasil dihapus.');
+    }
+
+    //--------------------------------------------------------------------
+    // nama karyawan & jabatan
+    //--------------------------------------------------------------------
+
+    public function createKaryawan()
+    {
+        if (!$this->validate($this->karyawanModel->getValidationRules())) {
+            return redirect()->to('/master-data?tab=karyawan')->withInput()->with('errors_karyawan', $this->validator->getErrors());
+        }
+
+        $this->karyawanModel->save([
+            'nama_karyawan' => $this->request->getPost('nama_karyawan'),
+            'jabatan'       => $this->request->getPost('jabatan'),
+        ]);
+
+        return redirect()->to('/master-data?tab=karyawan')->with('success', 'Data karyawan berhasil ditambahkan.');
+    }
+
+    public function deleteKaryawan($id)
+    {
+        // Di masa depan, Anda bisa menambahkan pengecekan apakah karyawan ini terkait dengan data lain
+        $this->karyawanModel->delete($id);
+        return redirect()->to('/master-data?tab=karyawan')->with('success', 'Data karyawan berhasil dihapus.');
     }
 }
 

@@ -101,14 +101,29 @@ Edit Aset
             </div>
             <div class="col-md-6">
                 <label for="status" class="form-label">Status Aset</label>
-                <!-- [MODIFIED] Status dropdown options -->
                 <select class="form-select" id="status" name="status" required>
                     <option value="Baik Terpakai" <?= $aset['status'] == 'Baik Terpakai' ? 'selected' : '' ?>>Baik (Terpakai)</option>
                     <option value="Baik Tidak Terpakai" <?= $aset['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
                     <option value="Rusak" <?= $aset['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
                     <option value="Perbaikan" <?= $aset['status'] == 'Perbaikan' ? 'selected' : '' ?>>Perbaikan</option>
                 </select>
-            </div>
+                
+                <div class="mt-3" id="pihak-kedua-wrapper" style="display: none;">
+                    <label for="pihak-kedua" class="form-label fw-bold">Pihak Kedua (Penerima)</label>
+                    <div class="input-group">
+                        <select class="form-select" id="pihak-kedua" name="pihak_kedua_id">
+                            <option value="">-- Pilih Karyawan --</option>
+                            <?php foreach($karyawan_list as $karyawan): ?>
+                                <option value="<?= $karyawan['id'] ?>"><?= esc($karyawan['nama_karyawan']) ?> (<?= esc($karyawan['jabatan']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" class="btn btn-info" id="download-pdf-btn">
+                            <i class="bi bi-download"></i> Unduh PDF
+                        </button>
+                    </div>
+                    <div class="form-text">Pilih penerima aset untuk membuat surat serah terima.</div>
+                </div>
+                </div>
             <div class="col-12">
                 <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
                 <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
@@ -159,44 +174,50 @@ Edit Aset
 
 <?= $this->section('script') ?>
 <script>
+// Fungsi ini akan dijalankan setelah semua elemen halaman dimuat
     document.addEventListener('DOMContentLoaded', function() {
-        const allSubKategoris = <?= json_encode($subkategori_list) ?>;
-        const kategoriSelect = document.getElementById('kategori_id');
-        const subKategoriSelect = document.getElementById('sub_kategori_id');
+    const statusDropdown = document.getElementById('status');
+    const pihakKeduaWrapper = document.getElementById('pihak-kedua-wrapper');
+    const pihakKeduaSelect = document.getElementById('pihak-kedua');
+    const downloadButton = document.getElementById('download-pdf-btn');
+    const statusAwal = '<?= esc($aset['status']) ?>';
+    const asetId = '<?= esc($aset['id']) ?>';
 
-        // This function populates sub-categories based on the main category selection.
-        function populateSubKategori(kategoriId, selectedId = null) {
-            // Fetch all sub-categories for the selected main category
-            fetch('<?= base_url('api/subkategori/') ?>' + kategoriId)
-                .then(response => response.json())
-                .then(data => {
-                    subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
-                    subKategoriSelect.disabled = true;
-                    if (data.length > 0) {
-                        data.forEach(sub => {
-                            const option = document.createElement('option');
-                            option.value = sub.id;
-                            option.textContent = sub.nama_sub_kategori;
-                            if (selectedId && selectedId == sub.id) {
-                                option.selected = true;
-                            }
-                            subKategoriSelect.appendChild(option);
-                        });
-                        subKategoriSelect.disabled = false;
-                    }
-                });
+    function togglePihakKedua() {
+        const statusBaru = statusDropdown.value;
+
+        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai') {
+            pihakKeduaWrapper.style.display = 'block';
+        } else {
+            pihakKeduaWrapper.style.display = 'none';
         }
+    }
 
-        // Add event listener for category changes
+    statusDropdown.addEventListener('change', togglePihakKedua);
+
+    downloadButton.addEventListener('click', function() {
+        const pihakKeduaId = pihakKeduaSelect.value;
+        if (!pihakKeduaId) {
+            Swal.fire('Peringatan', 'Silakan pilih Pihak Kedua terlebih dahulu.', 'warning');
+            return;
+        }
+        // Buka URL baru untuk men-download PDF dengan menyertakan ID Pihak Kedua
+        const url = `<?= base_url('aset/generate-pdf/') ?>${asetId}/${pihakKeduaId}`;
+        window.open(url, '_blank');
+    });
+
+
+        // Tambahkan event listener untuk perubahan pada dropdown kategori
         kategoriSelect.addEventListener('change', function() {
             populateSubKategori(this.value);
         });
         
-        // Initial population on page load
+        // Panggil fungsi saat halaman pertama kali dimuat untuk mengisi sub-kategori yang sudah ada
         if (kategoriSelect.value) {
             populateSubKategori(kategoriSelect.value, "<?= esc($aset['sub_kategori_id']) ?>");
         }
     });
+
 </script>
 <script>
     function hapusDokumen(id) {
