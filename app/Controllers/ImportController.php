@@ -89,6 +89,7 @@ class ImportController extends BaseController
                     'status'            => $statusFinal,
                     'keterangan'        => strtoupper(trim($sheet[$i]['L'])), // Kolom Keterangan 'L'
                     'is_duplicate'      => $isDuplicate,
+                    'errors'            => [] // TAMBAHKAN INI
                 ];
 
                 // Hanya impor baris yang memiliki data
@@ -128,7 +129,7 @@ class ImportController extends BaseController
 
         $nextNumber = 1;
         if ($lastAsset) {
-            $parts = explode('/', $lastAsset['kode_aset']);
+            $parts = explode('/', $lastAsset['kode']);
             $lastNumber = intval(end($parts));
             $nextNumber = $lastNumber + 1;
         }
@@ -156,20 +157,24 @@ class ImportController extends BaseController
     // TAHAP 1: VALIDASI SEMUA DATA TANPA MENYIMPAN
     // =============================================================
     foreach ($importedData as $index => $data) {
+        // Ambil data asli dari sesi untuk ditampilkan kembali jika ada error
+        $dataFromSession = session()->get('import_data')[$index] ?? [];
+
         // Lewati baris kosong
-        if (count(array_filter($data)) === 0) {
-            $originalDataWithErrors[] = session()->get('import_data')[$index]; // tetap bawa baris kosong
+        if (empty(array_filter($data))) {
+            $originalDataWithErrors[] = $dataFromSession;
             continue;
         }
 
         $errors = [];
         $requiredFields = [
             'kategori_id' => 'Kategori', 'sub_kategori_id' => 'Sub Kategori',
-            'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun_beli' => 'tahun_beli',
-            'lokasi_id' => 'Lokasi', 'status' => 'Status'
+            'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun_beli' => 'Tahun Beli',
+            'lokasi_id' => 'Lokasi'
         ];
 
         foreach ($requiredFields as $field => $label) {
+            // Gunakan ID dari form, bukan dari sesi, karena itu yang paling update
             if (empty($data[$field])) {
                 $errors[] = "$label wajib diisi.";
             }
@@ -182,16 +187,17 @@ class ImportController extends BaseController
             }
         }
 
-        // Ambil data asli dari sesi untuk ditampilkan kembali jika ada error
-        $dataFromSession = session()->get('import_data')[$index];
-
         if (!empty($errors)) {
-            $allRowsAreValid = false; // Tandai bahwa ada data yang tidak valid
+            $allRowsAreValid = false;
+            // Simpan error ke dalam data sesi agar bisa ditampilkan lagi
             $dataFromSession['errors'] = $errors;
+        } else {
+            // Jika tidak ada error, pastikan array errors-nya kosong
+            $dataFromSession['errors'] = [];
         }
         
         $originalDataWithErrors[] = $dataFromSession;
-        $validatedData[] = $data; // Kumpulkan data yang akan disimpan nanti
+        $validatedData[] = $data;
     }
 
     // =============================================================

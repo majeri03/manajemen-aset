@@ -162,14 +162,16 @@
                     <?php foreach ($import_data as $index => $row): ?>
                         <?php 
                             $hasError = !empty($row['errors']);
-                            // Tambahkan kelas 'table-warning' jika ada error
-                            $rowClass = ($row['is_duplicate'] ?? false) ? 'table-danger' : ($hasError ? 'table-warning' : '');
+                            $isDuplicate = $row['is_duplicate'] ?? false;
+                            // Kelas awal ditentukan oleh error dari backend (saat load)
+                            // JavaScript akan mengubahnya nanti secara real-time
+                            $rowClass = $isDuplicate ? 'table-danger is-duplicate' : ($hasError ? 'table-warning' : '');
                         ?>
                         <tr data-row-index="<?= $index ?>" class="<?= $rowClass ?>">
                             <td>
                                 <?= $index + 1 ?>
-                                <?php if ($hasError): ?>
-                                    <i class="bi bi-exclamation-triangle-fill text-danger" title="<?= implode(', ', $row['errors']) ?>"></i>
+                                <?php if ($isDuplicate): ?>
+                                    <i class="bi bi-exclamation-triangle-fill text-danger" title="Serial Number duplikat!"></i>
                                 <?php endif; ?>
                             </td>
 
@@ -191,7 +193,7 @@
                             </td>
                             <td>
                                 <input type="text" class="form-control" name="aset[<?= $index ?>][serial_number]" value="<?= esc($row['serial_number']) ?>">
-                                <?php if ($row['is_duplicate'] ?? false): ?>
+                                <?php if ($isDuplicate): ?>
                                     <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
                                 <?php endif; ?>
                             </td>
@@ -215,20 +217,22 @@
                                 <input type="file" class="form-control" name="bukti_aset[<?= $index ?>][]" multiple accept="image/png, image/jpeg, image/jpg, application/pdf">
                             </td>
                         </tr>
-                        <?php if ($hasError): ?>
-                            <tr class="table-danger-light">
-                                <td colspan="14">
-                                    <div class="px-3 py-1 text-danger-emphasis">
-                                        <strong><i class="bi bi-exclamation-circle-fill me-2"></i>Kesalahan:</strong>
-                                        <ul class="mb-0 ps-4">
+                        
+                        <tr class="validation-message-row" data-row-index="<?= $index ?>" style="<?= !$hasError ? 'display: none;' : '' ?>">
+                            <td colspan="14">
+                                <div class="px-3 py-1 text-danger-emphasis bg-danger-subtle">
+                                    <strong><i class="bi bi-exclamation-circle-fill me-2"></i>Kesalahan:</strong>
+                                    <ul class="mb-0 ps-4 error-list">
+                                    <?php if ($hasError): ?>
                                         <?php foreach($row['errors'] as $error): ?>
                                             <li><?= esc($error) ?></li>
                                         <?php endforeach; ?>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -440,30 +444,49 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: "<?= site_url('import/add-master') ?>",
-            method: 'POST',
-            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: name, parent_id: parentId },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $input.val(response.text);
-                    $hiddenInput.val(response.id).trigger('change');
+        url: "<?= site_url('import/add-master') ?>",
+        method: 'POST',
+        data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: name, parent_id: parentId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $input.val(response.text);
+                $hiddenInput.val(response.id).trigger('change');
+                
+                let newItem = { id: response.id, label: response.text };
+                if (parentId) newItem.parent_id = parentId;
+                
+                if(masterData[masterType]) masterData[masterType].push(newItem);
+                if(!newlyAddedItems[masterType]) newlyAddedItems[masterType] = [];
+                newlyAddedItems[masterType].push(response.id);
+
+                // ===== AWAL DARI KODE BARU YANG DITAMBAHKAN =====
+                // Propagasi update ke semua input lain yang cocok
+                const newText = response.text.toUpperCase();
+                const newId = response.id;
+
+                // Loop ke semua input dengan tipe master yang sama
+                $(`.autocomplete-master[data-type="${masterType}"]`).each(function() {
+                    const $currentInput = $(this);
+                    const $currentHiddenInput = $currentInput.next('.autocomplete-id');
                     
-                    let newItem = { id: response.id, label: response.text };
-                    if (parentId) newItem.parent_id = parentId;
-                    
-                    if(masterData[masterType]) masterData[masterType].push(newItem);
-                    if(!newlyAddedItems[masterType]) newlyAddedItems[masterType] = [];
-                    newlyAddedItems[masterType].push(response.id);
-                } else {
-                    Swal.fire('Gagal!', response.message || 'Gagal menyimpan data.', 'error');
-                    $input.val('');
-                    $hiddenInput.val('').trigger('change');
-                }
-            },
-            error: function() { Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error'); }
-        });
-    }
+                    // Cek jika teksnya sama dan ID-nya belum diisi
+                    if ($currentInput.val().toUpperCase() === newText && !$currentHiddenInput.val()) {
+                        $currentInput.val(response.text); // Update teks (jika ada normalisasi, misal: huruf besar)
+                        $currentHiddenInput.val(newId).trigger('change'); // Set ID dan trigger update sesi
+                    }
+                });
+                // ===== AKHIR DARI KODE BARU YANG DITAMBAHKAN =====
+
+            } else {
+                Swal.fire('Gagal!', response.message || 'Gagal menyimpan data.', 'error');
+                $input.val('');
+                $hiddenInput.val('').trigger('change');
+            }
+        },
+        error: function() { Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error'); }
+    });
+}
     
     function validateInputOnBlur($input) {
         const currentValue = $input.val();
@@ -504,18 +527,34 @@ $(document).ready(function() {
         });
     });
 
-    $('#import-table tbody').on('change', 'input.autocomplete-id, select', function() {
+    $('#import-table tbody').on('change', 'input, select', function() {
         const $el = $(this);
-        const $row = $el.closest('tr');
+        const $row = $el.closest('tr[data-row-index]');
+        
+        // Panggil validasi UI setiap kali ada perubahan
+        validateRowUI($row);
+        
+        // Tetap kirim update ke sesi backend
         const rowIndex = $row.data('row-index');
         const nameAttr = this.name;
 
         if (typeof rowIndex === 'undefined' || !nameAttr) return;
 
-        const fieldName = nameAttr.match(/\[(\w+)\]$/)[1];
-        const value = $el.is('select') ? $el.val() : $el.prev().val();
-        const id = $el.val();
+        // Logika untuk update sesi (sedikit disesuaikan)
+        const matches = nameAttr.match(/\[(\w+)\]$/);
+        if (!matches) return;
 
+        const fieldName = matches[1];
+        let value = $el.val();
+        let id = '';
+
+        if($el.hasClass('autocomplete-id')) {
+            value = $el.prev().val(); // ambil teks dari input sebelumnya
+            id = $el.val();
+        } else if ($el.hasClass('autocomplete-master')) {
+             id = $el.next('.autocomplete-id').val();
+        }
+        
         $.ajax({
             url: "<?= base_url('import/update-session') ?>",
             method: 'POST',
@@ -528,6 +567,7 @@ $(document).ready(function() {
             }
         });
     });
+
 
     // --- INISIALISASI ---
     $('#import-table tbody tr[data-row-index]').each(function() {
