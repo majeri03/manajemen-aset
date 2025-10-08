@@ -27,7 +27,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('dashboard', 'Dashboard::index');
     
     // Aset (Hanya melihat daftar dan detail)
-    $routes->get('aset', 'AsetController::index');
+    $routes->get('aset', 'AsetController::index'); 
     $routes->get('aset/search', 'AsetController::search');
     $routes->get('aset/history/(:num)', 'AsetController::getHistory/$1');
     $routes->get('aset/stockopname_history/(:num)', 'AsetController::getStockopnameHistory/$1');

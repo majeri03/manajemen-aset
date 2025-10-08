@@ -665,22 +665,23 @@ Data Aset
      * Membuat preview kode aset otomatis di form tambah aset.
      */
     function generateKodeAset() {
-        const entitasInput = document.getElementById('entitas_pembelian-tambah');
-        const tahunInput = document.getElementById('tahun_beli-tambah');
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        const merkSelect = document.getElementById('merk_id-tambah');
-        const kodeInput = document.getElementById('kode-tambah');
-        if (!entitasInput || !tahunInput || !subKategoriSelect || !merkSelect || !kodeInput) return;
+        const tahunBeli = $('#tahun_beli-tambah').val() || new Date().getFullYear();
+        const subKategori = $('#sub_kategori_id-tambah option:selected').text().split(' (')[0] || 'SUBKAT';
+        const merk = $('#merk_id-tambah option:selected').text() || 'MERK';
 
-        const entitas = entitasInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
-        const tahun_beli = tahunInput.value;
-        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'SUB';
-        const merkNama = merkSelect.options[merkSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'MRK';
+        // Format baru: Gabungkan Sub Kategori dan Merk
+        const subKategoriMerk = subKategori.substring(0, 5).toUpperCase() + '_' + merk.substring(0, 3).toUpperCase();
 
-        if (entitas && tahun_beli && subKategoriSelect.value && merkSelect.value) {
-            kodeInput.value = `BTR/${entitas}/${tahun_beli}/${subKategoriNama}/${merkNama}/XX`;
+        // Pastikan semua komponen kunci terisi sebelum menampilkan preview
+        if (tahunBeli && $('#sub_kategori_id-tambah').val() && $('#merk_id-tambah').val()) {
+            const kodeAset = 'BTR/' +
+                tahunBeli + '/' +
+                subKategori.substring(0, 5).toUpperCase() + '/' +
+                merk.substring(0, 3).toUpperCase() +
+                '/XX';
+            $('#kode-tambah').val(kodeAset);
         } else {
-            kodeInput.value = '';
+            $('#kode-tambah').val(''); // Kosongkan jika belum lengkap
         }
     }
     
@@ -930,7 +931,7 @@ if (printButton) {
         });
         
         // Panggil generateKodeAset saat form berubah
-        $('#sub_kategori_id-tambah, #merk_id-tambah, #tahun_beli-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
+        $('#sub_kategori_id-tambah, #merk_id-tambah, #tahun_beli-tambah').on('change', generateKodeAset);
         
         // Logika Pencarian Real-time
         $('#searchInput').on('keyup', function() {
