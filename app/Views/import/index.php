@@ -195,7 +195,7 @@
                                     <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
                                 <?php endif; ?>
                             </td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" required></td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>"></td>
                             <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun_beli]" value="<?= esc($row['tahun_beli']) ?>" required></td>
                             <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
                             <td><input type="text" class="form-control" name="aset[<?= $index ?>][user_pengguna]" value="<?= esc($row['user_pengguna']) ?>"></td>
@@ -240,28 +240,27 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <script>
+// =================================================================
+// BLOK 1: FUNGSI POPUP DENGAN SWEETALERT
+// =================================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Popup untuk form UPLOAD
     const uploadForm = document.getElementById('upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function() {
-            // Cek apakah file sudah dipilih
             const fileInput = document.getElementById('excel_file');
             if (fileInput.files.length > 0) {
                 Swal.fire({
                     title: 'Memproses File...',
                     text: 'Mohon tunggu, sistem sedang membaca data Excel Anda.',
                     allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                    didOpen: () => { Swal.showLoading(); }
                 });
             }
         });
     }
 
-    // 2. Popup untuk form SIMPAN DATA
     const saveForm = document.getElementById('save-form');
     if (saveForm) {
         saveForm.addEventListener('submit', function() {
@@ -269,66 +268,79 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Menyimpan Data...',
                 text: 'Mohon tunggu, data sedang divalidasi dan disimpan ke database.',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
         });
     }
 });
 
 
+// =================================================================
+// BLOK 2: LOGIKA UTAMA UNTUK IMPORT & AUTOCOMPLETE
+// =================================================================
 $(document).ready(function() {
-    // Data master dari PHP, diformat untuk autocomplete
+    // Variabel Global
     const masterData = {
         kategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_kategori']], $kategori)) ?>,
         subkategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_sub_kategori'], 'parent_id' => $item['kategori_id']], $subkategori)) ?>,
         merk: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_merk']], $merk)) ?>,
         lokasi: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_lokasi']], $lokasi)) ?>,
-        tipe: [] // Data tipe akan diisi via AJAX
     };
+    let newlyAddedItems = { kategori: [], subkategori: [], merk: [], tipe: [], lokasi: [] };
 
-    // Objek untuk melacak item yang baru ditambahkan
-    let newlyAddedItems = {
-        kategori: [], subkategori: [], merk: [], tipe: [], lokasi: []
-    };
+    // -----------------------------------------------------------------
+    // FUNGSI-FUNGSI UTAMA
+    // -----------------------------------------------------------------
 
-    // Fungsi inisialisasi autocomplete untuk sebuah baris
-    function initializeAutocompleteForRow($row) {
+    /**
+     * Inisialisasi semua fungsionalitas untuk satu baris. Dibuat ASYNC untuk menangani AJAX.
+     */
+    async function initializeRow(rowElement) {
+        const $row = $(rowElement);
+
+        // [FIX RELOAD] Atur urutan pemanggilan agar parent diinisialisasi lebih dulu
+        await setInitialId($row.find('[data-type="kategori"]'));
+        await setInitialId($row.find('[data-type="merk"]'));
+        await setInitialId($row.find('[data-type="lokasi"]'));
+        await setInitialId($row.find('[data-type="subkategori"]'));
+        await setInitialId($row.find('[data-type="tipe"]'));
+
+        // Inisialisasi Autocomplete untuk setiap input di baris ini
         $row.find('.autocomplete-master').each(function() {
             const $input = $(this);
             const $hiddenInput = $input.next('.autocomplete-id');
             const masterType = $input.data('type');
 
-            // Set nilai awal dari data Excel/session
-            setInitialValue($input, $hiddenInput, masterType, $row);
-
             $input.autocomplete({
-                source: (request, response) => getSourceDataForInput($input, request, response),
+                // [FIX SEARCHBOX] Mengisi kembali logika source
+                source: (request, response) => getSourceData($input, request, response),
                 minLength: 0,
+                // [FIX SEARCHBOX] Mengisi kembali logika select
                 select: function(event, ui) {
                     if (ui.item.isNew) {
                         handleNewMasterData($input, ui.item.value);
                     } else {
                         $input.val(ui.item.label);
                         $hiddenInput.val(ui.item.id).trigger('change');
+                        if (masterType === 'kategori') $row.find('[data-type="subkategori"]').val('').next().val('').trigger('change');
+                        if (masterType === 'merk') $row.find('[data-type="tipe"]').val('').next().val('').trigger('change');
                     }
                     return false;
                 },
+                // [FIX SEARCHBOX] Mengisi kembali logika change
                 change: function(event, ui) {
                     if (!ui.item) {
-                        validateInputOnBlur($input, $hiddenInput);
+                        validateInputOnBlur($input);
                     }
                 }
             }).focus(function() {
                 $(this).autocomplete("search", "");
             });
-
-            // Kustomisasi render item untuk menambahkan tombol hapus
+            
+            // [FIX SEARCHBOX] Mengisi kembali logika render item
             $input.autocomplete("instance")._renderItem = function(ul, item) {
                 let itemContent = `<div>${item.label}</div>`;
-
-                if (item.id && newlyAddedItems[masterType]?.includes(item.id)) {
+                if (item.id && newlyAddedItems[masterType] && newlyAddedItems[masterType].includes(item.id)) {
                     itemContent = `
                         <div class="ui-autocomplete-item-container">
                             <span>${item.label}</span>
@@ -338,54 +350,138 @@ $(document).ready(function() {
                             </button>
                         </div>`;
                 }
-
                 return $("<li>").append(itemContent).appendTo(ul);
             };
         });
     }
+    
+    // -----------------------------------------------------------------
+    // FUNGSI BANTU (AJAX, HELPERS, DLL)
+    // -----------------------------------------------------------------
 
+    /**
+     * [FIX RELOAD] Fungsi untuk mencocokkan teks awal (dari sesi) dengan ID
+     */
+    async function setInitialId($input) {
+        const masterType = $input.data('type');
+        const $hiddenInput = $input.next('.autocomplete-id');
+        const initialText = $input.val();
+        if (!initialText || $hiddenInput.val()) return; // Jangan jalankan jika kosong atau ID sudah ada
 
-    function createAndAppendEmptyRow() {
-        const tableBody = $('#import-table tbody');
-        const newIndex = tableBody.find('tr').length;
-        const newRowHtml = `
-            <tr data-row-index="${newIndex}">
-                <td>${newIndex + 1}</td>
-                <td><input type="text" class="form-control autocomplete-master" data-type="kategori" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][kategori_id]"></td>
-                <td><input type="text" class="form-control autocomplete-master" data-type="subkategori" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][sub_kategori_id]"></td>
-                <td><input type="text" class="form-control autocomplete-master" data-type="merk" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][merk_id]"></td>
-                <td><input type="text" class="form-control autocomplete-master" data-type="tipe" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][tipe_id]"></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][serial_number]"></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][entitas_pembelian]" required></td>
-                <td><input type="number" class="form-control" name="aset[${newIndex}][tahun_beli]" required></td>
-                <td><input type="number" class="form-control" name="aset[${newIndex}][harga_beli]"></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][user_pengguna]"></td>
-                <td><input type="text" class="form-control autocomplete-master" data-type="lokasi" required><input type="hidden" class="autocomplete-id" name="aset[${newIndex}][lokasi_id]"></td>
-                <td><select class="form-select" name="aset[${newIndex}][status]"><option value="Baik Terpakai">Baik Terpakai</option><option value="Baik Tidak Terpakai">Baik Tidak Terpakai</option><option value="Rusak">Rusak</option></select></td>
-                <td><input type="text" class="form-control" name="aset[${newIndex}][keterangan]"></td>
-            </tr>`;
-        const $newRow = $(newRowHtml);
-        tableBody.append($newRow);
-        initializeAutocompleteForRow($newRow);
-        attachListenerToLastRow();
+        let source = [];
+        if (masterType === 'subkategori') {
+            const kategoriId = $input.closest('tr').find('[data-type="kategori"]').next('.autocomplete-id').val();
+            if (kategoriId) source = masterData.subkategori.filter(s => s.parent_id == kategoriId);
+        } else if (masterType === 'tipe') {
+            const merkId = $input.closest('tr').find('[data-type="merk"]').next('.autocomplete-id').val();
+            if (merkId) {
+                source = await $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`).then(data =>
+                    data.map(item => ({ id: item.id, label: item.nama_tipe }))
+                ).fail(() => []); // Tambah .fail agar tidak error jika AJAX gagal
+            }
+        } else {
+            source = masterData[masterType] || [];
+        }
+        
+        const foundItem = source.find(item => item.label.toUpperCase() === initialText.toUpperCase());
+        if (foundItem) {
+            $hiddenInput.val(foundItem.id);
+        }
+    }
+
+    function getSourceData($input, request, response) {
+        const masterType = $input.data('type');
+        const $row = $input.closest('tr');
+        
+        if (masterType === 'subkategori') {
+            const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+            const source = kategoriId ? masterData.subkategori.filter(s => s.parent_id == kategoriId) : [];
+            filterAndRespond(request.term, source, response);
+        } else if (masterType === 'tipe') {
+            const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+            if (merkId) {
+                $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, data => {
+                    const mappedData = data.map(item => ({ id: item.id, label: item.nama_tipe }));
+                    filterAndRespond(request.term, mappedData, response);
+                });
+            } else {
+                response([]);
+            }
+        } else {
+            const source = masterData[masterType] || [];
+            filterAndRespond(request.term, source, response);
+        }
+    }
+
+    function filterAndRespond(term, data, responseCallback) {
+        const lowerTerm = term.toLowerCase();
+        const filtered = data.filter(item => item.label.toLowerCase().includes(lowerTerm));
+        const exactMatch = data.some(item => item.label.toLowerCase() === lowerTerm);
+
+        if (term.trim() !== '' && !exactMatch) {
+            filtered.push({ label: `+ Tambah Baru: "${term}"`, value: term, isNew: true });
+        }
+        responseCallback(filtered);
+    }
+
+    function handleNewMasterData($input, name) {
+        const masterType = $input.data('type');
+        const $hiddenInput = $input.next('.autocomplete-id');
+        const $row = $input.closest('tr');
+        let parentId = null;
+
+        if (masterType === 'subkategori') parentId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
+        if (masterType === 'tipe') parentId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
+
+        if ((masterType === 'subkategori' || masterType === 'tipe') && !parentId) {
+            Swal.fire('Gagal!', `Pilih ${masterType === 'subkategori' ? 'Kategori' : 'Merk'} terlebih dahulu.`, 'error');
+            $input.val('');
+            return;
+        }
+
+        $.ajax({
+            url: "<?= site_url('import/add-master') ?>",
+            method: 'POST',
+            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: name, parent_id: parentId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $input.val(response.text);
+                    $hiddenInput.val(response.id).trigger('change');
+                    
+                    let newItem = { id: response.id, label: response.text };
+                    if (parentId) newItem.parent_id = parentId;
+                    
+                    if(masterData[masterType]) masterData[masterType].push(newItem);
+                    if(!newlyAddedItems[masterType]) newlyAddedItems[masterType] = [];
+                    newlyAddedItems[masterType].push(response.id);
+                } else {
+                    Swal.fire('Gagal!', response.message || 'Gagal menyimpan data.', 'error');
+                    $input.val('');
+                    $hiddenInput.val('').trigger('change');
+                }
+            },
+            error: function() { Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error'); }
+        });
     }
     
-    // Event listener untuk tombol hapus
+    function validateInputOnBlur($input) {
+        const currentValue = $input.val();
+        const $hiddenInput = $input.next('.autocomplete-id');
+        if ($hiddenInput.val() && currentValue) return;
+        $input.val('');
+        $hiddenInput.val('').trigger('change');
+    }
+
     $(document).on('click', '.delete-master-item', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         const button = $(this);
         const id = button.data('id');
         const type = button.data('type');
-
         Swal.fire({
-            title: 'Hapus Item?',
-            text: "Item ini akan dihapus permanen dari database. Anda yakin?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
+            title: 'Anda Yakin?', text: "Item ini akan dihapus permanen.", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus!', cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -407,178 +503,18 @@ $(document).ready(function() {
             }
         });
     });
-    
-    // --- FUNGSI-FUNGSI BANTUAN ---
-    function setInitialValue($input, $hiddenInput, masterType, $row) {
-        const initialValue = $input.val();
-        if (!initialValue) return;
 
-        let sourceData = [];
-        if (masterType === 'subkategori') {
-            const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-            if(kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-        } else if (masterType !== 'tipe') {
-            sourceData = masterData[masterType] || [];
-        }
-
-        const foundItem = sourceData.find(item => item.label.toUpperCase() === initialValue.toUpperCase());
-        if (foundItem) {
-            $hiddenInput.val(foundItem.id);
-        }
-    }
-
-    function getSourceDataForInput($input, request, response) {
-        const masterType = $input.data('type');
-        const $row = $input.closest('tr');
-        let sourceData = [];
-
-        if (masterType === 'subkategori') {
-            const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-            if (kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-        } else if (masterType === 'tipe') {
-            const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
-            if (merkId && !isNaN(merkId)) {
-                $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, data => {
-                    const mappedData = data.map(item => ({ id: item.id, label: item.nama_tipe }));
-                    masterData.tipe = mappedData; // Cache data tipe
-                    filterAndRespond(request.term, mappedData, response, masterType);
-                });
-                return;
-            } 
-        } else {
-            sourceData = masterData[masterType] || [];
-        }
-        filterAndRespond(request.term, sourceData, response, masterType);
-    }
-
-    function filterAndRespond(term, data, responseCallback, type) {
-        const lowerTerm = term.toLowerCase();
-        const filtered = data.filter(item => item.label.toLowerCase().includes(lowerTerm));
-        const exactMatch = data.some(item => item.label.toLowerCase() === lowerTerm);
-
-        if (term !== '' && !exactMatch) {
-            filtered.push({ label: `+ Tambah Baru: "${term}"`, value: term, isNew: true });
-        }
-        responseCallback(filtered);
-    }
-
-    function validateInputOnBlur($input, $hiddenInput) {
-        const currentValue = $input.val();
-        if (currentValue === '') {
-            $hiddenInput.val('').trigger('change');
-            return;
-        }
-        
-        const sourceData = getSourceDataForInput($input, { term: '' }, () => {});
-        const match = (sourceData || []).find(item => item.label.toLowerCase() === currentValue.toLowerCase());
-
-        if (!match) {
-            $input.val('');
-            $hiddenInput.val('').trigger('change');
-        }
-    }
-    
-    function handleNewMasterData($input, name) {
-        const masterType = $input.data('type');
-        const $hiddenInput = $input.next('.autocomplete-id');
-        const $row = $input.closest('tr');
-        let parentId = null;
-        if (masterType === 'subkategori') parentId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-        if (masterType === 'tipe') parentId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
-        
-        $.ajax({
-            url: "<?= base_url('import/add-master') ?>",
-            method: 'POST',
-            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>', type: masterType, name: name, parent_id: parentId },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $input.val(response.text);
-                    $hiddenInput.val(response.id).trigger('change');
-                    
-                    let newItem = { id: response.id, label: response.text };
-                    if(parentId) newItem.parent_id = parentId;
-                    
-                    if(masterData[masterType]) {
-                        masterData[masterType].push(newItem);
-                        newlyAddedItems[masterType].push(response.id);
-                    }
-                } else {
-                    Swal.fire('Gagal!', response.message || 'Gagal menyimpan data baru.', 'error');
-                    $input.val('');
-                    $hiddenInput.val('').trigger('change');
-                }
-            }
-        });
-    }
-
-    // Inisialisasi awal untuk semua baris yang ada
-    $('#import-table tbody tr').each(function() {
-        initializeAutocompleteForRow($(this));
-    });
-    
-    // Auto save session data on change
-    $('#import-table tbody').on('input paste change', 'input, select', function() {
+    $('#import-table tbody').on('change', 'input.autocomplete-id, select', function() {
         const $el = $(this);
-
-        // Abaikan event dari hidden input untuk mencegah pengiriman ganda
-        if ($el.is(':hidden')) {
-            return;
-        }
-
         const $row = $el.closest('tr');
         const rowIndex = $row.data('row-index');
+        const nameAttr = this.name;
 
-        // Dapatkan nama field. Untuk autocomplete, acuannya adalah nama dari hidden input.
-        const nameAttr = $el.attr('name') || $el.next('.autocomplete-id').attr('name');
-
-        if (typeof rowIndex === 'undefined' || !nameAttr) {
-            return; // Hentikan jika tidak ada row index atau nama field
-        }
-
-        const fieldName = nameAttr.match(/\[(\w+)\]$/)[1];
-        const valueToSend = $el.val();
-
-        // Kirim teks mentah yang diketik/dipilih pengguna ke server
-        $.ajax({
-            url: "<?= base_url('import/update-session') ?>",
-            method: 'POST',
-            data: {
-                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
-                rowIndex: rowIndex,
-                fieldName: fieldName,
-                value: valueToSend,
-            }
-        });
-    });
-});
-// Lokasi: app/Views/import/index.php (di dalam tag <script>)
-
-$(document).ready(function() {
-    // --- DATA MASTER DARI PHP ---
-    const masterData = {
-        kategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_kategori']], $kategori)) ?>,
-        subkategori: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_sub_kategori'], 'parent_id' => $item['kategori_id']], $subkategori)) ?>,
-        merk: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_merk']], $merk)) ?>,
-        lokasi: <?= json_encode(array_map(fn($item) => ['id' => $item['id'], 'label' => $item['nama_lokasi']], $lokasi)) ?>,
-    };
-
-    // --- FUNGSI UNTUK MENYIMPAN PERUBAHAN KE SESI ---
-    function saveChangeToSession(element) {
-        const $el = $(element);
-        const $row = $el.closest('tr');
-        const rowIndex = $row.data('row-index');
-        
-        const nameAttr = $el.attr('name') || $el.next('.autocomplete-id').attr('name');
         if (typeof rowIndex === 'undefined' || !nameAttr) return;
 
         const fieldName = nameAttr.match(/\[(\w+)\]$/)[1];
-        const valueToSend = $el.val();
-        let idToSend = null;
-
-        if ($el.hasClass('autocomplete-master')) {
-            idToSend = $el.next('.autocomplete-id').val();
-        }
+        const value = $el.is('select') ? $el.val() : $el.prev().val();
+        const id = $el.val();
 
         $.ajax({
             url: "<?= base_url('import/update-session') ?>",
@@ -587,139 +523,16 @@ $(document).ready(function() {
                 '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
                 rowIndex: rowIndex,
                 fieldName: fieldName,
-                value: valueToSend,
-                id: idToSend
+                value: value,
+                id: id,
             }
         });
-    }
-
-    
-
-    // --- INISIALISASI AUTOCOMPLETE DAN EVENT ---
-    async function initializeRow(row) {
-        const $row = $(row);
-
-        // Fungsi internal untuk mengisi ID awal berdasarkan teks dari Excel
-        const setInitialId = async ($input) => {
-            const masterType = $input.data('type');
-            const $hiddenInput = $input.next('.autocomplete-id');
-            const initialText = $input.val();
-            if (!initialText) return;
-
-            let source = [];
-
-            if (masterType === 'subkategori') {
-                const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-                if (kategoriId) {
-                    source = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-                }
-            } else if (masterType === 'tipe') {
-                const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
-                if (merkId) {
-                    // [POSISI PERUBAHAN #2] Menambahkan 'await' untuk menunggu data Tipe
-                    source = await $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`).then(data => 
-                        data.map(item => ({ id: item.id, label: item.nama_tipe }))
-                    );
-                }
-            } else {
-                source = masterData[masterType] || [];
-            }
-            
-            const foundItem = source.find(item => item.label.toUpperCase() === initialText.toUpperCase());
-            if (foundItem) {
-                $hiddenInput.val(foundItem.id);
-            }
-        };
-
-        // [POSISI PERUBAHAN #3] Mengatur urutan pemanggilan agar parent di dahulukan
-        await setInitialId($row.find('[data-type="kategori"]'));
-        await setInitialId($row.find('[data-type="merk"]'));
-        await setInitialId($row.find('[data-type="lokasi"]'));
-        
-        // Baru jalankan untuk kolom yang bergantung pada data lain
-        await setInitialId($row.find('[data-type="subkategori"]'));
-        await setInitialId($row.find('[data-type="tipe"]')); // Tipe dijalankan paling akhir
-
-        // Inisialisasi Autocomplete (kode ini tidak berubah, hanya dipindahkan ke dalam 'initializeRow')
-        $row.find('.autocomplete-master').each(function() {
-            const $input = $(this);
-            const masterType = $input.data('type');
-
-            $input.autocomplete({
-                source: function(request, response) {
-                    let sourceData = [];
-                    const term = request.term.toLowerCase();
-
-                    if (masterType === 'subkategori') {
-                        const kategoriId = $row.find('[data-type="kategori"]').next('.autocomplete-id').val();
-                        if (kategoriId) sourceData = masterData.subkategori.filter(s => s.parent_id == kategoriId);
-                    } else if (masterType === 'tipe') {
-                        const merkId = $row.find('[data-type="merk"]').next('.autocomplete-id').val();
-                        if (merkId) {
-                            $.getJSON(`<?= base_url('api/tipe/') ?>${merkId}`, function(data) {
-                                const tipes = data.map(item => ({ id: item.id, label: item.nama_tipe }));
-                                const filtered = tipes.filter(item => item.label.toLowerCase().includes(term));
-                                if (term !== '' && !tipes.some(item => item.label.toLowerCase() === term)) {
-                                     filtered.push({ label: `+ Tambah Baru: "${request.term}"`, value: request.term, isNew: true });
-                                }
-                                response(filtered);
-                            });
-                            return;
-                        }
-                    } else {
-                        sourceData = masterData[masterType] || [];
-                    }
-
-                    const filtered = sourceData.filter(item => item.label.toLowerCase().includes(term));
-                    const exactMatch = sourceData.some(item => item.label.toLowerCase() === term);
-                    if (term !== '' && !exactMatch) {
-                        filtered.push({ label: `+ Tambah Baru: "${request.term}"`, value: request.term, isNew: true });
-                    }
-                    response(filtered);
-                },
-                minLength: 0,
-                select: function(event, ui) {
-                    if (ui.item.isNew) {
-                        // handleNewMasterData($(this), ui.item.value); // Anda bisa aktifkan ini jika perlu
-                    } else {
-                        $(this).val(ui.item.label);
-                        $(this).next('.autocomplete-id').val(ui.item.id);
-                        
-                        if (masterType === 'kategori') {
-                            const $subKategoriInput = $row.find('[data-type="subkategori"]');
-                            $subKategoriInput.val('');
-                            $subKategoriInput.next('.autocomplete-id').val('');
-                        } else if (masterType === 'merk') {
-                            const $tipeInput = $row.find('[data-type="tipe"]');
-                            $tipeInput.val('');
-                            $tipeInput.next('.autocomplete-id').val('');
-                        }
-                        saveChangeToSession(this); 
-                    }
-                    return false;
-                }
-            }).focus(function() {
-                $(this).autocomplete("search", "");
-            });
-        });
-
-
-        // Event Listener untuk menyimpan semua perubahan
-        $row.find('input, select').on('input paste change', function() {
-             saveChangeToSession(this);
-        });
-    }
-
-    // --- LOOP UNTUK INISIALISASI SETIAP BARIS ---
-    $('#import-table tbody tr').each(function() {
-        initializeRow(this);
     });
 
-    // --- (Sisa fungsi seperti handleNewMasterData, dll. bisa diletakkan di sini jika ada) ---
-    // Pastikan Anda masih memiliki fungsi handleNewMasterData, dll. jika sebelumnya terpisah
-    function handleNewMasterData($input, name) {
-        // ... (Fungsi ini dari kode Anda sebelumnya, tidak perlu diubah)
-    }
+    // --- INISIALISASI ---
+    $('#import-table tbody tr[data-row-index]').each(function() {
+        initializeRow(this);
+    });
 });
 </script>
 <?= $this->endSection() ?>

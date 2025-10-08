@@ -422,7 +422,7 @@ Dashboard
                                 <option value="Baik Terpakai" selected>Baik (Terpakai)</option>
                                 <option value="Baik Tidak Terpakai">Baik (Tidak Terpakai)</option>
                                 <option value="Rusak">Rusak</option>
-                                <option value="Perbaikan" <?= $aset['status'] == 'Perbaikan' ? 'selected' : '' ?>>Perbaikan</option>
+                                
                             </select>
                         </div>
                         <div class="col-md-6">
