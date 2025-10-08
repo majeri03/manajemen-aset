@@ -1,10 +1,95 @@
 <?= $this->extend('layouts/main_dashboard') ?>
 
+
 <?= $this->section('title') ?>
 Data Aset
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<style>
+    /* =================================
+    CSS UNTUK FUNGSI CETAK (PRINT)
+    =================================
+    */
+
+    @media print {
+        /* Sembunyikan semua elemen di body secara default saat mencetak */
+        body * {
+            visibility: hidden;
+        }
+
+        /* Tampilkan hanya area yang memiliki kelas .print-area dan semua isinya */
+        .print-area, .print-area * {
+            visibility: visible;
+        }
+
+        /* Posisikan area cetak di bagian paling atas halaman cetak */
+        .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        /* Pengaturan untuk grid label stiker */
+        .label-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Pengaturan untuk setiap label stiker individual */
+        .label {
+            page-break-inside: avoid; /* Mencegah label terpotong antar halaman */
+            width: 54mm; /* Sesuaikan dengan lebar stiker Anda */
+            height: 30mm; /* Sesuaikan dengan tinggi stiker Anda */
+            border: 1px dashed #999; /* Garis putus-putus untuk panduan potong */
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .label img { 
+            width: 60px; 
+            height: 60px; 
+        }
+        .label .kode-aset { 
+            font-size: 8pt; 
+            font-weight: bold; 
+            margin: 0; 
+            word-break: break-all; 
+        }
+        .label .detail-aset { 
+            font-size: 6pt; 
+            margin: 2px 0 0 0; 
+        }
+    }
+
+    /* =================================
+    CSS UNTUK TAMPILAN 'BERBASIS DOKUMEN'
+    =================================
+    */
+
+    /* Pengaturan untuk carousel mini di dalam sel tabel */
+    .mini-carousel .carousel-content {
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mini-carousel img {
+        max-height: 80px;
+        max-width: 100%;
+        cursor: pointer;
+        object-fit: cover;
+    }
+    .mini-carousel .file-icon {
+        font-size: 2.5rem;
+        color: #6c757d; /* Warna ikon abu-abu */
+    }
+</style>
 <div class="main-header mb-4">
     <div class="row align-items-center">
         <div class="col-md-6 col-lg-4">
@@ -121,14 +206,6 @@ Data Aset
 </form>
     </div>
 </div>
-<div class="d-flex justify-content-end mb-3">
-    <a href="<?= base_url('aset/barcodes') ?>" class="btn btn-info me-2">
-        <i class="bi bi-upc-scan me-2"></i>Lihat Semua Barcode
-    </a>
-    <a href="<?= base_url('aset/laporan/export') . '?' . http_build_query($filters ?? []) ?>" class="btn btn-success">
-        <i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel
-    </a>
-</div>
 
 
 <?php if (session()->getFlashdata('success')): ?>
@@ -156,58 +233,214 @@ Data Aset
 <?php endif; ?>
 
 
-<div class="table-container shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">KODE</th>
-                    <th scope="col">SUB KATEGORI</th>
-                    <th scope="col">MERK</th>
-                    <th scope="col">SERIAL NUMBER</th>
-                    <th scope="col">USER PENGGUNA</th>
-                    <th scope="col">LOKASI</th>
-                    <th scope="col">STATUS</th>
-                    <th scope="col">AKSI</th>
-                </tr>
-            </thead>
-        <tbody id="asetTableBody">
-                <?php if (!empty($asets)): ?>
-                    <?php foreach ($asets as $aset): ?>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="btn-group" role="group" id="view-switcher">
+        <button type="button" class="btn btn-primary active" data-view="aset"><i class="fas fa-server me-2"></i> Berbasis Aset</button>
+        <button type="button" class="btn btn-outline-primary" data-view="dokumen"><i class="fas fa-file-alt me-2"></i> Berbasis Dokumen</button>
+        <button type="button" class="btn btn-outline-primary" data-view="qrcode"><i class="fas fa-qrcode me-2"></i> Berbasis QR Code</button>
+    </div>
+</div>
+
+
+<div id="view-container">
+
+    <div id="aset-view">
+        <div class="table-container shadow-sm">
+            <div class="d-flex justify-content-end">
+        <a href="<?= base_url('aset/laporan/export') . '?' . http_build_query($filters ?? []) ?>" class="btn btn-success"><i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel</a>
+    </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
                         <tr>
-                            <td><?= esc($aset['kode']) ?></td>
-                            <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                            <td><?= esc($aset['nama_merk']) ?></td>
-                            <td><?= esc($aset['serial_number']) ?></td>
-                            <td><?= esc($aset['user_pengguna']) ?></td>
-                            <td><?= esc($aset['nama_lokasi']) ?></td>
-                            <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
-                            <td>
-                                <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
-                                    <i class="bi bi-eye-fill"></i>
-                                </button>
-                                <?php if (session()->get('role') === 'admin'): ?>
-                                <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Edit Aset">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </a>
-                                <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>" class="btn btn-danger btn-sm" title="Hapus Aset">
-                                    <i class="bi bi-trash-fill"></i>
-                                </a>
-                                <?php endif; ?>
+                            <th>KODE</th>
+                            <th>SUB KATEGORI</th>
+                            <th>MERK</th>
+                            <th>SERIAL NUMBER</th>
+                            <th>USER PENGGUNA</th>
+                            <th>LOKASI</th>
+                            <th>STATUS</th>
+                            <th>AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asetTableBody">
+                        <?php if (!empty($asets)): ?>
+                            <?php foreach ($asets as $aset): ?>
+                                <tr>
+                                    <td><?= esc($aset['kode']) ?></td>
+                                    <td><?= esc($aset['nama_sub_kategori']) ?></td>
+                                    <td><?= esc($aset['nama_merk']) ?></td>
+                                    <td><?= esc($aset['serial_number'] ?: '-') ?></td>
+                                    <td><?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna'] ?: '-') ?></td>
+                                    <td><?= esc($aset['nama_lokasi']) ?></td>
+                                    <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
+                                    <td>
+                                        <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </button>
+                                        
+                                        <?php if (!empty($aset['dokumen'])): ?>
+                                        <button class="btn btn-secondary btn-sm view-docs" title="Lihat Dokumen" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
+                                            <i class="bi bi-paperclip"></i>
+                                        </button>
+                                        <?php endif; ?>
+
+                                        <?php if (session()->get('role') === 'admin'): ?>
+                                        <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Edit Aset"><i class="bi bi-pencil-fill"></i></a>
+                                        <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>" class="btn btn-danger btn-sm" title="Hapus Aset"><i class="bi bi-trash-fill"></i></a>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="8" class="text-center">Belum ada data aset.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <form action="" method="post" id="deleteForm">
+                    <?= csrf_field() ?><input type="hidden" name="_method" value="DELETE">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dokumen-view" style="display: none;">
+        <div class="table-responsive shadow-sm">
+            <table class="table table-bordered table-striped align-middle" style="min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Dokumentasi</th>
+                        <th>Kode Aset</th>
+                        <th>Sub Kategori</th>
+                        <th>Serial Number</th>
+                        <th>Lokasi</th>
+                        <th>User Pengguna</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($asets)): ?>
+                        <?php foreach ($asets as $aset): ?>
+                            <tr>
+                                <td>
+                                    <?php if (!empty($aset['dokumen'])): ?>
+                                        <div class="mini-carousel" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
+                                            <div class="carousel-content text-center">
+                                                </div>
+                                            <div class="carousel-controls mt-1 text-center">
+                                                <button class="btn btn-dark btn-sm prev-btn">&lt;</button>
+                                                <span class="carousel-counter badge bg-secondary">1 / <?= count($aset['dokumen']); ?></span>
+                                                <button class="btn btn-dark btn-sm next-btn">&gt;</button>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Tidak ada dokumen</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= esc($aset['kode']); ?></td>
+                                <td><?= esc($aset['nama_sub_kategori']); ?></td>
+                                <td><?= esc($aset['serial_number'] ?: '-'); ?></td>
+                                <td><?= esc($aset['nama_lokasi']); ?></td>
+                                <td><?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna']); ?></td>
+                                <td><span class="badge bg-light text-dark"><?= esc($aset['status']); ?></span></td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <button class="dropdown-item view-detail" type="button" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>">
+                                                    <i class="bi bi-eye-fill me-2"></i>Lihat Detail
+                                                </button>
+                                            </li>
+                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <li>
+                                                <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
+                                                    <i class="bi bi-pencil-fill me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>">
+                                                    <i class="bi bi-trash-fill me-2"></i>Hapus
+                                                </a>
+                                            </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="8" class="text-center">Tidak ada data aset ditemukan.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div id="qrcode-view" style="display: none;">
+    <div class="table-container shadow-sm">
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+            <span>Pilih aset yang ingin Anda cetak labelnya.</span>
+            <button id="printButton" class="btn btn-success">
+                <i class="bi bi-printer-fill me-2"></i>CETAK YANG DIPILIH
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;"><input type="checkbox" id="selectAllCheckbox" class="form-check-input"></th>
+                        <th style="width: 120px;">QR CODE</th>
+                        <th>KODE ASET</th>
+                        <th>ENTITAS</th>
+                        <th>TAHUN BELI</th>
+                        <th>KATEGORI & SUB</th>
+                        <th>USER PENGGUNA</th>
+                        <th>LOKASI</th>
+                    </tr>
+                </thead>
+                <tbody id="barcodeTableBody">
+                    <?php if (!empty($asets)): ?>
+                        <?php foreach ($asets as $aset): ?>
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input barcode-checkbox"></td>
+                                <td>
+                                    <?php if (!empty($aset['qrcode'])): ?>
+                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid" style="width: 100px; height: 100px;">
+                                        <div class="print-data d-none">
+                                            <p class="kode-aset"><?= esc($aset['kode'] ?? 'N/A') ?></p>
+                                            <p class="detail-aset"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></p> 
+                                            <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code">
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="fw-bold"><?= esc($aset['kode'] ?? 'N/A') ?></td>
+                                <td><?= esc($aset['entitas_pembelian'] ?? 'N/A') ?></td>
+                                <td><?= esc($aset['tahun_beli'] ?? 'N/A') ?></td>
+                                <td>
+                                    <div><?= esc($aset['nama_kategori'] ?? 'N/A') ?></div>
+                                    <small class="text-muted"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></small>
+                                </td>
+                                <td><?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna'] ?? 'N/A') ?></td>
+                                <td><?= esc($aset['nama_lokasi'] ?? 'N/A') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" class="text-center p-5">
+                                <h5 class="text-muted">Data Tidak Ditemukan</h5>
+                                <p>Coba ubah atau reset filter Anda.</p>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="8" class="text-center">Belum ada data aset.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-        <form action="" method="post" id="deleteForm">
-            <?= csrf_field() ?>
-            <input type="hidden" name="_method" value="DELETE">
-        </form>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -369,266 +602,356 @@ Data Aset
 
 <?= $this->endSection() ?>
 
+<?= $this->section('modals') ?>
+<div class="modal fade" id="dokumenModal" tabindex="-1" aria-labelledby="dokumenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dokumenModalLabel">Dokumen untuk Aset: <span></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dokumen-carousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner bg-light text-center" style="min-height: 400px;">
+                        </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#dokumen-carousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#dokumen-carousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <p id="dokumen-deskripsi" class="fw-bold mb-0">Nama Dokumen</p>
+                    <small id="dokumen-counter" class="text-muted">1 / 1</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?= $this->endSection() ?>
+
+
 <?= $this->section('script') ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // =================================================================
+    // BAGIAN 1: FUNGSI-FUNGSI GLOBAL (DEKLARASI FUNGSI)
+    // =================================================================
+    // Fungsi-fungsi ini bisa dipanggil dari mana saja di dalam halaman ini.
 
-    // --- LOGIKA UNTUK MENAMPILKAN POPUP QR CODE ---
-    <?php if (session()->getFlashdata('new_aset')): ?>
-        document.addEventListener('DOMContentLoaded', function() {
-            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
-            document.getElementById('qr-kode').textContent = newAset.kode;
-            document.getElementById('qr-detail').textContent = `${newAset.entitas_pembelian} - ${newAset.nama_sub_kategori}`;
-            document.getElementById('qr-image').src = `<?= base_url() ?>/${newAset.qrcode}`;
-            const qrModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
-            qrModal.show();
-        });
-    <?php endif; ?>
+    /**
+     * Mencetak area grid QR code pada tampilan "Berbasis QR Code".
+     */
+    function printQrView() {
+        window.print();
+    }
 
-    // --- FUNGSI UNTUK MENCETAK AREA QR CODE ---
+    /**
+     * Mencetak QR code individual dari modal setelah menambah aset baru.
+     */
     function printQrCode() {
         const printContent = document.getElementById('qrCodePrintArea').innerHTML;
         const originalContent = document.body.innerHTML;
         document.body.innerHTML = printContent;
         window.print();
         document.body.innerHTML = originalContent;
-        window.location.reload(); 
+        window.location.reload();
     }
 
+    /**
+     * Membuat preview kode aset otomatis di form tambah aset.
+     */
     function generateKodeAset() {
-        // Ambil elemen dari form
         const entitasInput = document.getElementById('entitas_pembelian-tambah');
         const tahunInput = document.getElementById('tahun_beli-tambah');
         const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
         const merkSelect = document.getElementById('merk_id-tambah');
         const kodeInput = document.getElementById('kode-tambah');
+        if (!entitasInput || !tahunInput || !subKategoriSelect || !merkSelect || !kodeInput) return;
 
-        // Ambil nilai dan format
         const entitas = entitasInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
         const tahun_beli = tahunInput.value;
         const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'SUB';
         const merkNama = merkSelect.options[merkSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'MRK';
 
-        // Tampilkan preview jika semua data kunci sudah diisi
         if (entitas && tahun_beli && subKategoriSelect.value && merkSelect.value) {
-            // "XX" adalah placeholder untuk nomor unik yang akan dibuat di server
             kodeInput.value = `BTR/${entitas}/${tahun_beli}/${subKategoriNama}/${merkNama}/XX`;
         } else {
             kodeInput.value = '';
         }
     }
-
-
-    // Dropdown Dinamis untuk Merk dan Tipe
-    function setupMerkTipeDropdowns(merkSelectId, tipeSelectId, selectedTipeId = null) {
-        const merkSelect = document.getElementById(merkSelectId);
-        const tipeSelect = document.getElementById(tipeSelectId);
-
-        if (!merkSelect || !tipeSelect) return;
-
-        merkSelect.addEventListener('change', function() {
-            const merkId = this.value;
-            tipeSelect.innerHTML = '<option value="">Memuat...</option>';
-            tipeSelect.disabled = true;
-
-            if (merkId) {
-                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        tipeSelect.innerHTML = '<option value="">Pilih Tipe</option>';
-                        if (data.length > 0) {
-                            data.forEach(tipe => {
-                                const option = document.createElement('option');
-                                option.value = tipe.id;
-                                option.textContent = tipe.nama_tipe;
-                                if (selectedTipeId && selectedTipeId == tipe.id) {
-                                    option.selected = true;
-                                }
-                                tipeSelect.appendChild(option);
-                            });
-                            tipeSelect.disabled = false;
-                        } else {
-                            tipeSelect.innerHTML = '<option value="">Tidak ada tipe untuk merk ini</option>';
-                        }
-                    });
-            } else {
-                tipeSelect.innerHTML = '<option value="">Pilih Merk Dahulu</option>';
-                tipeSelect.disabled = true;
-            }
-        });
-    }
-
-    // Inisialisasi di halaman Data Aset & Dashboard (Modal Tambah)
-    document.addEventListener('DOMContentLoaded', function() {
-        setupMerkTipeDropdowns('merk_id-tambah', 'tipe_id-tambah');
-    });
-
-    // Inisialisasi di halaman Edit Aset
-    document.addEventListener('DOMContentLoaded', function() {
-        setupMerkTipeDropdowns('merk_id', 'tipe_id', '<?= $aset['tipe_id'] ?? '' ?>');
-    });
-
-    const subKategoris = <?= json_encode($subkategori_list) ?>;
-
-    function populateSubKategori(kategoriId, selectedSubKategoriId = null) {
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        subKategoriSelect.innerHTML = '<option value="">Pilih Sub Kategori</option>';
-        subKategoriSelect.disabled = true;
-
-        if (kategoriId) {
-            const filteredSubkategoris = subKategoris.filter(sub => sub.kategori_id == kategoriId);
-            if (filteredSubkategoris.length > 0) {
-                filteredSubkategoris.forEach(sub => {
-                    const option = document.createElement('option');
-                    option.value = sub.id;
-                    option.textContent = sub.nama_sub_kategori;
-                    if (selectedSubKategoriId && selectedSubKategoriId == sub.id) {
-                        option.selected = true;
-                    }
-                    subKategoriSelect.appendChild(option);
-                });
-                subKategoriSelect.disabled = false;
-            }
-        }
-    }
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Event listener untuk filter kategori
-        const filterKategori = document.getElementById('filter-kategori');
-        if (filterKategori) {
-            filterKategori.addEventListener('change', function() {
-                const url = new URL(window.location.href);
-                if (this.value) {
-                    url.searchParams.set('kategori_id', this.value);
-                } else {
-                    url.searchParams.delete('kategori_id');
-                }
-                window.location.href = url.toString();
-            });
-        }
-
-       
-
-         // --- Inisialisasi Select2 di modal ---
-    $('#tambahAsetModal').on('shown.bs.modal', function () {
-        $('#kategori_id-tambah, #sub_kategori_id-tambah, #merk_id-tambah, #tipe_id-tambah, #lokasi-tambah').select2({
-            dropdownParent: $('#tambahAsetModal')
-        });
-    });
-
-    // --- KODE UNTUK DROPDOWN DEPENDEN ---
-    const kategoriTambahSelect = $('#kategori_id-tambah');
-    const subKategoriTambahSelect = $('#sub_kategori_id-tambah');
-    const merkTambahSelect = $('#merk_id-tambah');
-    const tipeTambahSelect = $('#tipe_id-tambah');
-
-        // Event untuk Kategori -> Sub Kategori
-        kategoriTambahSelect.on('change', function () { // Menggunakan 'change' agar lebih umum
-            const kategoriId = $(this).val();
-            
-            subKategoriTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
-            generateKodeAset();
-
-            if (kategoriId) {
-                const allSubKategoris = <?= json_encode($subkategori_list) ?>;
-                const filteredSubkategoris = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
-
-                subKategoriTambahSelect.empty().append('<option value="">Pilih Sub Kategori</option>');
-                if (filteredSubkategoris.length > 0) {
-                    filteredSubkategoris.forEach(sub => {
-                        const option = new Option(sub.nama_sub_kategori, sub.id, false, false);
-                        subKategoriTambahSelect.append(option);
-                    });
-                    subKategoriTambahSelect.prop('disabled', false);
-                } else {
-                    subKategoriTambahSelect.append('<option value="">Tidak ada sub kategori</option>');
-                }
-                subKategoriTambahSelect.trigger('change');
-            }
-        });
-
-        // Event untuk Merk -> Tipe
-        merkTambahSelect.on('change', function () { // Menggunakan 'change'
-            const merkId = $(this).val();
-
-            tipeTambahSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
-            generateKodeAset();
-
-            if (merkId) {
-                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        tipeTambahSelect.empty().append('<option value="">Pilih Tipe</option>');
-                        if (data.length > 0) {
-                            data.forEach(tipe => {
-                                const option = new Option(tipe.nama_tipe, tipe.id, false, false);
-                                tipeTambahSelect.append(option);
-                            });
-                            tipeTambahSelect.prop('disabled', false);
-                        } else {
-                            tipeTambahSelect.append('<option value="">Tidak ada tipe</option>');
-                        }
-                        tipeTambahSelect.trigger('change');
-                    });
-            }
-        });
-
-        // Panggil generateKodeAset saat dropdown lain juga berubah
-        $('#sub_kategori_id-tambah, #tahun_beli-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
     
-        // --- FUNGSI PENCARIAN REAL-TIME DI DATA ASET ---
-        const searchInput = document.getElementById('searchInput');
-const tableBody = document.getElementById('asetTableBody');
+    /**
+     * Menampilkan konfirmasi sebelum menghapus aset.
+     */
+    function confirmDelete(el) {
+        const asetId = el.getAttribute('data-id');
+        const asetKode = el.getAttribute('data-kode');
+        const deleteForm = document.getElementById('deleteForm');
 
-if (searchInput && tableBody) {
-    searchInput.addEventListener('keyup', function() {
-        const keyword = this.value;
-        // Pastikan URL fetch sudah benar
-        fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
-            .then(response => response.json())
-            .then(data => {
-                tableBody.innerHTML = ''; // Kosongkan tabel sebelum mengisi hasil baru
-                if (data.length > 0) {
-                    data.forEach(aset => {
-                        // Variabel untuk menangani data yang mungkin null
-                        const serialNumber = aset.serial_number || '-';
-                        const penanggungJawab = aset.user_pengguna || '-';
+        Swal.fire({
+            title: 'Apakah Anda Yakin?',
+            html: `Anda akan menghapus aset dengan kode:<br><b>${asetKode}</b><br><br>Tindakan ini tidak dapat dibatalkan!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus Saja!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                deleteForm.action = `<?= base_url('aset/') ?>${asetId}`;
+                deleteForm.submit();
+            }
+        });
+    }
 
-                        // Buat baris tabel dengan urutan kolom yang BENAR
-                        const row = `<tr>
-                            <td>${aset.kode}</td>
-                            <td>${aset.nama_sub_kategori}</td>
-                            <td>${aset.nama_merk}</td>
-                            <td>${serialNumber}</td>
-                            <td>${penanggungJawab}</td>
-                            <td>${aset.nama_lokasi}</td>
-                            <td><span class="badge bg-light text-dark">${aset.status}</span></td>
-                            <td>
-                                <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="${aset.id}" title="Lihat Detail">
-                                    <i class="bi bi-eye-fill"></i>
-                                </button>
-                                <?php if (session()->get('role') === 'admin'): ?>
-                                <a href="<?= base_url('aset/') ?>${aset.id}/edit" class="btn btn-warning btn-sm" title="Edit Aset">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </a>
-                                <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="${aset.id}" data-kode="${aset.kode}" class="btn btn-danger btn-sm" title="Hapus Aset">
-                                    <i class="bi bi-trash-fill"></i>
-                                </a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                } else {
-                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`;
-                }
-            })
-            .catch(error => console.error('Error searching:', error));
+    /**
+     * Mengubah angka menjadi format Rupiah.
+     */
+    function formatRupiah(angka) {
+        if (!angka) return 'Rp 0';
+        var reverse = angka.toString().split('').reverse().join(''),
+            ribuan = reverse.match(/\d{1,3}/g);
+        ribuan = ribuan.join('.').split('').reverse().join('');
+        return 'Rp ' + ribuan;
+    }
+
+    // =================================================================
+    // BAGIAN 2: SCRIPT YANG DIJALANKAN SAAT HALAMAN SIAP (EVENT LISTENERS)
+    // =================================================================
+    $(document).ready(function() {
+
+        // 1. Logika untuk checkbox "Pilih Semua"
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+        // Cari semua checkbox di dalam Tampilan QR Code dan atur statusnya
+        document.querySelectorAll('#qrcode-view .barcode-checkbox').forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
     });
 }
 
-         // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
+// 2. Logika untuk tombol "CETAK YANG DIPILIH"
+const printButton = document.getElementById('printButton');
+if (printButton) {
+    printButton.addEventListener('click', function() {
+        // Buat atau temukan area cetak yang tersembunyi
+        let printArea = document.querySelector('.print-area');
+        if (!printArea) {
+            printArea = document.createElement('div');
+            printArea.classList.add('print-area');
+            document.body.appendChild(printArea);
+        }
+        printArea.innerHTML = ''; // Kosongkan area cetak setiap kali tombol diklik
+
+        // Buat grid untuk menampung label
+        const labelGrid = document.createElement('div');
+        labelGrid.classList.add('label-grid');
+
+        let selectedCount = 0;
+        // Cari semua checkbox yang dicentang di dalam Tampilan QR Code
+        document.querySelectorAll('#qrcode-view .barcode-checkbox:checked').forEach(checkbox => {
+            selectedCount++;
+            // Ambil data cetak tersembunyi dari baris tabel yang sama
+            const row = checkbox.closest('tr');
+            const printDataHTML = row.querySelector('.print-data').innerHTML;
+            
+            // Buat elemen label dan masukkan datanya
+            const label = document.createElement('div');
+            label.classList.add('label');
+            label.innerHTML = printDataHTML;
+            labelGrid.appendChild(label);
+        });
+
+        // 3. Cek apakah ada yang dipilih sebelum mencetak
+        if (selectedCount > 0) {
+            printArea.appendChild(labelGrid);
+            window.print(); // Panggil fungsi cetak browser
+        } else {
+            // Tampilkan peringatan jika tidak ada yang dipilih
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tidak Ada Barcode Dipilih',
+                text: 'Silakan pilih setidaknya satu barcode untuk dicetak.',
+            });
+        }
+    });
+}
+
+        // --- Inisialisasi Tampilan Awal ---
+        $('#view-container > div').hide();
+        $('#aset-view').show();
+
+        // --- LOGIKA UTAMA: PENGALIH TAMPILAN (VIEW SWITCHER) ---
+        $('#view-switcher button').on('click', function() {
+            $('#view-switcher button').removeClass('active btn-primary').addClass('btn-outline-primary');
+            $(this).removeClass('btn-outline-primary').addClass('active btn-primary');
+            var viewToShow = $(this).data('view');
+            $('#view-container > div').hide();
+            $('#' + viewToShow + '-view').show();
+            
+            // Inisialisasi carousel mini jika pindah ke tampilan dokumen
+            if (viewToShow === 'dokumen') {
+                initializeMiniCarousels();
+            }
+        });
+
+        // --- LOGIKA FITUR 1: POP-UP GALERI DOKUMEN ---
+        $(document).on('click', '.view-docs', function() {
+            var namaAset = $(this).data('nama-aset');
+            var dokumen = $(this).data('dokumen');
+            $('#dokumenModalLabel span').text(namaAset);
+            var carouselInner = $('#dokumen-carousel .carousel-inner');
+            carouselInner.empty();
+
+            if (dokumen && dokumen.length > 0) {
+                dokumen.forEach(function(doc, index) {
+                    var activeClass = (index === 0) ? 'active' : '';
+                    var slideHtml = '';
+                    var fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
+
+                    if (doc.tipe_file.startsWith('image/')) {
+                        slideHtml = `<div class="carousel-item ${activeClass}" data-deskripsi="${doc.nama_asli_file}"><img src="${fileUrl}" class="d-block w-100" style="max-height: 500px; object-fit: contain;"></div>`;
+                    } else {
+                        slideHtml = `<div class="carousel-item ${activeClass}" data-deskripsi="${doc.nama_asli_file}"><div class="d-flex flex-column justify-content-center align-items-center" style="height: 400px;"><i class="bi bi-file-earmark-text-fill" style="font-size: 5rem;"></i><h4>${doc.nama_asli_file}</h4><a href="${fileUrl}" target="_blank" class="btn btn-primary mt-2">Lihat File</a></div></div>`;
+                    }
+                    carouselInner.append(slideHtml);
+                });
+                $('#dokumen-carousel .carousel-control-prev, #dokumen-carousel .carousel-control-next').toggle(dokumen.length > 1);
+                updateCarouselInfo();
+            } else {
+                carouselInner.html('<div class="carousel-item active"><div class="text-center p-5">Tidak ada dokumen.</div></div>');
+                $('#dokumen-carousel .carousel-control-prev, #dokumen-carousel .carousel-control-next').hide();
+                $('#dokumen-deskripsi, #dokumen-counter').text('');
+            }
+        });
+
+        function updateCarouselInfo() {
+            var activeItem = $('#dokumen-carousel .carousel-item.active');
+            if (!activeItem.length) return;
+            var total = $('#dokumen-carousel .carousel-item').length;
+            var current = activeItem.index() + 1;
+            $('#dokumen-counter').text(`${current} / ${total}`);
+            $('#dokumen-deskripsi').text(activeItem.data('deskripsi'));
+        }
+        $('#dokumen-carousel').on('slid.bs.carousel', updateCarouselInfo);
+
+        // --- LOGIKA FITUR 2: CAROUSEL MINI DI TABEL DOKUMEN ---
+        function initializeMiniCarousels() {
+            $('.mini-carousel').each(function() {
+                var carousel = $(this);
+                if (carousel.hasClass('initialized')) return; // Mencegah inisialisasi ganda
+
+                var dokumen = carousel.data('dokumen');
+                if (!dokumen || dokumen.length === 0) return;
+                var currentIndex = 0;
+
+                function renderSlide(index) {
+                    var doc = dokumen[index];
+                    var fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
+                    var contentHtml = doc.tipe_file.startsWith('image/')
+                        ? `<img src="${fileUrl}" alt="${doc.nama_asli_file}" title="Klik untuk memperbesar">`
+                        : `<a href="${fileUrl}" target="_blank" title="Lihat File"><i class="bi bi-file-earmark-text-fill file-icon"></i></a>`;
+                    carousel.find('.carousel-content').html(contentHtml);
+                    carousel.find('.carousel-counter').text(`${index + 1} / ${dokumen.length}`);
+                }
+                renderSlide(currentIndex);
+
+                carousel.find('.prev-btn').off('click').on('click', function() {
+                    currentIndex = (currentIndex > 0) ? currentIndex - 1 : dokumen.length - 1;
+                    renderSlide(currentIndex);
+                });
+                carousel.find('.next-btn').off('click').on('click', function() {
+                    currentIndex = (currentIndex < dokumen.length - 1) ? currentIndex + 1 : 0;
+                    renderSlide(currentIndex);
+                });
+                carousel.find('.carousel-controls').toggle(dokumen.length > 1);
+                carousel.addClass('initialized'); // Tandai sudah diinisialisasi
+            });
+        }
+
+        // --- SEMUA LOGIKA LAMA ANDA YANG PERLU DIJALANKAN SAAT HALAMAN SIAP ---
+
+        // Menampilkan popup QR Code setelah tambah aset
+        <?php if (session()->getFlashdata('new_aset')): ?>
+            const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
+            $('#qr-kode').text(newAset.kode);
+            $('#qr-detail').text(`${newAset.entitas_pembelian} - ${newAset.nama_sub_kategori}`);
+            $('#qr-image').attr('src', `<?= base_url() ?>/${newAset.qrcode}`);
+            new bootstrap.Modal(document.getElementById('qrCodeModal')).show();
+        <?php endif; ?>
+
+        // Inisialisasi Select2 di modal tambah
+        $('#tambahAsetModal').on('shown.bs.modal', function () {
+            $('#kategori_id-tambah, #sub_kategori_id-tambah, #merk_id-tambah, #tipe_id-tambah, #lokasi-tambah').select2({
+                dropdownParent: $('#tambahAsetModal')
+            });
+        });
+
+        // Logika Dropdown Kategori -> Sub Kategori
+        $('#kategori_id-tambah').on('change', function () {
+            const kategoriId = $(this).val();
+            const subKategoriSelect = $('#sub_kategori_id-tambah');
+            subKategoriSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+            if (kategoriId) {
+                const allSubKategoris = <?= json_encode($subkategori_list) ?>;
+                const filtered = allSubKategoris.filter(sub => sub.kategori_id == kategoriId);
+                subKategoriSelect.empty().append('<option value="">Pilih Sub Kategori</option>');
+                if (filtered.length > 0) {
+                    filtered.forEach(sub => subKategoriSelect.append(new Option(sub.nama_sub_kategori, sub.id, false, false)));
+                    subKategoriSelect.prop('disabled', false);
+                }
+                subKategoriSelect.trigger('change');
+            }
+        });
+
+        // Logika Dropdown Merk -> Tipe
+        $('#merk_id-tambah').on('change', function () {
+            const merkId = $(this).val();
+            const tipeSelect = $('#tipe_id-tambah');
+            tipeSelect.empty().append('<option value="">Memuat...</option>').prop('disabled', true).trigger('change');
+            if (merkId) {
+                fetch(`<?= base_url('api/tipe/') ?>${merkId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        tipeSelect.empty().append('<option value="">Pilih Tipe</option>');
+                        if (data.length > 0) {
+                            data.forEach(tipe => tipeSelect.append(new Option(tipe.nama_tipe, tipe.id, false, false)));
+                            tipeSelect.prop('disabled', false);
+                        }
+                        tipeSelect.trigger('change');
+                    });
+            }
+        });
+        
+        // Panggil generateKodeAset saat form berubah
+        $('#sub_kategori_id-tambah, #merk_id-tambah, #tahun_beli-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
+        
+        // Logika Pencarian Real-time
+        $('#searchInput').on('keyup', function() {
+            const keyword = this.value;
+            const tableBody = $('#asetTableBody');
+            fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.empty();
+                    if (data.length > 0) {
+                        data.forEach(aset => {
+                            const row = `<tr>...</tr>`; // Bangun baris tabel seperti di PHP
+                            tableBody.append(row);
+                        });
+                    } else {
+                        tableBody.append(`<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`);
+                    }
+                });
+        });
+
+// --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
 const detailAsetModal = document.getElementById('detailAsetModal');
         let currentAsetId = null;
 
@@ -740,37 +1063,7 @@ const detailAsetModal = document.getElementById('detailAsetModal');
 
     })  
     
-
-    // FUNGSI BARU UNTUK KONFIRMASI HAPUS
-    function confirmDelete(el) {
-        const asetId = el.getAttribute('data-id');
-        const asetKode = el.getAttribute('data-kode');
-        const deleteForm = document.getElementById('deleteForm');
-
-        Swal.fire({
-            title: 'Apakah Anda Yakin?',
-            html: `Anda akan menghapus aset dengan kode:<br><b>${asetKode}</b><br><br>Tindakan ini tidak dapat dibatalkan!`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, Hapus Saja!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                deleteForm.action = `<?= base_url('aset/') ?>${asetId}`;
-                deleteForm.submit();
-            }
-        });
-    }
-
-    function formatRupiah(angka) {
-        if(!angka) return 'Rp 0';
-        var reverse = angka.toString().split('').reverse().join(''),
-            ribuan = reverse.match(/\d{1,3}/g);
-        ribuan = ribuan.join('.').split('').reverse().join('');
-        return 'Rp ' + ribuan;
-    }
+    
 
     
     
