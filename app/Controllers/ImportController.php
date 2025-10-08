@@ -166,7 +166,7 @@ class ImportController extends BaseController
         $requiredFields = [
             'kategori_id' => 'Kategori', 'sub_kategori_id' => 'Sub Kategori',
             'merk_id' => 'Merk', 'tipe_id' => 'Tipe', 'tahun_beli' => 'tahun_beli',
-            'entitas_pembelian' => 'Entitas Pembelian', 'lokasi_id' => 'Lokasi', 'status' => 'Status'
+            'lokasi_id' => 'Lokasi', 'status' => 'Status'
         ];
 
         foreach ($requiredFields as $field => $label) {
@@ -210,8 +210,9 @@ class ImportController extends BaseController
     $newlyCreatedAssets = [];
     foreach ($validatedData as $index => $data) {
         $kode = $this->generateUniqueAssetCode(
-            $data['entitas_pembelian'], $data['tahun_beli'],
-            $data['sub_kategori_id'], $data['merk_id']
+            $data['tahun_beli'],
+            $data['sub_kategori_id'],
+            $data['merk_id']
         );
 
         if ($asetModel->save([

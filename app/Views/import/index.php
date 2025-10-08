@@ -195,7 +195,7 @@
                                     <small class="text-danger fw-bold d-block mt-1">Duplikat!</small>
                                 <?php endif; ?>
                             </td>
-                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>" required></td>
+                            <td><input type="text" class="form-control" name="aset[<?= $index ?>][entitas_pembelian]" value="<?= esc($row['entitas_pembelian']) ?>"></td>
                             <td><input type="number" class="form-control" name="aset[<?= $index ?>][tahun_beli]" value="<?= esc($row['tahun_beli']) ?>" required></td>
                             <td><input type="number" class="form-control" name="aset[<?= $index ?>][harga_beli]" value="<?= esc($row['harga_beli']) ?>"></td>
                             <td><input type="text" class="form-control" name="aset[<?= $index ?>][user_pengguna]" value="<?= esc($row['user_pengguna']) ?>"></td>
