@@ -20,6 +20,7 @@ use Dompdf\Dompdf;
 use App\Models\KaryawanModel;
 
 
+
 /**
  * @property \CodeIgniter\HTTP\IncomingRequest $request
  */
@@ -85,23 +86,25 @@ class AsetController extends ResourceController
      *
      * @return ResponseInterface
      */
-    public function index()
+        public function index()
     {
         $filters = [
             'kategori_id' => $this->request->getGet('kategori_id'),
             'status'      => $this->request->getGet('status'),
             'keyword'     => $this->request->getGet('keyword'),
         ];
-    
-        // [MODIFIKASI] Tambahkan 'user_pengguna' dan 'entitas_pembelian' ke SELECT dan pencarian
+
+        // [BAGIAN QUERY ANDA]
+        // Kita tambahkan join ke tabel karyawan untuk mendapatkan nama, bukan hanya ID
         $query = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
+            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe, karyawan.nama_karyawan')
             ->join('kategori k', 'k.id = aset.kategori_id', 'left')
             ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
             ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
             ->join('merk m', 'm.id = aset.merk_id', 'left')
-            ->join('tipe t', 't.id = aset.tipe_id', 'left');
-    
+            ->join('tipe t', 't.id = aset.tipe_id', 'left')
+            ->join('karyawan', 'karyawan.id = aset.user_pengguna', 'left'); // Join ke tabel karyawan
+
         if (!empty($filters['kategori_id'])) {
             $query = $query->where('aset.kategori_id', $filters['kategori_id']);
         }
@@ -111,26 +114,53 @@ class AsetController extends ResourceController
         if (!empty($filters['keyword'])) {
             $query = $query->groupStart()
                 ->like('aset.kode', $filters['keyword'])
-                ->orLike('m.nama_merk', $filters['keyword']) // Menggunakan alias tabel
+                ->orLike('m.nama_merk', $filters['keyword'])
                 ->orLike('aset.serial_number', $filters['keyword'])
                 ->orLike('l.nama_lokasi', $filters['keyword'])
-                ->orLike('aset.user_pengguna', $filters['keyword'])
-                ->orLike('aset.entitas_pembelian', $filters['keyword']) // Pencarian berdasarkan entitas
+                ->orLike('karyawan.nama_karyawan', $filters['keyword']) // Pencarian berdasarkan nama karyawan
+                ->orLike('aset.entitas_pembelian', $filters['keyword'])
                 ->groupEnd();
         }
         
+        // [PENGAMBILAN DATA BARU] Menggunakan paginate() untuk performa
         $asets_data = $query->orderBy('aset.updated_at', 'DESC')->findAll();
-    
+
+        // ======================= PENINGKATAN DIMULAI DI SINI =======================
+        // Jika ada aset yang ditemukan di halaman ini, ambil dokumennya
+        if (!empty($asets_data)) {
+            // 1. Kumpulkan semua ID aset dari hasil paginasi
+            $asetIds = array_column($asets_data, 'id');
+
+            // 2. Ambil semua dokumen yang terkait dalam SATU query
+            $dokumentasiModel = new DokumentasiAsetModel();
+            // Disini kita pastikan menggunakan nama kolom yang benar yaitu 'aset_id'
+            $allDokumen = $dokumentasiModel->whereIn('aset_id', $asetIds)->findAll();
+
+            // 3. Buat "peta" dokumen agar mudah dicari
+            $dokumenMap = [];
+            foreach ($allDokumen as $dokumen) {
+                // Disini juga, gunakan 'aset_id' sebagai key
+                $dokumenMap[$dokumen['aset_id']][] = $dokumen;
+            }
+
+            // 4. Lampirkan array dokumen ke setiap aset
+            foreach ($asets_data as &$aset) { // tanda '&' penting
+                $aset['dokumen'] = $dokumenMap[$aset['id']] ?? [];
+            }
+            unset($aset); // Hapus referensi setelah loop selesai
+        }
+        // ======================== PENINGKATAN SELESAI ========================
+
         $data = [
             'title'            => 'Data Aset',
-            'asets'            => $asets_data,
+            'asets'            => $asets_data, // Sekarang sudah ada sub-array 'dokumen'
             'kategori_list'    => $this->kategoriModel->findAll(),
-            'subkategori_list' => $this->subKategoriModel->findAll(),
+            'subkategori_list' => $this->subKategoriModel->findAll(), // Anda menggunakan ini di view asli
             'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
             'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
             'filters'          => $filters
         ];
-    
+
         return view('aset/index', $data);
     }
 
@@ -893,5 +923,60 @@ public function barcodes()
             ->setBody($fileContent)
             ->setHeader('Content-Disposition', 'inline; filename="' . $docInfo['nama_asli_file'] . '"'); // Menampilkan file, bukan download paksa
     }
+
+    public function getAsetWithDetails($filters = [])
+    {
+        // Memulai query builder dengan join yang sudah ada
+        $builder = $this->select('aset.*, lokasi.nama_lokasi, kategori.nama_kategori, karyawan.nama_karyawan')
+                        ->join('lokasi', 'lokasi.id = aset.id_lokasi', 'left')
+                        ->join('kategori', 'kategori.id = aset.id_kategori', 'left')
+                        ->join('karyawan', 'karyawan.id = aset.user_pengguna', 'left');
+
+        // Menerapkan filter yang sudah ada dari URL
+        if (!empty($filters['keyword'])) {
+            $builder->groupStart()
+                    ->like('nama_aset', $filters['keyword'])
+                    ->orLike('kode_aset', $filters['keyword'])
+                    ->orLike('serial_number', $filters['keyword'])
+                    ->groupEnd();
+        }
+        // Anda bisa tambahkan filter lain di sini jika diperlukan
+        // Contoh:
+        // if (!empty($filters['id_lokasi'])) {
+        //     $builder->where('aset.id_lokasi', $filters['id_lokasi']);
+        // }
+
+        // Dapatkan hasil query aset yang sudah difilter
+        // PENTING: Kita akan gunakan paginate() agar halaman tidak berat
+        $asets = $builder->where('aset.deleted_at', null)->paginate(10, 'aset');
+
+        // Jika tidak ada aset sama sekali, kembalikan array kosong
+        if (empty($asets)) {
+            return [];
+        }
+
+        // --- Bagian Baru: Mengambil Dokumen Secara Efisien ---
+        // 1. Kumpulkan semua ID aset dari hasil paginasi
+        $asetIds = array_column($asets, 'id');
+
+        // 2. Ambil semua dokumen yang terkait dengan ID tersebut dalam SATU query
+        $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+        $allDokumen = $dokumentasiModel->whereIn('id_aset', $asetIds)->findAll();
+
+        // 3. Buat "peta" dokumen agar mudah dicari berdasarkan id_aset
+        $dokumenMap = [];
+        foreach ($allDokumen as $dokumen) {
+            $dokumenMap[$dokumen['id_aset']][] = $dokumen;
+        }
+
+        // 4. Lampirkan array dokumen ke setiap aset
+        foreach ($asets as &$aset) { // tanda '&' penting untuk mengubah array aslinya
+            $aset['dokumen'] = isset($dokumenMap[$aset['id']]) ? $dokumenMap[$aset['id']] : [];
+        }
+        // --------------------------------------------------
+
+        return $asets;
+    }
+
 
 }
