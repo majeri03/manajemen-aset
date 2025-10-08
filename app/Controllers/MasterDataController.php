@@ -290,5 +290,90 @@ class MasterDataController extends BaseController
         $this->karyawanModel->delete($id);
         return redirect()->to('/master-data?tab=karyawan')->with('success', 'Data karyawan berhasil dihapus.');
     }
+
+    public function addSubKategori()
+    {
+        // Pastikan ini adalah request AJAX
+        if ($this->request->isAJAX()) {
+            $nama_sub_kategori = $this->request->getPost('nama_sub_kategori');
+            $kategori_id = $this->request->getPost('kategori_id');
+
+            if (empty($nama_sub_kategori) || empty($kategori_id)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Data tidak lengkap.']);
+            }
+
+            $subKategoriModel = new SubKategoriModel();
+
+            // Cek apakah sudah ada
+            $exists = $subKategoriModel->where('nama_sub_kategori', $nama_sub_kategori)
+                                      ->where('kategori_id', $kategori_id)
+                                      ->first();
+
+            if ($exists) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Sub Kategori sudah ada untuk kategori ini.']);
+            }
+
+            $data = [
+                'nama_sub_kategori' => $nama_sub_kategori,
+                'kategori_id'  => $kategori_id
+            ];
+
+            if ($subKategoriModel->save($data)) {
+                $newId = $subKategoriModel->getInsertID();
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [
+                        'id' => $newId,
+                        'text' => $nama_sub_kategori
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan ke database.']);
+            }
+        }
+        // Jika bukan AJAX, tolak akses
+        return redirect()->to('/');
+    }
+
+    public function addTipe()
+    {
+        if ($this->request->isAJAX()) {
+            $nama_tipe = $this->request->getPost('nama_tipe');
+            $merk_id = $this->request->getPost('merk_id');
+
+            if (empty($nama_tipe) || empty($merk_id)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Data tidak lengkap.']);
+            }
+
+            $tipeModel = new TipeModel();
+
+            $exists = $tipeModel->where('nama_tipe', $nama_tipe)
+                                ->where('merk_id', $merk_id)
+                                ->first();
+
+            if ($exists) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Tipe sudah ada untuk merk ini.']);
+            }
+            
+            $data = [
+                'nama_tipe' => $nama_tipe,
+                'merk_id'  => $merk_id
+            ];
+
+            if ($tipeModel->save($data)) {
+                $newId = $tipeModel->getInsertID();
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [
+                        'id' => $newId,
+                        'text' => $nama_tipe
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan ke database.']);
+            }
+        }
+        return redirect()->to('/');
+    }
 }
 

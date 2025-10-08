@@ -548,4 +548,44 @@ public function downloadTemplate()
 
     return $this->response->setBody($fileData);
 }
+public function validateRow()
+{
+    // Hanya izinkan request AJAX
+    if (!$this->request->isAJAX()) {
+        return $this->response->setStatusCode(403, 'Forbidden');
+    }
+
+    $rowData = $this->request->getPost();
+    $errors = [];
+
+    // Gunakan logika validasi yang sama persis seperti di fungsi save()
+    $requiredFields = [
+        'kategori_id' => 'Kategori',
+        'sub_kategori_id' => 'Sub Kategori',
+        'merk_id' => 'Merk',
+        'tipe_id' => 'Tipe',
+        'tahun_beli' => 'Tahun Beli',
+        'lokasi_id' => 'Lokasi',
+        'status' => 'Status'
+    ];
+
+    foreach ($requiredFields as $field => $label) {
+        // Periksa apakah field ada dan tidak kosong
+        if (empty($rowData[$field])) {
+            $errors[] = "$label wajib diisi.";
+        }
+    }
+
+    // Validasi tambahan (contoh: tahun beli harus angka)
+    if (!empty($rowData['tahun_beli']) && !is_numeric($rowData['tahun_beli'])) {
+        $errors[] = 'Tahun beli harus berupa angka.';
+    }
+
+    if (empty($errors)) {
+        return $this->response->setJSON(['success' => true]);
+    } else {
+        return $this->response->setJSON(['success' => false, 'errors' => $errors]);
+    }
+}
+
 }

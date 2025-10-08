@@ -174,6 +174,128 @@ Edit Aset
 
 <?= $this->section('script') ?>
 <script>
+
+    // Event handler untuk Sub Kategori
+    $('#sub_kategori_id').on('select2:select', function(e) {
+        var data = e.params.data;
+        // Cek apakah ini adalah tag baru
+        if (data.newTag === true) {
+            var newSubKategori = data.text.replace(' (Baru)', '');
+            var kategoriId = $('#kategori_id').val(); // Ambil ID kategori yang dipilih
+
+            // Validasi: pastikan kategori sudah dipilih
+            if (!kategoriId) {
+                alert('Silakan pilih Kategori terlebih dahulu!');
+                // Hapus tag baru yang salah
+                var values = $('#sub_kategori_id').val();
+                if (values) {
+                    var index = values.indexOf(data.id);
+                    if (index > -1) {
+                        values.splice(index, 1);
+                        $('#sub_kategori_id').val(values).trigger('change');
+                    }
+                }
+                return;
+            }
+
+            // Kirim data ke server via AJAX
+            $.ajax({
+                url: "<?= site_url('master-data/add-sub-kategori') ?>", // URL ke controller
+                type: "POST",
+                data: {
+                    nama_sub_kategori: newSubKategori,
+                    kategori_id: kategoriId,
+                    // Tambahkan CSRF token untuk keamanan
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        // Jika berhasil, perbarui opsi di Select2
+                        // Hapus tag sementara
+                        var values = $('#sub_kategori_id').val();
+                        if (values) {
+                            var index = values.indexOf(data.id);
+                            if (index > -1) {
+                                values.splice(index, 1);
+                            }
+                        }
+                        // Tambahkan opsi baru yang permanen dari server
+                        var newOption = new Option(response.data.text, response.data.id, true, true);
+                        $('#sub_kategori_id').append(newOption).trigger('change');
+                        
+                        // Set nilai yang baru ditambahkan
+                        values.push(response.data.id);
+                        $('#sub_kategori_id').val(values).trigger('change');
+
+                        alert('Sub Kategori baru berhasil ditambahkan dan diasosiasikan!');
+                    } else {
+                        alert('Gagal menambahkan sub kategori baru: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan koneksi. Gagal menambahkan sub kategori.');
+                }
+            });
+        }
+    });
+
+    // Lakukan hal yang sama untuk Tipe yang berelasi dengan Merk
+    $('#tipe_id').on('select2:select', function(e) {
+        var data = e.params.data;
+        if (data.newTag === true) {
+            var newTipe = data.text.replace(' (Baru)', '');
+            var merkId = $('#merk_id').val();
+
+            if (!merkId) {
+                alert('Silakan pilih Merk terlebih dahulu!');
+                var values = $('#tipe_id').val();
+                if (values) {
+                    var index = values.indexOf(data.id);
+                    if (index > -1) {
+                        values.splice(index, 1);
+                        $('#tipe_id').val(values).trigger('change');
+                    }
+                }
+                return;
+            }
+
+            $.ajax({
+                url: "<?= site_url('master-data/add-tipe') ?>",
+                type: "POST",
+                data: {
+                    nama_tipe: newTipe,
+                    merk_id: merkId,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        var values = $('#tipe_id').val();
+                        if (values) {
+                            var index = values.indexOf(data.id);
+                            if (index > -1) {
+                                values.splice(index, 1);
+                            }
+                        }
+                        var newOption = new Option(response.data.text, response.data.id, true, true);
+                        $('#tipe_id').append(newOption).trigger('change');
+                        
+                        values.push(response.data.id);
+                        $('#tipe_id').val(values).trigger('change');
+
+                        alert('Tipe baru berhasil ditambahkan dan diasosiasikan!');
+                    } else {
+                        alert('Gagal menambahkan tipe baru: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan koneksi. Gagal menambahkan tipe.');
+                }
+            });
+        }
+    });
+    
 // Fungsi ini akan dijalankan setelah semua elemen halaman dimuat
     document.addEventListener('DOMContentLoaded', function() {
     const statusDropdown = document.getElementById('status');
