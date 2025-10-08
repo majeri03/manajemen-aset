@@ -412,9 +412,9 @@ Dashboard
                             <label for="harga_beli-tambah" class="form-label">Harga Beli</label>
                             <input type="number" class="form-control" id="harga_beli-tambah" name="harga_beli" placeholder="Contoh: 1500000">
                         </div>
-                        <div class="col-md-6">
-                            <label for="entitas_pembelian-tambah" class="form-label">Entitas Pembelian</label>
-                            <input type="text" class="form-control" id="entitas_pembelian-tambah" name="entitas_pembelian" placeholder="Contoh: BANDAR INDONESIA" oninput="generateKodeAset();">
+                        <div class="mb-3">
+                            <label for="entitas_pembelian" class="form-label">Entitas Pembelian</label>
+                            <input type="text" class="form-control" id="entitas_pembelian" name="entitas_pembelian">
                         </div>
                         <div class="col-md-6">
                             <label for="status-tambah" class="form-label">Status Aset</label>
@@ -522,25 +522,23 @@ Dashboard
 
 
     function generateKodeAset() {
-        // Ambil elemen dari form
-        const entitasInput = document.getElementById('entitas_pembelian-tambah');
-        const tahunInput = document.getElementById('tahun_beli-tambah');
-        const subKategoriSelect = document.getElementById('sub_kategori_id-tambah');
-        const merkSelect = document.getElementById('merk_id-tambah');
-        const kodeInput = document.getElementById('kode-tambah');
+        const tahunBeli = $('#tahun_beli-tambah').val() || new Date().getFullYear();
+        const subKategori = $('#sub_kategori_id-tambah option:selected').text().split(' (')[0] || 'SUBKAT';
+        const merk = $('#merk_id-tambah option:selected').text() || 'MERK';
 
-        // Ambil nilai dan format
-        const entitas = entitasInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
-        const tahun_beli = tahunInput.value;
-        const subKategoriNama = subKategoriSelect.options[subKategoriSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'SUB';
-        const merkNama = merkSelect.options[merkSelect.selectedIndex]?.text.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'MRK';
+        // Format baru: Gabungkan Sub Kategori dan Merk
+        const subKategoriMerk = subKategori.substring(0, 5).toUpperCase() + '_' + merk.substring(0, 3).toUpperCase();
 
-        // Tampilkan preview jika semua data kunci sudah diisi
-        if (entitas && tahun_beli && subKategoriSelect.value && merkSelect.value) {
-            // "XX" adalah placeholder untuk nomor unik yang akan dibuat di server
-            kodeInput.value = `BTR/${entitas}/${tahun_beli}/${subKategoriNama}/${merkNama}/XX`;
+        // Pastikan semua komponen kunci terisi sebelum menampilkan preview
+        if (tahunBeli && $('#sub_kategori_id-tambah').val() && $('#merk_id-tambah').val()) {
+            const kodeAset = 'BTR/' +
+                tahunBeli + '/' +
+                subKategori.substring(0, 5).toUpperCase() + '/' +
+                merk.substring(0, 3).toUpperCase() +
+                '/XX';
+            $('#kode-tambah').val(kodeAset);
         } else {
-            kodeInput.value = '';
+            $('#kode-tambah').val(''); // Kosongkan jika belum lengkap
         }
     }
     
@@ -1004,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Panggil generateKodeAset saat dropdown lain juga berubah
-    $('#sub_kategori_id-tambah, #tahun_beli-tambah, #entitas_pembelian-tambah').on('change', generateKodeAset);
+    $('#sub_kategori_id-tambah, #merk_id-tambah, #tahun_beli-tambah').on('change', generateKodeAset);
 })
 
 

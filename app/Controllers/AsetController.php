@@ -46,39 +46,38 @@ class AsetController extends ResourceController
         $this->dokumentasiAsetModel = new DokumentasiAsetModel();
     }
 
-    private function generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId)
+    private function generateUniqueAssetCode($tahunBeli, $subKategoriId, $merkId)
     {
-        // 1. Ambil data terakhir berdasarkan kata kunci
+        $subKategoriModel = new \App\Models\SubKategoriModel();
+        $merkModel = new \App\Models\MerkModel();
+
+        $subKategori = $subKategoriModel->find($subKategoriId);
+        $merk = $merkModel->find($merkId);
+
+        $kodeSubKategori = strtoupper(substr($subKategori['nama_sub_kategori'], 0, 5));
+        $kodeMerk = strtoupper(substr($merk['nama_merk'], 0, 3));
+        $kodeSubKategoriMerk = $kodeSubKategori . '_' . $kodeMerk;
+
+        // --- PERUBAHAN LOGIKA UTAMA ADA DI SINI ---
+        // Mencari aset terakhir berdasarkan kombinasi TAHUN, SUB KATEGORI, dan MERK
+        // Ini adalah kunci baru untuk menentukan nomor urut.
         $lastAsset = $this->asetModel
-            ->where('entitas_pembelian', $entitas)
+            ->where('tahun_beli', $tahunBeli)
             ->where('sub_kategori_id', $subKategoriId)
-            ->orderBy('kode', 'DESC')
+            ->where('merk_id', $merkId)
+            ->orderBy('id', 'DESC')
             ->first();
-    
-        $nextUniqueNumber = 1;
-    
-        // 2. Jika data ada, ambil nomor terakhir dan increment
+
+        $nextNumber = 1;
         if ($lastAsset) {
-            $parts = explode('/', $lastAsset['kode']);
-            $lastUniqueNumber = (int)end($parts);
-            $nextUniqueNumber = $lastUniqueNumber + 1;
+            $parts = explode('/', $lastAsset['kode_aset']);
+            $lastNumber = intval(end($parts));
+            $nextNumber = $lastNumber + 1;
         }
-    
-        // 3. Format nomor unik menjadi dua digit (e.g., 01, 02)
-        $formattedUniqueNumber = str_pad($nextUniqueNumber, 2, '0', STR_PAD_LEFT);
-    
-        // Ambil singkatan dari master data
-        $subKategoriInfo = $this->subKategoriModel->find($subKategoriId);
-        $merkInfo = $this->merkModel->find($merkId);
-        $subKategoriCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $subKategoriInfo['nama_sub_kategori']), 0, 5));
-        $merkCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $merkInfo['nama_merk']), 0, 3));
-        $entitasCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entitas), 0, 5));
-    
-    
-        // 4. Gabungkan menjadi kode aset final
-        $newCode = "BTR/{$entitasCode}/{$tahun_beli}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
-    
-        return $newCode;
+
+        $nextNumberFormatted = str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
+
+        return 'BTR/' . $tahunBeli . '/' . $kodeSubKategoriMerk . '/' . $nextNumberFormatted;
     }
 
     /**
@@ -220,34 +219,38 @@ public function show($id = null)
                 $redirectTo = ($redirectPage === 'dashboard') ? '/dashboard' : '/aset';
 
                 return redirect()->to($redirectTo)
-                                 ->with('error', 'Gagal! Serial Number sudah terdaftar pada aset lain.')
-                                 ->with('conflicting_asset_id', $existingAset['id']);
+                                ->with('error', 'Gagal! Serial Number sudah terdaftar pada aset lain.')
+                                ->with('conflicting_asset_id', $existingAset['id']);
             }
         }
         
-        $entitas = $this->request->getPost('entitas_pembelian');
+        // Variabel-variabel yang dibutuhkan untuk generate kode
         $tahun_beli = $this->request->getPost('tahun_beli');
         $subKategoriId = $this->request->getPost('sub_kategori_id');
         $merkId = $this->request->getPost('merk_id');
-    
-        $newAssetCode = $this->generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId);
+
+        // --- PERUBAHAN DI SINI ---
+        // Panggil fungsi generateUniqueAssetCode TANPA menyertakan entitas pembelian.
+        $newAssetCode = $this->generateUniqueAssetCode($tahun_beli, $subKategoriId, $merkId);
+
+        // Variabel entitas tetap diambil untuk disimpan ke database, tapi tidak dipakai untuk generate kode.
+        $entitas = $this->request->getPost('entitas_pembelian');
 
         $data = [
-            'kode'              => $newAssetCode,
-            'kategori_id'       => $this->request->getPost('kategori_id'),
-            'sub_kategori_id'   => $subKategoriId,
-            'merk_id'           => $merkId,
-            'tipe_id'           => $this->request->getPost('tipe_id'),
-            'serial_number'     => $this->request->getPost('serial_number'),
-            'tahun_beli'             => $tahun_beli,
-            'lokasi_id'         => $this->request->getPost('lokasi_id'), 
-            'status'            => $this->request->getPost('status'),
-            'keterangan'        => $this->request->getPost('keterangan'),
-            'harga_beli'        => $this->request->getPost('harga_beli'),
-            'entitas_pembelian' => strtoupper($entitas),
-            'user_pengguna'  => strtoupper($this->request->getPost('user_pengguna'))
+            'kode'                => $newAssetCode, // Gunakan kode aset yang baru
+            'kategori_id'         => $this->request->getPost('kategori_id'),
+            'sub_kategori_id'     => $subKategoriId,
+            'merk_id'             => $merkId,
+            'tipe_id'             => $this->request->getPost('tipe_id'),
+            'serial_number'       => !empty($this->request->getPost('serial_number')) ? $this->request->getPost('serial_number') : null,
+            'tahun_beli'          => $tahun_beli,
+            'lokasi_id'           => $this->request->getPost('lokasi_id'), 
+            'status'              => $this->request->getPost('status'),
+            'keterangan'          => $this->request->getPost('keterangan'),
+            'harga_beli'          => $this->request->getPost('harga_beli'),
+            'entitas_pembelian'   => !empty($entitas) ? strtoupper($entitas) : null,
+            'user_pengguna'       => !empty($this->request->getPost('user_pengguna')) ? strtoupper($this->request->getPost('user_pengguna')) : null
         ];
-
 
         if ($this->asetModel->save($data)) {
             $newAsetId = $this->asetModel->getInsertID();
@@ -295,8 +298,8 @@ public function show($id = null)
                 ->find($newAsetId);
 
             return redirect()->to($redirectTo)
-                             ->with('success', 'Aset baru berhasil ditambahkan!')
-                             ->with('new_aset', $newAset);
+                            ->with('success', 'Aset baru berhasil ditambahkan!')
+                            ->with('new_aset', $newAset);
         } else {
             return redirect()->back()->withInput()->with('error', 'Gagal menambahkan aset.');
         }

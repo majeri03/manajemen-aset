@@ -36,9 +36,9 @@ class ImportController extends BaseController
         return view('import/index', $data);
     }
 
-public function upload()
+    public function upload()
     {
-     $file = $this->request->getFile('excel_file');
+        $file = $this->request->getFile('excel_file');
 
         if ($file->isValid() && !$file->hasMoved()) {
             $asetModel = new AsetModel();
@@ -82,9 +82,9 @@ public function upload()
                     'tipe'              => strtoupper(trim($sheet[$i]['D'])),
                     'serial_number'     => $serialNumber,
                     'entitas_pembelian' => strtoupper(trim($sheet[$i]['F'])), // Kolom Entitas 'F'
-                    'tahun_beli'             => trim($sheet[$i]['G']),             // Kolom tahun_beli 'G'
+                    'tahun_beli'        => trim($sheet[$i]['G']),             // Kolom tahun_beli 'G'
                     'harga_beli'        => trim($sheet[$i]['H']),             // Kolom Harga Beli 'H'
-                    'user_pengguna'  => strtoupper(trim($sheet[$i]['I'])), // Kolom USER PENGGUNA 'I'
+                    'user_pengguna'     => strtoupper(trim($sheet[$i]['I'])), // Kolom USER PENGGUNA 'I'
                     'lokasi'            => strtoupper(trim($sheet[$i]['J'])), // Kolom Lokasi 'J'
                     'status'            => $statusFinal,
                     'keterangan'        => strtoupper(trim($sheet[$i]['L'])), // Kolom Keterangan 'L'
@@ -105,37 +105,37 @@ public function upload()
         return redirect()->to('/import')->with('success', 'File berhasil diunggah. Silakan validasi data di bawah.');
     }
     
-    private function generateUniqueAssetCode($entitas, $tahun_beli, $subKategoriId, $merkId)
+    private function generateUniqueAssetCode($tahunBeli, $subKategoriId, $merkId)
     {
-        $asetModel = new AsetModel();
-        $subKategoriModel = new SubKategoriModel();
-        $merkModel = new MerkModel();
+        $subKategoriModel = new \App\Models\SubKategoriModel();
+        $merkModel = new \App\Models\MerkModel();
+        $asetModel = new \App\Models\AsetModel();
 
+        $subKategori = $subKategoriModel->find($subKategoriId);
+        $merk = $merkModel->find($merkId);
+
+        $kodeSubKategori = strtoupper(substr($subKategori['nama_sub_kategori'], 0, 5));
+        $kodeMerk = strtoupper(substr($merk['nama_merk'], 0, 3));
+        $kodeSubKategoriMerk = $kodeSubKategori . '_' . $kodeMerk;
+
+        // Kunci baru untuk keunikan: Tahun, Sub Kategori, dan Merk
         $lastAsset = $asetModel
-            ->where('entitas_pembelian', $entitas)
+            ->where('tahun_beli', $tahunBeli)
             ->where('sub_kategori_id', $subKategoriId)
+            ->where('merk_id', $merkId)
             ->orderBy('id', 'DESC')
             ->first();
-        
-        $nextUniqueNumber = 1;
 
+        $nextNumber = 1;
         if ($lastAsset) {
-            $parts = explode('/', $lastAsset['kode']);
-            $lastUniqueNumber = (int)end($parts);
-            $nextUniqueNumber = $lastUniqueNumber + 1;
+            $parts = explode('/', $lastAsset['kode_aset']);
+            $lastNumber = intval(end($parts));
+            $nextNumber = $lastNumber + 1;
         }
 
-        $formattedUniqueNumber = str_pad($nextUniqueNumber, 2, '0', STR_PAD_LEFT);
+        $nextNumberFormatted = str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
 
-        $subKategoriInfo = $subKategoriModel->find($subKategoriId);
-        $merkInfo = $merkModel->find($merkId);
-
-        $subKategoriCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $subKategoriInfo['nama_sub_kategori'] ?? 'SUB'), 0, 5));
-        $merkCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $merkInfo['nama_merk'] ?? 'MRK'), 0, 3));
-        $entitasCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entitas), 0, 5));
-        
-        $newCode = "BTR/{$entitasCode}/{$tahun_beli}/{$subKategoriCode}/{$merkCode}/{$formattedUniqueNumber}";
-        return $newCode;
+        return 'BTR/' . $tahunBeli . '/' . $kodeSubKategoriMerk . '/' . $nextNumberFormatted;
     }
 
     public function save()
