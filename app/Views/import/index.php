@@ -54,6 +54,31 @@
     .ui-autocomplete {
         z-index: 9999 !important; /* Memastikan daftar autocomplete muncul di atas elemen lain */
     }
+
+    .table-wrapper { 
+        overflow-x: auto; 
+        max-height: 70vh; /* Maksimal tinggi 70% dari layar */
+        overflow-y: auto; /* Menambahkan scroll vertikal PADA TABEL */
+        position: relative;
+    }
+    .table-wrapper table { 
+        width: 100%; 
+        min-width: 1800px; 
+    }
+    .table-wrapper th, .table-wrapper td { 
+        white-space: nowrap; 
+        vertical-align: middle; 
+    }
+
+    .table-wrapper thead th {
+        position: -webkit-sticky; /* Untuk kompatibilitas browser Safari */
+        position: sticky;
+        top: 0;
+        z-index: 10; /* Memastikan header selalu di atas konten lain */
+        background-color: #f8f9fa; /* Warna latar belakang agar tidak transparan */
+        box-shadow: inset 0 -2px 0 #dee2e6; /* Memberi garis bawah visual */
+    }
+
 </style>
 
 <div class="main-header mb-4">

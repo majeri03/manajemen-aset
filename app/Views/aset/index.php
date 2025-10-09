@@ -89,6 +89,27 @@ Data Aset
         font-size: 2.5rem;
         color: #6c757d; /* Warna ikon abu-abu */
     }
+
+    /* =================================
+    CSS UNTUK FREEZE KOLOM'
+    =================================
+    */
+    /* Memberi batas tinggi dan scroll pada pembungkus tabel */
+    .table-responsive {
+        max-height: 75vh; /* Maksimal tinggi 75% dari layar */
+        overflow-y: auto; /* Menambahkan scroll vertikal */
+    }
+
+    /* Membuat header tabel menempel di atas */
+    .table-responsive thead th {
+        position: -webkit-sticky; /* Untuk Safari */
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #ffffff; /* Warna putih agar menyatu dengan card */
+        box-shadow: inset 0 -2px 0 #dee2e6; /* Garis bawah visual */
+    }
+
 </style>
 <div class="main-header mb-4">
     <div class="row align-items-center">
