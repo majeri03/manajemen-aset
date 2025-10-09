@@ -527,13 +527,60 @@ $(document).ready(function() {
         });
     });
 
+    function validateRowRealtime($row) {
+    const rowIndex = $row.data('row-index');
+    if (typeof rowIndex === 'undefined') return;
+
+    const $errorRow = $(`.validation-message-row[data-row-index="${rowIndex}"]`);
+    const $errorList = $errorRow.find('.error-list');
+
+    const getVal = (name) => $row.find(`[name="aset[${rowIndex}][${name}]"]`).val();
+
+    const rowData = {
+        kategori_id: getVal('kategori_id'),
+        sub_kategori_id: getVal('sub_kategori_id'),
+        merk_id: getVal('merk_id'),
+        tipe_id: getVal('tipe_id'),
+        serial_number: getVal('serial_number'),
+        tahun_beli: getVal('tahun_beli'),
+        lokasi_id: getVal('lokasi_id'),
+        status: getVal('status')
+    };
+
+    $.ajax({
+        url: "<?= base_url('import/validate-row') ?>",
+        method: 'POST',
+        data: {
+            '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+            rowData: rowData
+        },
+        dataType: 'json',
+        success: function(response) {
+            $errorList.empty(); // Selalu kosongkan list error lama
+
+            if (response.status === 'invalid' && response.errors.length > 0) {
+                // JIKA TIDAK VALID: Tampilkan error
+                response.errors.forEach(function(error) {
+                    $errorList.append(`<li>${error}</li>`);
+                });
+                $row.addClass('table-warning').removeClass('is-valid');
+                $errorRow.show(); // Tampilkan baris error
+            } else if (response.status === 'valid') {
+                // JIKA VALID: Sembunyikan error
+                $row.removeClass('table-warning').addClass('is-valid');
+                $errorRow.hide(); // Sembunyikan baris error
+            }
+        }
+    });
+}
+
     $('#import-table tbody').on('change', 'input, select', function() {
         const $el = $(this);
         const $row = $el.closest('tr[data-row-index]');
-        
-        // Panggil validasi UI setiap kali ada perubahan
-        validateRowUI($row);
-        
+
+        // Panggil validasi real-time setiap kali ada perubahan
+        validateRowRealtime($row);
+
         // Tetap kirim update ke sesi backend
         const rowIndex = $row.data('row-index');
         const nameAttr = this.name;

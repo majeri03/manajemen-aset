@@ -593,5 +593,46 @@ public function validateRow()
         return $this->response->setJSON(['success' => false, 'errors' => $errors]);
     }
 }
+public function validate_row()
+{
+    // Pastikan ini adalah request AJAX
+    if (!$this->request->isAJAX()) {
+        return $this->response->setStatusCode(403, 'Forbidden');
+    }
+
+    $rowData = $this->request->getPost('rowData');
+
+    if (empty($rowData)) {
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Data tidak lengkap.']);
+    }
+
+    $errors = [];
+    $asetModel = new AsetModel(); // Panggil AsetModel
+
+    // --- Logika Validasi (disederhanakan dari method save()) ---
+    if (empty($rowData['kategori_id'])) $errors[] = 'Kategori wajib diisi.';
+    if (empty($rowData['sub_kategori_id'])) $errors[] = 'Sub Kategori wajib diisi.';
+    if (empty($rowData['merk_id'])) $errors[] = 'Merk wajib diisi.';
+    if (empty($rowData['tipe_id'])) $errors[] = 'Tipe wajib diisi.';
+    if (empty($rowData['tahun_beli'])) $errors[] = 'Tahun Beli wajib diisi.';
+    if (empty($rowData['lokasi_id'])) $errors[] = 'Lokasi wajib diisi.';
+
+    if (!empty($rowData['serial_number'])) {
+        // Cek duplikasi hanya jika serial number diisi
+        if ($asetModel->where('serial_number', $rowData['serial_number'])->first()) {
+            $errors[] = 'Serial Number sudah ada di database.';
+        }
+    }
+
+    // --- Kirim Respons ---
+    if (empty($errors)) {
+        // Jika tidak ada error, kirim status 'valid'
+        return $this->response->setJSON(['status' => 'valid']);
+    } else {
+        // Jika ada error, kirim status 'invalid' beserta daftar errornya
+        return $this->response->setJSON(['status' => 'invalid', 'errors' => $errors]);
+    }
+}
+
 
 }
