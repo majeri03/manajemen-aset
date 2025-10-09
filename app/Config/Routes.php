@@ -124,10 +124,12 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->get('import/template', 'ImportController::downloadTemplate');
         $routes->post('import/update-session', 'ImportController::updateSessionData');
         $routes->post('import/delete-master', 'ImportController::deleteMasterData');
+        $routes->post('import/validate-row', 'ImportController::validate_row');
 
         $routes->post('/master-data/add-sub-kategori', 'MasterDataController::addSubKategori', ['filter' => 'auth']);
         $routes->post('/master-data/add-tipe', 'MasterDataController::addTipe', ['filter' => 'auth']);
         $routes->post('/import/validate-row', 'ImportController::validateRow', ['filter' => 'auth']);
+
         
         //download serah terima pdf
         $routes->get('aset/generate-pdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
