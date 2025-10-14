@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/main_dashboard') ?>
+<!-- <?= $this->extend('layouts/main_dashboard') ?>
 
 <?= $this->section('title') ?>
 <?= esc($title) ?>
@@ -82,4 +82,4 @@
         </div>
     </div>
 </div>
-<?= $this->endSection() ?>
+<?= $this->endSection() ?> -->

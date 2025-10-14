@@ -27,7 +27,7 @@ class AsetModel extends Model
         'status',
         'harga_beli',
         'entitas_pembelian',
-        'user_pengguna', // <-- TAMBAHKAN INI
+        'user_pengguna',
         'qrcode',
     ];
    
@@ -62,4 +62,17 @@ class AsetModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    // ↓↓↓ FUNGSI BARU DITAMBAHKAN DI SINI ↓↓↓
+    public function getAsetDetail($id)
+    {
+        return $this->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe, kar.nama_karyawan')
+                    ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+                    ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+                    ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+                    ->join('merk m', 'm.id = aset.merk_id', 'left')
+                    ->join('tipe t', 't.id = aset.tipe_id', 'left')
+                    ->join('karyawan kar', 'kar.id = aset.user_pengguna', 'left')
+                    ->find($id);
+    }
 }

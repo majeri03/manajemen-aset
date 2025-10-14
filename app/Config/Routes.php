@@ -11,6 +11,7 @@ $routes->get('/', 'AuthController::login'); // Diarahkan ke login jika belum mas
 $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::processLogin');
 $routes->get('/logout', 'AuthController::logout');
+$routes->get('/aset/info/(:num)', 'AsetController::infoPublik/$1');
 
 // RUTE BARU UNTUK LUPA PASSWORD
 $routes->get('/forgot-password', 'AuthController::forgotPassword');
@@ -34,8 +35,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('aset/(:num)', 'AsetController::show/$1'); // Detail aset
 
     // Stock Opname (Fitur utama Staff)
-    $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
-    $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
+    // $routes->get('stockopname/aset/(:num)', 'StockOpnameController::view/$1');
+    // $routes->post('stockopname/process/(:num)', 'StockOpnameController::process/$1');
 
     // Permintaan (Hanya untuk membuat pengajuan baru)
     $routes->get('requests/new/(:num)', 'RequestController::newRequest/$1');
