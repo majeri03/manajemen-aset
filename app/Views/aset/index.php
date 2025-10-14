@@ -296,20 +296,40 @@ Data Aset
                                     <td><?= esc($aset['nama_lokasi']) ?></td>
                                     <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
                                     <td>
-                                        <button type="button" class="btn btn-info btn-sm view-detail" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>" title="Lihat Detail">
-                                            <i class="bi bi-eye-fill"></i>
-                                        </button>
-                                        
-                                        <?php if (!empty($aset['dokumen'])): ?>
-                                        <button class="btn btn-secondary btn-sm view-docs" title="Lihat Dokumen" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
-                                            <i class="bi bi-paperclip"></i>
-                                        </button>
-                                        <?php endif; ?>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <button class="dropdown-item view-detail" type="button" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>">
+                                                        <i class="bi bi-eye-fill me-2"></i>Lihat Detail
+                                                    </button>
+                                                </li>
 
-                                        <?php if (session()->get('role') === 'admin'): ?>
-                                        <a href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>" class="btn btn-warning btn-sm" title="Edit Aset"><i class="bi bi-pencil-fill"></i></a>
-                                        <a href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>" class="btn btn-danger btn-sm" title="Hapus Aset"><i class="bi bi-trash-fill"></i></a>
-                                        <?php endif; ?>
+                                                <?php if (!empty($aset['dokumen'])): ?>
+                                                <li>
+                                                    <button class="dropdown-item view-docs" type="button" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
+                                                        <i class="bi bi-paperclip me-2"></i>Lihat Dokumen
+                                                    </button>
+                                                </li>
+                                                <?php endif; ?>
+
+                                                <?php if (session()->get('role') === 'admin'): ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
+                                                        <i class="bi bi-pencil-fill me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>">
+                                                        <i class="bi bi-trash-fill me-2"></i>Hapus
+                                                    </a>
+                                                </li>
+                                                <?php endif; ?>
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

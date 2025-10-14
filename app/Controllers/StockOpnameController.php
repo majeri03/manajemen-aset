@@ -70,143 +70,143 @@ class StockOpnameController extends BaseController
      * Menampilkan form untuk verifikasi/stock opname aset.
      * URL: /stockopname/aset/{id}
      */
-    public function view($asetId)
-    {
-        $db = \Config\Database::connect();
-        $userModel = new \App\Models\UserModel(); // Panggil UserModel
+    // public function view($asetId)
+    // {
+    //     $db = \Config\Database::connect();
+    //     $userModel = new \App\Models\UserModel(); // Panggil UserModel
 
-        // Cek 1: Apakah mode SO aktif secara global?
-        $setting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
-        if (!$setting || $setting->setting_value !== 'on') {
-            return view('stock_opname/inactive', ['title' => 'Akses Ditolak']);
-        }
+    //     // Cek 1: Apakah mode SO aktif secara global?
+    //     $setting = $db->table('settings')->where('setting_key', 'stock_opname_mode')->get()->getRow();
+    //     if (!$setting || $setting->setting_value !== 'on') {
+    //         return view('stock_opname/inactive', ['title' => 'Akses Ditolak']);
+    //     }
 
-        // Cek 2: Apakah pengguna yang login punya izin?
-        $currentUser = $userModel->find(session()->get('user_id'));
-        if (!$currentUser || !$currentUser->can_perform_so) {
-            return view('stock_opname/inactive', [
-                'title' => 'Akses Ditolak',
-                'message' => 'Anda tidak memiliki izin untuk melakukan Stock Opname. Silakan hubungi administrator.'
-            ]);
-        }
+    //     // Cek 2: Apakah pengguna yang login punya izin?
+    //     $currentUser = $userModel->find(session()->get('user_id'));
+    //     if (!$currentUser || !$currentUser->can_perform_so) {
+    //         return view('stock_opname/inactive', [
+    //             'title' => 'Akses Ditolak',
+    //             'message' => 'Anda tidak memiliki izin untuk melakukan Stock Opname. Silakan hubungi administrator.'
+    //         ]);
+    //     }
 
-        // --- Jika semua pengecekan lolos, lanjutkan seperti biasa ---
-        $asetModel = new AsetModel();
+    //     // --- Jika semua pengecekan lolos, lanjutkan seperti biasa ---
+    //     $asetModel = new AsetModel();
 
-        $aset = $asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
-            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
-            ->join('merk m', 'm.id = aset.merk_id', 'left')
-            ->join('tipe t', 't.id = aset.tipe_id', 'left')
-            ->find($asetId);
+    //     $aset = $asetModel
+    //         ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe')
+    //         ->join('kategori k', 'k.id = aset.kategori_id', 'left')
+    //         ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+    //         ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+    //         ->join('merk m', 'm.id = aset.merk_id', 'left')
+    //         ->join('tipe t', 't.id = aset.tipe_id', 'left')
+    //         ->find($asetId);
 
-        if (!$aset) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Aset dengan ID ' . $asetId . ' tidak ditemukan.');
-        }
+    //     if (!$aset) {
+    //         throw new \CodeIgniter\Exceptions\PageNotFoundException('Aset dengan ID ' . $asetId . ' tidak ditemukan.');
+    //     }
 
-        $lokasiModel = new LokasiModel();
+    //     $lokasiModel = new LokasiModel();
 
-        $data = [
-            'title'       => 'Verifikasi Aset: ' . esc($aset['kode']),
-            'aset'        => $aset,
-            'lokasi_list' => $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
-        ];
+    //     $data = [
+    //         'title'       => 'Verifikasi Aset: ' . esc($aset['kode']),
+    //         'aset'        => $aset,
+    //         'lokasi_list' => $lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+    //     ];
 
-        return view('stock_opname/form', $data);
-    }
+    //     return view('stock_opname/form', $data);
+    // }
 
     /**
      * Memproses data dari form stock opname.
      */
-    public function process($asetId)
-    {
-        $asetModel = new AsetModel();
-        $db = \Config\Database::connect();
+    // public function process($asetId)
+    // {
+    //     $asetModel = new AsetModel();
+    //     $db = \Config\Database::connect();
 
-        $asetAsli = $asetModel->find($asetId);
-        if (!$asetAsli) {
-            return redirect()->to('/dashboard')->with('error', 'Aset tidak ditemukan.');
-        }
+    //     $asetAsli = $asetModel->find($asetId);
+    //     if (!$asetAsli) {
+    //         return redirect()->to('/dashboard')->with('error', 'Aset tidak ditemukan.');
+    //     }
 
-        $dataForm = [
-            'lokasi_id'  => $this->request->getPost('lokasi_id'),
-            'status'     => $this->request->getPost('status'),
-            'keterangan' => $this->request->getPost('keterangan'),
-        ];
+    //     $dataForm = [
+    //         'lokasi_id'  => $this->request->getPost('lokasi_id'),
+    //         'status'     => $this->request->getPost('status'),
+    //         'keterangan' => $this->request->getPost('keterangan'),
+    //     ];
 
-        $perubahan = [];
-        if ($asetAsli['lokasi_id'] != $dataForm['lokasi_id']) {
-            $perubahan['lokasi_id'] = $dataForm['lokasi_id'];
-        }
-        if ($asetAsli['status'] != $dataForm['status']) {
-            $perubahan['status'] = $dataForm['status'];
-        }
-        if ($asetAsli['keterangan'] != $dataForm['keterangan']) {
-            $perubahan['keterangan'] = $dataForm['keterangan'];
-        }
+    //     $perubahan = [];
+    //     if ($asetAsli['lokasi_id'] != $dataForm['lokasi_id']) {
+    //         $perubahan['lokasi_id'] = $dataForm['lokasi_id'];
+    //     }
+    //     if ($asetAsli['status'] != $dataForm['status']) {
+    //         $perubahan['status'] = $dataForm['status'];
+    //     }
+    //     if ($asetAsli['keterangan'] != $dataForm['keterangan']) {
+    //         $perubahan['keterangan'] = $dataForm['keterangan'];
+    //     }
         
-        $adaPerubahan = !empty($perubahan);
+    //     $adaPerubahan = !empty($perubahan);
 
-        $historyData = [
-            'aset_id'       => $asetId,
-            'user_id'       => session()->get('user_id'),
-            'opname_at'     => date('Y-m-d H:i:s'),
-            'catatan'       => $dataForm['keterangan'],
-            'ada_perubahan' => $adaPerubahan,
-        ];
+    //     $historyData = [
+    //         'aset_id'       => $asetId,
+    //         'user_id'       => session()->get('user_id'),
+    //         'opname_at'     => date('Y-m-d H:i:s'),
+    //         'catatan'       => $dataForm['keterangan'],
+    //         'ada_perubahan' => $adaPerubahan,
+    //     ];
         
-        // KONDISI 1: Aset sudah pernah dicek dalam siklus ini.
-    if ($asetAsli['status_verifikasi'] === 'Sudah Dicek') {
-        // Jika sudah dicek TAPI ada perubahan baru yang diajukan, izinkan.
-        if ($adaPerubahan) {
-            // Buat permintaan perubahan untuk disetujui admin
-            $db->table('aset_update_requests')->insert([
-                'aset_id'       => $asetId,
-                'user_id'       => session()->get('user_id'),
-                'proposed_data' => json_encode($perubahan),
-                'status'        => 'pending',
-                'created_at'    => date('Y-m-d H:i:s'),
-            ]);
-            return redirect()->to('stockopname/aset/' . $asetId)->with('success', 'Pengajuan perubahan tambahan berhasil dikirim.');
-        } 
-        // Jika sudah dicek DAN tidak ada perubahan, tolak.
-        else {
-            return redirect()->to('stockopname/aset/' . $asetId)->with('info', 'Aset sudah diverifikasi dan tidak ada perubahan data yang diajukan.');
-        }
-    } 
-    // KONDISI 2: Aset ini belum pernah dicek dalam siklus ini.
-    else {
-        // Tandai aset ini sebagai 'Sudah Dicek' untuk siklus ini.
-        $asetModel->update($asetId, ['status_verifikasi' => 'Sudah Dicek']);
+    //     // KONDISI 1: Aset sudah pernah dicek dalam siklus ini.
+    // if ($asetAsli['status_verifikasi'] === 'Sudah Dicek') {
+    //     // Jika sudah dicek TAPI ada perubahan baru yang diajukan, izinkan.
+    //     if ($adaPerubahan) {
+    //         // Buat permintaan perubahan untuk disetujui admin
+    //         $db->table('aset_update_requests')->insert([
+    //             'aset_id'       => $asetId,
+    //             'user_id'       => session()->get('user_id'),
+    //             'proposed_data' => json_encode($perubahan),
+    //             'status'        => 'pending',
+    //             'created_at'    => date('Y-m-d H:i:s'),
+    //         ]);
+    //         return redirect()->to('stockopname/aset/' . $asetId)->with('success', 'Pengajuan perubahan tambahan berhasil dikirim.');
+    //     } 
+    //     // Jika sudah dicek DAN tidak ada perubahan, tolak.
+    //     else {
+    //         return redirect()->to('stockopname/aset/' . $asetId)->with('info', 'Aset sudah diverifikasi dan tidak ada perubahan data yang diajukan.');
+    //     }
+    // } 
+    // // KONDISI 2: Aset ini belum pernah dicek dalam siklus ini.
+    // else {
+    //     // Tandai aset ini sebagai 'Sudah Dicek' untuk siklus ini.
+    //     $asetModel->update($asetId, ['status_verifikasi' => 'Sudah Dicek']);
 
-        // Buat catatan di riwayat verifikasi.
-        $db->table('stock_opname_history')->insert([
-            'aset_id'       => $asetId,
-            'user_id'       => session()->get('user_id'),
-            'opname_at'     => date('Y-m-d H:i:s'),
-            'catatan'       => "Verifikasi dari form manual: " . $dataForm['keterangan'],
-            'ada_perubahan' => $adaPerubahan,
-        ]);
+    //     // Buat catatan di riwayat verifikasi.
+    //     $db->table('stock_opname_history')->insert([
+    //         'aset_id'       => $asetId,
+    //         'user_id'       => session()->get('user_id'),
+    //         'opname_at'     => date('Y-m-d H:i:s'),
+    //         'catatan'       => "Verifikasi dari form manual: " . $dataForm['keterangan'],
+    //         'ada_perubahan' => $adaPerubahan,
+    //     ]);
 
-        // Jika pada verifikasi pertama ini ada perubahan, ajukan juga.
-        if ($adaPerubahan) {
-            $db->table('aset_update_requests')->insert([
-                'aset_id'       => $asetId,
-                'user_id'       => session()->get('user_id'),
-                'proposed_data' => json_encode($perubahan),
-                'status'        => 'pending',
-                'created_at'    => date('Y-m-d H:i:s'),
-            ]);
-            $pesan = 'Aset berhasil diverifikasi dan usulan perubahan Anda telah diajukan.';
-        } else {
-            $pesan = 'Aset berhasil diverifikasi tanpa ada perubahan.';
-        }
+    //     // Jika pada verifikasi pertama ini ada perubahan, ajukan juga.
+    //     if ($adaPerubahan) {
+    //         $db->table('aset_update_requests')->insert([
+    //             'aset_id'       => $asetId,
+    //             'user_id'       => session()->get('user_id'),
+    //             'proposed_data' => json_encode($perubahan),
+    //             'status'        => 'pending',
+    //             'created_at'    => date('Y-m-d H:i:s'),
+    //         ]);
+    //         $pesan = 'Aset berhasil diverifikasi dan usulan perubahan Anda telah diajukan.';
+    //     } else {
+    //         $pesan = 'Aset berhasil diverifikasi tanpa ada perubahan.';
+    //     }
         
-        return redirect()->to('/dashboard')->with('success', $pesan);
-        }
-    }
+    //     return redirect()->to('/dashboard')->with('success', $pesan);
+    //     }
+    // }
     public function export()
     {
         $db = \Config\Database::connect();
@@ -584,9 +584,9 @@ class StockOpnameController extends BaseController
             if ($asetAsli['status'] != $asetData['status']) {
                 $perubahan['status'] = $asetData['status'];
             }
-            if (($asetData['keterangan'] !== null) && ($asetAsli['keterangan'] != $asetData['keterangan'])) {
-                $perubahan['keterangan'] = $asetData['keterangan'];
-            }
+            // if (($asetData['keterangan'] !== null) && ($asetAsli['keterangan'] != $asetData['keterangan'])) {
+            //     $perubahan['keterangan'] = $asetData['keterangan'];
+            // }
             $adaPerubahan = !empty($perubahan);
 
             // Catat ke riwayat stock opname

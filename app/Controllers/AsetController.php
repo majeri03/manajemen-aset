@@ -277,7 +277,7 @@ public function show($id = null)
                     }
                 }
             }
-            $url = base_url('stockopname/aset/' . $newAsetId);
+            $url = base_url('aset/info/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
             }
@@ -980,6 +980,30 @@ public function barcodes()
 
         return $asets;
     }
+
+    public function infoPublik($id)
+{
+    // Ambil detail lengkap aset
+    $aset = $this->asetModel->getAsetDetail($id);
+
+    // Jika aset tidak ditemukan, tampilkan error 404
+    if (empty($aset)) {
+        throw new \CodeIgniter\Exceptions\PageNotFoundException('Informasi Aset tidak ditemukan.');
+    }
+
+    // Ambil data dokumen terkait aset ini
+    $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+    $dokumen = $dokumentasiModel->where('aset_id', $id)->findAll();
+
+    $data = [
+        'title'   => 'Informasi Aset: ' . esc($aset['kode']),
+        'aset'    => $aset,
+        'dokumen' => $dokumen,
+    ];
+
+    // Tampilkan view yang sudah kita rename tadi
+    return view('aset/info_publik', $data);
+}
 
 
 }
