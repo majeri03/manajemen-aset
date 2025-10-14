@@ -73,9 +73,9 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-person-badge-fill"></i></span>
                                         <select class="form-select" id="role" name="role" required>
-                                            <option value="admin" <?= old('role', $user->role) === 'admin' ? 'selected' : '' ?>>Admin</option>
-                                            <option value="manager" <?= old('role', $user->role) === 'manager' ? 'selected' : '' ?>>Manager</option>
-                                            <option value="staff" <?= old('role', $user->role) === 'staff' ? 'selected' : '' ?>>Staff</option>
+                                             <option value="super_admin" <?= old('role') === 'super_admin' ? 'selected' : '' ?>>Super Admin</option>
+                                                <option value="admin" <?= old('role') === 'admin' ? 'selected' : '' ?>>Admin</option>
+                                                <option value="staff" <?= old('role') === 'staff' ? 'selected' : '' ?>>Staff</option>
                                         </select>
                                     </div>
                                 </div>
