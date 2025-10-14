@@ -22,8 +22,8 @@
             <input type="text" name="keyword" class="form-control" placeholder="Cari nama atau email..." value="<?= esc($filters['keyword'] ?? '') ?>">
             <select name="role" class="form-select" style="width: 150px;">
                 <option value="">Semua Role</option>
+                <option value="super_admin" <?= ($filters['role'] ?? '') === 'super_admin' ? 'selected' : '' ?>>Super Admin</option>
                 <option value="admin" <?= ($filters['role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
-                <option value="manager" <?= ($filters['role'] ?? '') === 'manager' ? 'selected' : '' ?>>Manager</option>
                 <option value="staff" <?= ($filters['role'] ?? '') === 'staff' ? 'selected' : '' ?>>Staff</option>
             </select>
             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
@@ -62,8 +62,8 @@
         <div class="badge bg-success fs-6 fw-normal">Aktif: <?= $statusCounts['active'] ?></div>
         <div class="badge bg-secondary fs-6 fw-normal">Non-Aktif: <?= $statusCounts['inactive'] ?></div>
         <div class="vr mx-2"></div>
+        <div class="badge bg-info text-dark fs-6 fw-normal">Super Admin: <?= $roleCounts['super_admin'] ?></div>
         <div class="badge bg-info text-dark fs-6 fw-normal">Admin: <?= $roleCounts['admin'] ?></div>
-        <div class="badge bg-info text-dark fs-6 fw-normal">Manager: <?= $roleCounts['manager'] ?></div>
         <div class="badge bg-info text-dark fs-6 fw-normal">Staff: <?= $roleCounts['staff'] ?></div>
     </div>
     <hr class="mt-0 mb-4">

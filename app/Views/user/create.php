@@ -37,8 +37,8 @@
         <div class="mb-3">
             <label for="role" class="form-label">Role</label>
             <select class="form-select" id="role" name="role" required>
+                 <option value="super_admin" <?= old('role') === 'super_admin' ? 'selected' : '' ?>>Super Admin</option>
                 <option value="admin" <?= old('role') === 'admin' ? 'selected' : '' ?>>Admin</option>
-                <option value="manager" <?= old('role') === 'manager' ? 'selected' : '' ?>>Manager</option>
                 <option value="staff" <?= old('role') === 'staff' ? 'selected' : '' ?>>Staff</option>
             </select>
         </div>

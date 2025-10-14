@@ -33,8 +33,8 @@ public function index()
     // ===== TAMBAHKAN LOGIKA STATISTIK INI =====
     $totalUsers = count($userModel->findAll()); // Hitung total sebelum filter
     $roleCounts = [
+        'super_admin' => $userModel->where('role', 'super_admin')->countAllResults(),
         'admin'   => $userModel->where('role', 'admin')->countAllResults(),
-        'manager' => $userModel->where('role', 'manager')->countAllResults(),
         'staff'   => $userModel->where('role', 'staff')->countAllResults(),
     ];
     $statusCounts = [
