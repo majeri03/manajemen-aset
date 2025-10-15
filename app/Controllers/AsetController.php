@@ -20,6 +20,7 @@ use Dompdf\Dompdf;
 use App\Models\KaryawanModel;
 
 
+
 /**
  * @property \CodeIgniter\HTTP\IncomingRequest $request
  */
