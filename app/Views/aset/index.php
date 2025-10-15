@@ -65,6 +65,24 @@ Data Aset
             font-size: 6pt; 
             margin: 2px 0 0 0; 
         }
+
+    }
+    .table-responsive .table th,
+    .table-responsive .table td {
+        white-space: nowrap; /* Mencegah teks turun baris */
+        min-width: 150px; /* Beri lebar minimal untuk setiap kolom */
+    }
+    /* Beri lebar khusus untuk kolom yang sering panjang */
+    .table th:contains("KODE ASET"), .table td:nth-child(1),
+    .table th:contains("SERIAL NUMBER"), .table td:nth-child(6) {
+        min-width: 180px;
+    }
+    .table th:contains("KETERANGAN"), .table td:nth-child(13) {
+        min-width: 250px;
+        white-space: normal; /* Izinkan keterangan untuk turun baris */
+    }
+    .table th:contains("AKSI"), .table td:nth-child(14) {
+        min-width: 80px;
     }
 
     /* =================================
@@ -266,84 +284,140 @@ Data Aset
 <div id="view-container">
 
     <div id="aset-view">
-        <div class="table-container shadow-sm">
-            <div class="d-flex justify-content-end">
-        <a href="<?= base_url('aset/laporan/export') . '?' . http_build_query($filters ?? []) ?>" class="btn btn-success"><i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel</a>
-    </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>KODE</th>
-                            <th>SUB KATEGORI</th>
-                            <th>MERK</th>
-                            <th>SERIAL NUMBER</th>
-                            <th>USER PENGGUNA</th>
-                            <th>LOKASI</th>
-                            <th>STATUS</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody id="asetTableBody">
-                        <?php if (!empty($asets)): ?>
-                            <?php foreach ($asets as $aset): ?>
-                                <tr>
-                                    <td><?= esc($aset['kode']) ?></td>
-                                    <td><?= esc($aset['nama_sub_kategori']) ?></td>
-                                    <td><?= esc($aset['nama_merk']) ?></td>
-                                    <td><?= esc($aset['serial_number'] ?: '-') ?></td>
-                                    <td><?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna'] ?: '-') ?></td>
-                                    <td><?= esc($aset['nama_lokasi']) ?></td>
-                                    <td><span class="badge bg-light text-dark"><?= esc($aset['status']) ?></span></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots-vertical"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <button class="dropdown-item view-detail" type="button" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>">
-                                                        <i class="bi bi-eye-fill me-2"></i>Lihat Detail
-                                                    </button>
-                                                </li>
+    <div class="table-container shadow-sm">
+        <div class="d-flex justify-content-end p-3">
+            <a href="<?= base_url('aset/laporan/export') . '?' . http_build_query($filters ?? []) ?>" class="btn btn-success"><i class="bi bi-file-earmark-excel-fill me-2"></i>Ekspor ke Excel</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>KODE ASET</th>
+                        <th>KATEGORI</th>
+                        <th>SUB KATEGORI</th>
+                        <th>MERK</th>
+                        <th>TIPE</th>
+                        <th>SERIAL NUMBER</th>
+                        <th>HARGA BELI</th>
+                        <th>ENTITAS PEMBELIAN</th>
+                        <th>LOKASI</th>
+                        <th>USER PENGGUNA</th>
+                        <th>STATUS</th>
+                        <th>UPDATE SO</th>
+                        <th>KETERANGAN</th>
+                        
+                        <th>AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="asetTableBody">
+                    <?php if (!empty($asets)): ?>
+                        <?php foreach ($asets as $aset): ?>
+                            <tr>
+                                <td class="fw-bold"><?= esc($aset['kode']) ?></td>
+                                <td><?= esc($aset['nama_kategori']) ?></td>
+                                <td><?= esc($aset['nama_sub_kategori']) ?></td>
+                                <td><?= esc($aset['nama_merk']) ?></td>
+                                <td><?= esc($aset['nama_tipe'] ?? '-') ?></td>
+                                <td><?= esc($aset['serial_number'] ?: '-') ?></td>
+                                <td><?= 'Rp ' . number_format($aset['harga_beli'] ?? 0, 0, ',', '.') ?></td>
+                                <td><?= esc($aset['entitas_pembelian'] ?: '-') ?></td>
+                                <td><?= esc($aset['nama_lokasi']) ?></td>
+                                <td><?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna'] ?: '-') ?></td>
+                                <td>
+                                    <?php
+                                    $status = $aset['status'];
+                                    $badgeClass = '';
 
-                                                <?php if (!empty($aset['dokumen'])): ?>
-                                                <li>
-                                                    <button class="dropdown-item view-docs" type="button" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
-                                                        <i class="bi bi-paperclip me-2"></i>Lihat Dokumen
-                                                    </button>
-                                                </li>
-                                                <?php endif; ?>
+                                    if ($status == 'Baik Terpakai') {
+                                        $badgeClass = 'bg-success';
+                                    } elseif ($status == 'Baik Tidak Terpakai') {
+                                        $badgeClass = 'bg-primary';
+                                    } elseif ($status == 'Rusak' || $status == 'Perbaikan') {
+                                        $badgeClass = 'bg-danger';
+                                    } else {
+                                        $badgeClass = 'bg-light text-dark'; // Warna default jika ada status lain
+                                    }
+                                    ?>
+                                    <span class="badge fs-7 <?= $badgeClass ?>"><?= esc($status) ?></span>
+                                </td>
+                                <td>
+                                    <?php
+                                    if (!empty($aset['last_so_date'])):
+                                        // Ambil tanggal hari ini dan tanggal SO terakhir
+                                        $today = new DateTime();
+                                        $lastSoDate = new DateTime($aset['last_so_date']);
+                                        
+                                        // Hitung selisih bulan
+                                        $interval = $today->diff($lastSoDate);
+                                        $monthsSinceSo = ($interval->y * 12) + $interval->m;
 
-                                                <?php if (session()->get('role') === 'admin'): ?>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
-                                                        <i class="bi bi-pencil-fill me-2"></i>Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>">
-                                                        <i class="bi bi-trash-fill me-2"></i>Hapus
-                                                    </a>
-                                                </li>
-                                                <?php endif; ?>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr><td colspan="8" class="text-center">Belum ada data aset.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-                <form action="" method="post" id="deleteForm">
-                    <?= csrf_field() ?><input type="hidden" name="_method" value="DELETE">
-                </form>
-            </div>
+                                        $badgeClass = '';
+                                        $badgeText = esc(date('d M Y, H:i', strtotime($aset['last_so_date'])));
+
+                                        // Tentukan warna badge berdasarkan selisih bulan
+                                        if ($monthsSinceSo >= 6) {
+                                            $badgeClass = 'bg-warning text-dark'; // Kuning jika sudah 6 bulan atau lebih
+                                        } else {
+                                            $badgeClass = 'bg-success'; // Hijau jika kurang dari 6 bulan
+                                        }
+                                    ?>
+                                        <span class="badge fs-7 <?= $badgeClass ?>"><?= $badgeText ?></span>
+                                    <?php else: ?>
+                                        <span class="badge fs-7 bg-secondary">Belum SO</span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td style="max-width: 200px; white-space: normal;"><?= esc($aset['keterangan'] ?: '-') ?></td>
+
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <button class="dropdown-item view-detail" type="button" data-bs-toggle="modal" data-bs-target="#detailAsetModal" data-id="<?= $aset['id'] ?>">
+                                                    <i class="bi bi-eye-fill me-2"></i>Lihat Detail
+                                                </button>
+                                            </li>
+
+                                            <?php if (!empty($aset['dokumen'])): ?>
+                                            <li>
+                                                <button class="dropdown-item view-docs" type="button" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
+                                                    <i class="bi bi-paperclip me-2"></i>Lihat Dokumen
+                                                </button>
+                                            </li>
+                                            <?php endif; ?>
+
+                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
+                                                    <i class="bi bi-pencil-fill me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete(this)" data-id="<?= $aset['id'] ?>" data-kode="<?= esc($aset['kode']) ?>">
+                                                    <i class="bi bi-trash-fill me-2"></i>Hapus
+                                                </a>
+                                            </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="14" class="text-center">Belum ada data aset.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <form action="" method="post" id="deleteForm">
+                <?= csrf_field() ?><input type="hidden" name="_method" value="DELETE">
+            </form>
         </div>
     </div>
+</div>
 
     <div id="dokumen-view" style="display: none;">
         <div class="table-responsive shadow-sm">

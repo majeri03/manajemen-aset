@@ -584,9 +584,9 @@ class StockOpnameController extends BaseController
             if ($asetAsli['status'] != $asetData['status']) {
                 $perubahan['status'] = $asetData['status'];
             }
-            // if (($asetData['keterangan'] !== null) && ($asetAsli['keterangan'] != $asetData['keterangan'])) {
-            //     $perubahan['keterangan'] = $asetData['keterangan'];
-            // }
+            if (($asetData['keterangan'] !== null) && ($asetAsli['keterangan'] != $asetData['keterangan'])) {
+                $perubahan['keterangan'] = $asetData['keterangan'];
+            }
             $adaPerubahan = !empty($perubahan);
 
             // Catat ke riwayat stock opname
