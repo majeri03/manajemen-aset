@@ -7,8 +7,13 @@ use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
 use App\Models\MerkModel; 
-use App\Models\TipeModel; 
+use App\Models\TipeModel;
+
 use App\Models\DokumentasiAsetModel;
+use App\Models\DokumenPerbaikanModel;
+
+use App\Models\BerkasAsetModel;
+
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -377,92 +382,214 @@ public function show($id = null)
      */
     public function update($id = null)
 {
-    // [LANGKAH 1] Ambil data aset SEBELUM diubah untuk perbandingan
-    // Gunakan getAsetDetail agar nama karyawan dari user_pengguna lama juga ikut terambil
-    $asetSebelumnya = $this->asetModel->getAsetDetail($id);
-    if (!$asetSebelumnya) {
-        return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
-    }
-
-    $data = $this->request->getPost();
-    $statusSebelumnya = $asetSebelumnya['status'];
-    $statusSekarang = $data['status'] ?? $statusSebelumnya;
-    $pihakKeduaId = $this->request->getPost('pihak_kedua_id');
-
-    // [LANGKAH 2] Validasi: Jika terjadi serah terima, Pihak Kedua wajib diisi
-    if ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai' && empty($pihakKeduaId)) {
-        return redirect()->back()->withInput()->with('error', 'Untuk serah terima aset, Anda wajib memilih Pihak Kedua (Penerima).');
-    }
-    
-    // [LANGKAH 3] Siapkan data Pihak Pertama untuk PDF dari data SEBELUM update
-    $pihakPertamaData = [];
-    if (!empty($asetSebelumnya['nama_karyawan'])) {
-        // Jika user_pengguna adalah ID dan terhubung ke tabel karyawan
-        $pihakPertamaData = [
-            'nama_karyawan' => $asetSebelumnya['nama_karyawan'],
-            'jabatan'       => $asetSebelumnya['jabatan'] ?? 'HCGA'
-        ];
-    } else {
-        // Jika user_pengguna hanya teks biasa (seperti "GUDANG" atau "JERI")
-        $pihakPertamaData = [
-            'nama_karyawan' => $asetSebelumnya['user_pengguna'], // Ambil teks apa adanya
-            'jabatan'       => 'HCGA' // Jabatan default
-        ];
-    }
-    
-    // [LANGKAH 4] Update 'user_pengguna' di array $data yang akan disimpan
-    if ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai' && !empty($pihakKeduaId)) {
-        $karyawanModel = new KaryawanModel();
-        $penerima = $karyawanModel->find($pihakKeduaId);
-        if ($penerima) {
-            // Timpa field 'user_pengguna' dengan ID karyawan penerima yang baru
-            $data['user_pengguna'] = $penerima['id'];
+        $asetSebelumnya = $this->model->getAsetDetail($id);
+        if (!$asetSebelumnya) {
+            return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
-    }
 
-    // [LANGKAH 5] Lakukan pembaruan data utama di database
-    if ($this->asetModel->update($id, $data)) {
+        $data = $this->request->getPost();
+        $statusSebelumnya = $asetSebelumnya['status'];
+        $statusSekarang = $data['status'] ?? $statusSebelumnya;
         
-        // [LANGKAH 6] Proses pembuatan & penyimpanan PDF otomatis jika ada serah terima
-        if ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai' && !empty($pihakKeduaId)) {
-            
-            $asetDetail_SetelahUpdate = $this->asetModel->getAsetDetail($id); 
-            $penerima = (new \App\Models\KaryawanModel())->find($pihakKeduaId);
+        $isSerahTerima = ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai');
+        $isPerbaikan = ($statusSekarang === 'Perbaikan');
 
-            if ($asetDetail_SetelahUpdate && $penerima) {
-                // [FIX] Mengirim data yang benar ke view PDF
-                $pdfData = [
-                    'aset'           => $asetDetail_SetelahUpdate,
-                    'pihak_pertama'  => $pihakPertamaData, // Gunakan data lama yang sudah kita siapkan
-                    'pihak_kedua'    => $penerima,         // Gunakan data penerima baru
-                ];
-
-                $options = new \Dompdf\Options();
-                $options->set('isRemoteEnabled', true);
-                $dompdf = new \Dompdf\Dompdf($options);
-                $dompdf->loadHtml(view('aset/serah_terima_pdf', $pdfData));
-                $dompdf->setPaper('A4', 'portrait');
-                $dompdf->render();
-                $pdfOutput = $dompdf->output();
-
-                $filename = 'serah_terima_' . str_replace('/', '-', $asetDetail_SetelahUpdate['kode']) . '_' . time() . '.pdf';
-                $path = FCPATH . 'uploads/aset_bukti/'; 
-
-                if (file_put_contents($path . $filename, $pdfOutput)) {
-                    $berkasModel = new \App\Models\BerkasAsetModel(); 
-                    $berkasModel->save([
-                        'aset_id'     => $id, 'path_file'   => $filename, 'nama_berkas' => 'BUKTI SERAH TERIMA',
-                        'tipe_file'   => 'application/pdf', 'ukuran_file' => strlen($pdfOutput)
-                    ]);
-                }
+        // Validasi
+        if ($isSerahTerima && empty($this->request->getPost('pihak_kedua_id'))) {
+            return redirect()->back()->withInput()->with('error', 'Untuk serah terima, Anda wajib memilih Pihak Kedua (Penerima).');
+        }
+        if ($isPerbaikan && (empty($data['penyetuju_nama']) || empty($data['keterangan_kerusakan']) || empty($data['estimasi_biaya']))) {
+            return redirect()->back()->withInput()->with('error', 'Untuk status "Perbaikan", semua detail permohonan harus diisi.');
+        }
+        
+        // Proses update user pengguna jika ada serah terima
+        if ($isSerahTerima) {
+            $penerima = (new KaryawanModel())->find($this->request->getPost('pihak_kedua_id'));
+            if ($penerima) {
+                $data['user_pengguna'] = $penerima['id'];
             }
         }
-        return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui dan berkas serah terima telah disimpan.');
-    } else {
-        return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
-    }
-}
 
+        // LAKUKAN UPDATE DATA UTAMA
+        if ($this->model->update($id, $data)) {
+            // PROSES PDF SERAH TERIMA (JIKA ADA)
+            if ($isSerahTerima) {
+                $pihakPertamaData = [
+                    'nama_karyawan' => $asetSebelumnya['nama_karyawan'] ?? $asetSebelumnya['user_pengguna'] ?? 'Gudang',
+                    'jabatan'       => $asetSebelumnya['jabatan'] ?? 'HCGA'
+                ];
+                $this->buatDanSimpanPdfSerahTerima($id, $pihakPertamaData, (new KaryawanModel())->find($this->request->getPost('pihak_kedua_id')));
+            }
+
+            // PROSES PDF PERBAIKAN (JIKA ADA)
+            if ($isPerbaikan) {
+                $this->buatDanSimpanPdfPerbaikan($id, $data);
+            }
+
+            return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
+        }
+    }
+
+    private function buatDanSimpanPdfSerahTerima($asetId, $pihakPertama, $pihakKedua)
+    {
+        $asetDetail = $this->model->getAsetDetail($asetId);
+        if (!$asetDetail || !$pihakKedua) return;
+
+        $pdfData = [
+            'aset'           => $asetDetail,
+            'pihak_pertama'  => $pihakPertama,
+            'pihak_kedua'    => $pihakKedua,
+            'tanggal'        => date('l, d F Y'),
+        ];
+        
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/serah_terima_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        $filename = 'serah_terima_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+        $path = FCPATH . 'uploads/aset_bukti/'; 
+
+        if (file_put_contents($path . $filename, $pdfOutput)) {
+            (new BerkasAsetModel())->save([
+                'aset_id'     => $asetId, 'path_file'   => $filename, 'nama_berkas' => 'BUKTI SERAH TERIMA',
+                'tipe_file'   => 'application/pdf', 'ukuran_file' => strlen($pdfOutput)
+            ]);
+        }
+    }
+
+    private function buatDanSimpanPdfPerbaikan($asetId, $dataPermohonan)
+    {
+        $dokumenPerbaikanModel = new DokumenPerbaikanModel();
+        $dokumenPerbaikanModel->save([
+            'aset_id'              => $asetId,
+            'user_pemohon_id'      => session()->get('user_id'),
+            'penyetuju_nama'       => $dataPermohonan['penyetuju_nama'],
+            'keterangan_kerusakan' => $dataPermohonan['keterangan_kerusakan'],
+            'estimasi_biaya'       => $dataPermohonan['estimasi_biaya'],
+        ]);
+        $dokumenPerbaikanId = $dokumenPerbaikanModel->getInsertID();
+
+        $asetDetail = $this->model->getAsetDetail($asetId);
+        $karyawanModel = new KaryawanModel();
+            // Logika yang sama seperti di atas: prioritaskan data dari user_pengguna aset
+            $pemohon = $karyawanModel->find($asetDetail['user_pengguna']);
+
+            if (!$pemohon) {
+                $pemohon = [
+                    'nama_karyawan' => $asetDetail['nama_karyawan'] ?: ($asetDetail['user_pengguna'] ?: 'Tidak Ada'),
+                    'jabatan'       => $asetDetail['jabatan'] ?? 'Pengguna Aset'
+                ];
+            }
+
+        $pdfData = [
+            'aset'           => $asetDetail,
+            'pemohon'        => $pemohon, // <-- DATA PEMOHON SEKARANG SUDAH BENAR
+            'penyetuju'      => ['nama' => $dataPermohonan['penyetuju_nama'], 'jabatan' => 'HCGA'],
+            'perbaikan'      => [ // Menggunakan key 'perbaikan' agar konsisten dengan template
+                'keterangan_kerusakan' => $dataPermohonan['keterangan_kerusakan'],
+                'estimasi_biaya' => $dataPermohonan['estimasi_biaya']
+            ]
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/permohonan_perbaikan_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        $filename = 'permohonan_perbaikan_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+        $path = FCPATH . 'uploads/aset_bukti/';
+
+        if (file_put_contents($path . $filename, $pdfOutput)) {
+            (new BerkasAsetModel())->save([
+                'aset_id'     => $asetId, 'path_file'   => $filename, 'nama_berkas' => 'PERMOHONAN DANA PERBAIKAN',
+                'tipe_file'   => 'application/pdf', 'ukuran_file' => strlen($pdfOutput)
+            ]);
+            $dokumenPerbaikanModel->update($dokumenPerbaikanId, ['nama_file' => $filename]);
+        }
+    }
+
+    public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
+    {
+        $asetSaatIni = $this->model->getAsetDetail($id);
+        $pihakKedua = (new KaryawanModel())->find($pihakKeduaId);
+
+        if (!$asetSaatIni || !$pihakKedua) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Data aset atau karyawan tidak ditemukan.');
+        }
+
+        $pihakPertamaData = [
+            'nama_karyawan' => $asetSaatIni['nama_karyawan'] ?? $asetSaatIni['user_pengguna'] ?? 'Gudang',
+            'jabatan'       => $asetSaatIni['jabatan'] ?? 'HCGA'
+        ];
+
+        $filename = 'Berita_Acara_Serah_Terima_' . str_replace('/', '_', $asetSaatIni['kode']) . '.pdf';
+        
+        $pdfData = [
+            'aset'           => $asetSaatIni,
+            'pihak_pertama'  => $pihakPertamaData,
+            'pihak_kedua'    => $pihakKedua,
+            'tanggal'        => date('l, d F Y'),
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/serah_terima_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream($filename);
+    }
+    public function generatePerbaikanPdf($id = null)
+{
+    // Ambil data dari query string di URL
+    $penyetujuNama = $this->request->getGet('penyetuju');
+    $kerusakan = $this->request->getGet('kerusakan');
+    $biaya = $this->request->getGet('biaya');
+
+    // Ambil detail lengkap aset untuk memastikan kita punya 'nama_karyawan' jika ada
+    $asetDetail = $this->model->getAsetDetail($id);
+    $karyawanModel = new \App\Models\KaryawanModel();
+
+    // Prioritaskan mencari data karyawan berdasarkan ID 'user_pengguna'
+    $pemohon = $karyawanModel->find($asetDetail['user_pengguna']);
+
+    // Jika tidak ada di tabel karyawan (misal 'user_pengguna' hanya teks biasa),
+    // gunakan data dari detail aset itu sendiri.
+    if (!$pemohon) {
+        $pemohon = [
+            'nama_karyawan' => $asetDetail['nama_karyawan'] ?: ($asetDetail['user_pengguna'] ?: 'Tidak Ada'),
+            'jabatan'       => $asetDetail['jabatan'] ?? 'Pengguna Aset'
+        ];
+    }
+
+    // Validasi menggunakan variabel $asetDetail
+    if (!$asetDetail || !$penyetujuNama || !$kerusakan || !$biaya) {
+        throw new \CodeIgniter\Exceptions\PageNotFoundException('Data tidak lengkap untuk membuat PDF permohonan perbaikan.');
+    }
+
+    // Membuat nama file menggunakan variabel $asetDetail
+    $filename = 'Permohonan_Perbaikan_' . str_replace('/', '_', $asetDetail['kode']) . '.pdf';
+
+    $pdfData = [
+        'aset'           => $asetDetail, // Mengirim data ke view dengan nama 'aset'
+        'pemohon'        => $pemohon,
+        'penyetuju'      => ['nama' => $penyetujuNama, 'jabatan' => 'HCGA'],
+        'kerusakan'      => $kerusakan,
+        'estimasi_biaya' => $biaya,
+    ];
+
+    $options = new \Dompdf\Options();
+    $options->set('isRemoteEnabled', true);
+    $dompdf = new \Dompdf\Dompdf($options);
+    $dompdf->loadHtml(view('aset/permohonan_perbaikan_pdf', $pdfData));
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    $dompdf->stream($filename);
+}
     /**
      * Delete the designated resource object from the model.
      *
@@ -886,50 +1013,6 @@ public function barcodes()
         return $this->response->setJSON(['success' => false]);
     }
 
-
-    public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
-{
-    $karyawanModel = new KaryawanModel();
-
-    // [FIX] Ambil detail lengkap aset SEKARANG untuk Pihak Pertama
-    $asetSaatIni = $this->asetModel->getAsetDetail($id);
-    $pihakKedua = $karyawanModel->find($pihakKeduaId);
-
-    if (!$asetSaatIni || !$pihakKedua) {
-        throw new \CodeIgniter\Exceptions\PageNotFoundException('Data aset atau karyawan tidak ditemukan.');
-    }
-
-    // [FIX] Logika Cerdas untuk Pihak Pertama (disamakan dengan fungsi update)
-    $pihakPertamaData = [];
-    if (!empty($asetSaatIni['nama_karyawan'])) {
-        $pihakPertamaData = [
-            'nama_karyawan' => $asetSaatIni['nama_karyawan'],
-            'jabatan'       => $asetSaatIni['jabatan'] ?? 'HCGA'
-        ];
-    } else {
-        $pihakPertamaData = [
-            'nama_karyawan' => $asetSaatIni['user_pengguna'],
-            'jabatan'       => 'HCGA'
-        ];
-    }
-
-    $filename = 'Berita_Acara_Serah_Terima_' . str_replace('/', '_', $asetSaatIni['kode']) . '.pdf';
-    $dompdf = new Dompdf();
-
-    $viewData = [
-        'aset'           => $asetSaatIni,
-        'pihak_pertama'  => $pihakPertamaData, // Gunakan data yang sudah diolah
-        'pihak_kedua'    => $pihakKedua,
-    ];
-
-    $dompdf->loadHtml(view('aset/serah_terima_pdf', $viewData));
-    $dompdf->setPaper('A4', 'portrait');
-    $dompdf->render();
-    $dompdf->stream($filename);
-
-    return;
-}
-
      public function serveDocument($fileName = null)
     {
         if (empty($fileName)) {
@@ -1146,6 +1229,8 @@ public function delete_document($id = null, $type = null)
     }
     return redirect()->back()->with('error', 'Akses tidak diizinkan.');
 }
+
+
 
 
 
