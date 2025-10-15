@@ -97,6 +97,7 @@ Edit Aset
                     <option value="Rusak" <?= $aset['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
                     <option value="Perbaikan" <?= $aset['status'] == 'Perbaikan' ? 'selected' : '' ?>>Perbaikan</option>
                 </select>
+                
                 <div class="mt-3" id="pihak-kedua-wrapper" style="display: none;">
                     <label for="pihak-kedua" class="form-label fw-bold">Pihak Kedua (Penerima)</label>
                     <div class="input-group">
@@ -110,18 +111,60 @@ Edit Aset
                     </div>
                     <div class="form-text">Pilih penerima aset untuk membuat surat serah terima.</div>
                 </div>
-            </div>
-            <div class="col-12">
-                <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
-                <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
-            </div>
-        </div>
 
-        <div class="mt-4 d-flex justify-content-end">
-            <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
-            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                <div class="mt-3" id="perbaikan-controls-wrapper" style="display: none;">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#perbaikanModal">
+                        <i class="bi bi-tools me-2"></i>Buat Permohonan Perbaikan
+                    </button>
+                </div>
+            </div>
+                <div class="col-12">
+                            <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
+                            <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
+                        </div>
+
+                        <input type="hidden" id="hidden_penyetuju_nama" name="penyetuju_nama">
+                        <input type="hidden" id="hidden_keterangan_kerusakan" name="keterangan_kerusakan">
+                        <input type="hidden" id="hidden_estimasi_biaya" name="estimasi_biaya">
+                        </div>
+
+                    <div class="mt-4 d-flex justify-content-end">
+                        <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </form>
+
+<div class="modal fade" id="perbaikanModal" tabindex="-1" aria-labelledby="perbaikanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="perbaikanModalLabel">Detail Permohonan Perbaikan Aset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="penyetuju_nama" class="form-label">Nama Penyetuju</label>
+                    <input type="text" class="form-control" id="penyetuju_nama" name="penyetuju_nama" placeholder="Nama atasan atau pemberi persetujuan">
+                </div>
+                <div class="mb-3">
+                    <label for="keterangan_kerusakan" class="form-label">Keterangan Kerusakan</label>
+                    <textarea class="form-control" id="keterangan_kerusakan" name="keterangan_kerusakan" rows="3" placeholder="Jelaskan kerusakan secara singkat..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="estimasi_biaya" class="form-label">Estimasi Biaya (Rp)</label>
+                    <input type="number" class="form-control" id="estimasi_biaya" name="estimasi_biaya" placeholder="Contoh: 500000">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-info" id="download-perbaikan-pdf-btn">
+                    <i class="bi bi-download"></i> Unduh Draf PDF
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    Simpan Detail
+                </button>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 
 <div class="card shadow-sm mt-4">
@@ -251,7 +294,6 @@ $(document).ready(function() {
                 body: formData,
                 headers: { 
                     'X-Requested-With': 'XMLHttpRequest',
-                    // [PERBAIKAN] Tambahkan CSRF token di sini untuk keamanan
                     '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 }
             })
@@ -273,60 +315,102 @@ $(document).ready(function() {
         });
     }
 
-    // Terapkan fungsi AJAX ke kedua form unggahan
     handleAjaxFormSubmit('#form-unggah-foto');
     handleAjaxFormSubmit('#form-unggah-berkas');
 
+
     // =================================================================
-    // 2. FUNGSI UNTUK MENAMPILKAN OPSI SERAH TERIMA
+    // 2. LOGIKA KONTROL FORM SERAH TERIMA & PERBAIKAN (DIPERBARUI)
     // =================================================================
     const statusDropdown = document.getElementById('status');
     const pihakKeduaWrapper = document.getElementById('pihak-kedua-wrapper');
-    const pihakKeduaSelect = document.getElementById('pihak-kedua');
-    const downloadButton = document.getElementById('download-pdf-btn');
+    const perbaikanControlsWrapper = document.getElementById('perbaikan-controls-wrapper');
     const statusAwal = '<?= esc($aset['status']) ?>';
     const asetId = '<?= esc($aset['id']) ?>';
 
-    function togglePihakKedua() {
+    function toggleConditionalControls() {
         const statusBaru = statusDropdown.value;
-        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai') {
-            pihakKeduaWrapper.style.display = 'block';
-        } else {
-            pihakKeduaWrapper.style.display = 'none';
-        }
+        // Tampilkan/sembunyikan kontrol serah terima
+        pihakKeduaWrapper.style.display = (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai') ? 'block' : 'none';
+        // Tampilkan/sembunyikan tombol perbaikan
+        perbaikanControlsWrapper.style.display = (statusBaru === 'Perbaikan') ? 'block' : 'none';
     }
 
-    statusDropdown.addEventListener('change', togglePihakKedua);
-    togglePihakKedua();
+    statusDropdown.addEventListener('change', toggleConditionalControls);
+    toggleConditionalControls(); // Panggil saat halaman pertama kali dimuat
 
+    // Validasi saat form utama akan disubmit
     $('form[action="<?= base_url('aset/' . $aset['id']) ?>"]').on('submit', function(e) {
         const statusBaru = $('#status').val();
-        const pihakKeduaId = $('#pihak-kedua').val();
-
-        // Cek kondisi serah terima: status berubah DAN pihak kedua kosong
-        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai' && !pihakKeduaId) {
-            e.preventDefault(); // Batalkan proses simpan
-            Swal.fire({
-                icon: 'warning',
-                title: 'Peringatan',
-                text: 'Anda harus memilih Pihak Kedua (Penerima) untuk melanjutkan proses serah terima aset.',
-            });
+        
+        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai' && !$('#pihak-kedua').val()) {
+            e.preventDefault();
+            Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Anda harus memilih Pihak Kedua (Penerima) untuk melanjutkan.' });
+        }
+        
+        if (statusBaru === 'Perbaikan') {
+            if (!$('#penyetuju_nama').val() || !$('#keterangan_kerusakan').val() || !$('#estimasi_biaya').val()) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'Data Permohonan Belum Lengkap', text: 'Silakan klik "Buat Permohonan Perbaikan" dan lengkapi semua detailnya.' });
+            }
         }
     });
 
-    downloadButton.addEventListener('click', function() {
-        const pihakKeduaId = pihakKeduaSelect.value;
+    // Event listener untuk tombol download PDF Serah Terima
+    $('#download-pdf-btn').on('click', function() {
+        const pihakKeduaId = $('#pihak-kedua').val();
         if (!pihakKeduaId) {
             Swal.fire('Peringatan', 'Silakan pilih Pihak Kedua terlebih dahulu.', 'warning');
             return;
         }
-        const url = `<?= base_url('aset/generate-pdf/') ?>${asetId}/${pihakKeduaId}`;
+        window.open(`<?= base_url('aset/generateSerahTerimaPdf/') ?>${asetId}/${pihakKeduaId}`, '_blank');
+    });
+
+    // Event listener untuk tombol download PDF Perbaikan
+    $('#download-perbaikan-pdf-btn').on('click', function() {
+        const penyetujuNama = $('#penyetuju_nama').val();
+        const keteranganKerusakan = $('#keterangan_kerusakan').val();
+        const estimasiBiaya = $('#estimasi_biaya').val();
+
+        if (!penyetujuNama || !keteranganKerusakan || !estimasiBiaya) {
+            Swal.fire('Peringatan', 'Harap lengkapi semua field di pop-up permohonan sebelum mengunduh draf.', 'warning');
+            return;
+        }
+
+        const url = `<?= base_url('aset/generatePerbaikanPdf/') ?>${asetId}?penyetuju=${encodeURIComponent(penyetujuNama)}&kerusakan=${encodeURIComponent(keteranganKerusakan)}&biaya=${estimasiBiaya}`;
         window.open(url, '_blank');
     });
 
-    // Panggil sekali saat halaman dimuat untuk memeriksa status awal
-    togglePihakKedua();
+    
 
+    // Ambil tombol "Simpan Detail" dari modal perbaikan
+    const simpanDetailPerbaikanBtn = document.querySelector('#perbaikanModal .btn-primary');
+
+    if (simpanDetailPerbaikanBtn) {
+        simpanDetailPerbaikanBtn.addEventListener('click', function() {
+            // Ambil nilai dari form di dalam modal
+            const penyetuju = document.getElementById('penyetuju_nama').value;
+            const kerusakan = document.getElementById('keterangan_kerusakan').value;
+            const biaya = document.getElementById('estimasi_biaya').value;
+
+            // Salin nilai tersebut ke hidden input di form utama
+            document.getElementById('hidden_penyetuju_nama').value = penyetuju;
+            document.getElementById('hidden_keterangan_kerusakan').value = kerusakan;
+            document.getElementById('hidden_estimasi_biaya').value = biaya;
+
+            // Beri notifikasi (opsional tapi sangat membantu)
+            if(penyetuju && kerusakan && biaya) {
+                 Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Detail perbaikan disimpan sementara. Silakan simpan perubahan utama.',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+        });
+    }
 
     // =================================================================
     // 3. FUNGSI UNTUK SELECT2 (TAMBAH DATA MASTER BARU)
@@ -451,7 +535,10 @@ $(document).ready(function() {
             });
         }
     });
+
+    
 });
+
    </script>
 <?= $this->endSection() ?>
 

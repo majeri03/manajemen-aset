@@ -59,6 +59,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
 
     $routes->get('files/bukti/(:segment)', 'AsetController::serveDocument/$1');
+
+
     // ===================================================================
     // RUTE YANG HANYA BISA DIAKSES OLEH ADMIN
     // ===================================================================
@@ -140,7 +142,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
         
         //download serah terima pdf
-        $routes->get('aset/generate-pdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
+        $routes->get('aset/generateSerahTerimaPdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
+        $routes->get('aset/generatePerbaikanPdf/(:num)', 'AsetController::generatePerbaikanPdf/$1');
 
         // Manajemen Akun
         $routes->get('user', 'UserController::index');
