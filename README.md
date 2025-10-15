@@ -1,176 +1,105 @@
-# Alur Kerja Git (Git Workflow)
+# 🧭 Panduan Alur Kerja Git (Git Workflow)
 
-Panduan ini bertujuan untuk menstandarkan cara kita menggunakan Git dalam proyek **Manajemen Aset**. Mengikuti alur ini akan membantu menjaga histori repository tetap bersih, meminimalkan konflik, dan memudahkan pelacakan perubahan.
+## 🎯 Prinsip Utama
 
-## Prinsip Utama
-
-1.  **`main` adalah Sumber Kebenaran**: Branch `main` harus selalu dalam keadaan stabil dan siap untuk di-deploy. Tidak ada yang boleh melakukan `push` langsung ke `main`.
-2.  **Bekerja di Feature Branch**: Setiap tugas, baik itu fitur baru, perbaikan bug, atau penyesuaian kecil, harus dikerjakan di dalam *branch* terpisah.
-3.  **Selalu Update Sebelum Mulai**: Sebelum membuat branch baru atau melanjutkan pekerjaan, pastikan branch `main` lokal Anda sudah sinkron dengan server (`origin`).
-4.  **Commit Kecil dan Sering**: Simpan pekerjaan Anda secara berkala dengan `commit`. Gunakan pesan yang jelas agar mudah dipahami.
-5.  **Jaga Kebersihan Histori**: Gunakan `pull --rebase` untuk menjaga histori commit tetap lurus dan mudah dibaca.
-
----
-
-##  Workflow Lengkap
-
-Ada dua skenario utama saat memulai pekerjaan: membuat fitur baru atau melanjutkan pekerjaan yang sudah ada.
-
-### ✅ Skenario 1: Memulai Tugas/Fitur Baru
-
-Lakukan ini setiap kali Anda akan mengerjakan tugas baru yang belum pernah dimulai.
-
-**Tujuan**: Membuat branch baru yang dasarnya adalah versi terbaru dari `main`.
-
-**Langkah-langkah:**
-
-1.  **Pindah ke Branch `main`**
-    Pastikan Anda berada di branch `main` sebelum mengambil data terbaru.
-    ```bash
-    git checkout main
-    ```
-
-2.  **Update Branch `main` Lokal**
-    Tarik semua perubahan terbaru dari repository pusat (origin) ke `main` lokal Anda.
-    ```bash
-    git pull origin main
-    ```
-
-3.  **Buat Branch Baru**
-    Buat branch baru untuk tugas Anda dan langsung pindah ke branch tersebut. Gunakan format penamaan yang deskriptif.
-
-    **Format Penamaan Branch:**
-    * **Fitur Baru**: `fitur/<deskripsi-singkat>` (contoh: `fitur/form-perbaikan-aset`)
-    * **Perbaikan Bug**: `fix/<deskripsi-singkat>` (contoh: `fix/validasi-tanggal-mundur`)
-    * **Tugas Lain**: `chore/<deskripsi-singkat>` (contoh: `chore/update-readme-workflow`)
-
-    ```bash
-    # Ganti <nama-branch-baru> dengan nama branch Anda
-    git checkout -b <nama-branch-baru>
-
-    # Contoh:
-    git checkout -b fitur/tampilan-detail-stock-opname
-    ```
-    Sekarang Anda siap untuk mulai *coding* di branch baru ini.
-
-### 🔁 Skenario 2: Melanjutkan Pekerjaan di Branch Lama
-
-Lakukan ini jika Anda ingin melanjutkan pekerjaan di branch yang sudah pernah Anda buat sebelumnya.
-
-**Tujuan**: Mengupdate branch kerja Anda dengan kode terbaru dari `main` sebelum melanjutkan.
-
-**Langkah-langkah:**
-
-1.  **Update Branch `main` Lokal**
-    Sama seperti skenario 1, pastikan `main` Anda adalah yang terbaru.
-    ```bash
-    git checkout main
-    git pull origin main
-    ```
-
-2.  **Pindah ke Branch Kerja Anda**
-    Pindah kembali ke branch tempat Anda mengerjakan fitur sebelumnya.
-    ```bash
-    # Ganti <nama-branch-lama> dengan branch Anda
-    git checkout <nama-branch-lama>
-
-    # Contoh:
-    git checkout dashboard/tampilan
-    ```
-
-3.  **Gabungkan Perubahan dari `main`**
-    Terapkan semua update dari `main` ke branch Anda saat ini. Ini penting untuk memastikan kode Anda kompatibel dengan pekerjaan orang lain.
-    ```bash
-    git merge main
-    ```
-    > **Catatan**: Jika terjadi *merge conflict*, Git akan memberitahu Anda. Buka file yang konflik, selesaikan perbedaannya, lalu `add` dan `commit` untuk menyelesaikan proses merge.
-
-### 📤 Menyimpan dan Mengunggah Progress
-
-Lakukan ini secara berkala setelah Anda menyelesaikan satu unit pekerjaan.
-
-**Langkah-langkah:**
-
-1.  **Tambahkan File ke Staging Area**
-    Pilih file mana yang ingin Anda simpan. Untuk menambahkan semua perubahan, gunakan `.`.
-    ```bash
-    git add .
-    ```
-    *Tips: Untuk menambahkan file hanya dari satu direktori, gunakan `git add app/Controllers/`.*
-
-2.  **Simpan Perubahan (Commit)**
-    Beri pesan yang jelas tentang apa yang Anda kerjakan.
-
-    **Format Pesan Commit:**
-    Gunakan prefix untuk menjelaskan jenis perubahan:
-    * `feat:` (fitur baru)
-    * `fix:` (perbaikan bug)
-    * `docs:` (perubahan dokumentasi)
-    * `style:` (perubahan format, spasi, dll.)
-    * `refactor:` (perubahan kode yang tidak mengubah fungsionalitas)
-    * `chore:` (tugas lain seperti update library)
-
-    ```bash
-    # Ganti <Pesan commit> dengan deskripsi Anda
-    git commit -m "<Tipe>: <Pesan commit yang jelas>"
-
-    # Contoh:
-    git commit -m "feat: add PDF generation for asset repair requests"
-    ```
-
-3.  **Unggah ke Server (Push)**
-    Kirim semua commit Anda ke repository pusat.
-    ```bash
-    # Ganti <nama-branch-aktif> dengan nama branch Anda saat ini
-    git push origin <nama-branch-aktif>
-
-    # Contoh:
-    git push origin fitur/form-perbaikan-aset
-    ```
+| No | Prinsip | Penjelasan |
+|----|----------|------------|
+| 1 | **`main` adalah sumber kebenaran** | Branch `main` selalu stabil dan siap deploy. Jangan `push` langsung ke `main`. |
+| 2 | **Gunakan Feature Branch** | Semua pekerjaan (fitur, bug, dokumentasi) dikerjakan di branch terpisah. |
+| 3 | **Selalu update sebelum mulai** | Pastikan `main` lokal sudah sinkron dengan `origin/main`. |
+| 4 | **Commit kecil & sering** | Simpan pekerjaan per bagian dengan pesan jelas. |
+| 5 | **Histori bersih** | Gunakan `git pull --rebase` agar riwayat commit tetap lurus. |
 
 ---
 
-## Contoh Alur Kerja Lengkap (Studi Kasus)
+## 🚀 Skenario 1 – Membuat Fitur/Tugas Baru
 
-**Tugas**: Membuat fitur filter laporan berdasarkan rentang tanggal.
+| Langkah | Perintah Git | Keterangan |
+|----------|---------------|------------|
+| 1 | `git checkout main` | Pindah ke branch utama |
+| 2 | `git pull origin main` | Update versi terbaru dari server |
+| 3 | `git checkout -b fitur/<nama-fitur>` | Buat branch baru untuk fitur |
 
-1.  **Memulai Tugas (Skenario 1)**
-    ```bash
-    git checkout main
-    git pull origin main
-    git checkout -b fitur/filter-laporan-tanggal
-    ```
-
-2.  **Coding...**
-    * Mengubah file `app/Controllers/LaporanController.php`.
-    * Mengubah file `app/Views/laporan/index.php`.
-
-3.  **Menyimpan Progress Pertama**
-    ```bash
-    git add app/Controllers/LaporanController.php app/Views/laporan/index.php
-    git commit -m "feat: add date filter inputs on report view"
-    ```
-
-4.  **Coding Lagi...**
-    * Menyelesaikan logika filter di controller.
-
-5.  **Menyimpan Progress Kedua dan Mengunggah**
-    ```bash
-    git add app/Controllers/LaporanController.php
-    git commit -m "feat: implement date range logic in LaporanController"
-    git push origin fitur/filter-laporan-tanggal
-    ```
-    Pekerjaan Anda sekarang sudah aman di server.
+📌 **Format Nama Branch:**
+| Jenis | Format | Contoh |
+|-------|--------|--------|
+| Fitur Baru | `fitur/<deskripsi>` | `fitur/form-perbaikan-aset` |
+| Perbaikan Bug | `fix/<deskripsi>` | `fix/validasi-tanggal` |
+| Tugas Lain | `chore/<deskripsi>` | `chore/update-readme` |
 
 ---
 
-## Konfigurasi Opsional (Sangat Direkomendasikan)
+## 🔁 Skenario 2 – Melanjutkan Branch Lama
 
-Jalankan perintah ini sekali untuk membuat alur kerja lebih mulus dan menghindari histori yang berantakan.
+| Langkah | Perintah Git | Keterangan |
+|----------|---------------|------------|
+| 1 | `git checkout main` | Pindah ke branch utama |
+| 2 | `git pull origin main` | Update perubahan terbaru |
+| 3 | `git checkout <nama-branch-lama>` | Pindah ke branch lama Anda |
+| 4 | `git merge main` | Gabungkan update dari `main` |
+
+> ⚠️ Jika ada konflik, selesaikan manual lalu `git add` dan `git commit` ulang.
+
+---
+
+## 💾 Menyimpan dan Mengunggah Perubahan
+
+| Langkah | Perintah Git | Keterangan |
+|----------|---------------|------------|
+| 1 | `git add .` | Tambahkan semua perubahan ke staging |
+| 2 | `git commit -m "<tipe>: <pesan>"` | Simpan perubahan dengan pesan jelas |
+| 3 | `git push origin <nama-branch>` | Kirim branch ke server GitHub |
+
+📌 **Format Pesan Commit:**
+| Tipe | Keterangan | Contoh |
+|------|-------------|--------|
+| `feat:` | Fitur baru | `feat: add PDF generation for asset report` |
+| `fix:` | Perbaikan bug | `fix: date validation logic` |
+| `docs:` | Dokumentasi | `docs: update README for git workflow` |
+| `style:` | Perubahan tampilan/kode minor | `style: format controller code` |
+| `refactor:` | Ubah struktur tanpa ubah fungsi | `refactor: simplify asset fetch logic` |
+| `chore:` | Tugas umum/non-code | `chore: update dependencies` |
+
+---
+
+## 🧩 Contoh Kasus Lengkap
+
+**Tugas:** Membuat fitur filter laporan berdasarkan rentang tanggal.
+
+| Tahap | Perintah | Penjelasan |
+|--------|-----------|------------|
+| 1 | `git checkout main`<br>`git pull origin main`<br>`git checkout -b fitur/filter-laporan-tanggal` | Buat branch baru |
+| 2 | _(Coding…)_ | Ubah `LaporanController.php` & `laporan/index.php` |
+| 3 | `git add .`<br>`git commit -m "feat: add date filter inputs"` | Simpan perubahan pertama |
+| 4 | _(Coding lagi…)_ | Selesaikan logika filter |
+| 5 | `git add .`<br>`git commit -m "feat: implement date range filter"`<br>`git push origin fitur/filter-laporan-tanggal` | Upload ke server |
+
+---
+
+## ⚙️ Konfigurasi Tambahan (Opsional tapi Disarankan)
 
 ```bash
-# Otomatis menggunakan 'rebase' saat 'pull', membuat histori lurus
 git config --global pull.rebase true
-
-# Otomatis menyimpan perubahan lokal sementara saat 'rebase'
 git config --global rebase.autoStash true
+```
+💡 Ini akan menjaga histori commit tetap **rata (tanpa merge bubble)** dan otomatis menyimpan perubahan lokal saat melakukan `pull`.
+
+---
+
+## 🧱 Diagram Ringkas Alur Kerja
+
+```
+       ┌────────────────┐
+       │   MAIN (Stabil)│
+       └──────┬─────────┘
+              │
+       git pull origin main
+              │
+       git checkout -b fitur/nama-fitur
+              │
+        🧑‍💻 Coding & Commit
+              │
+       git push origin fitur/nama-fitur
+              │
+       🔁 Merge ke MAIN via Pull Request
+```
