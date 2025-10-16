@@ -381,12 +381,12 @@ Data Aset
                                                 </button>
                                             </li>
 
-                                            <?php if (!empty($aset['dokumen'])): ?>
-                                            <li>
-                                                <button class="dropdown-item view-docs" type="button" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['dokumen']); ?>'>
-                                                    <i class="bi bi-paperclip me-2"></i>Lihat Dokumen
-                                                </button>
-                                            </li>
+                                            <?php if (!empty($aset['berkas_list'])): ?>
+                                                <li>
+                                                    <button class="dropdown-item view-docs" type="button" data-bs-toggle="modal" data-bs-target="#dokumenModal" data-nama-aset="<?= esc($aset['kode']); ?>" data-dokumen='<?= json_encode($aset['berkas_list']); ?>'>
+                                                        <i class="bi bi-paperclip me-2"></i>Lihat Berkas Legal
+                                                    </button>
+                                                </li>
                                             <?php endif; ?>
 
                                             <?php if (session()->get('role') === 'admin'): ?>
@@ -714,39 +714,27 @@ Data Aset
         </div>
     </div>
 </div>
-
-<?= $this->endSection() ?>
-
-<?= $this->section('modals') ?>
 <div class="modal fade" id="dokumenModal" tabindex="-1" aria-labelledby="dokumenModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="dokumenModalLabel">Dokumen untuk Aset: <span></span></h5>
+                <h5 class="modal-title" id="dokumenModalLabel">Berkas Legal untuk Aset: <span></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="dokumen-carousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner bg-light text-center" style="min-height: 400px;">
-                        </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#dokumen-carousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#dokumen-carousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5);"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </div>
-                <div class="text-center mt-2">
-                    <p id="dokumen-deskripsi" class="fw-bold mb-0">Nama Dokumen</p>
-                    <small id="dokumen-counter" class="text-muted">1 / 1</small>
-                </div>
+                <ul class="list-group" id="berkas-list-container">
+                    </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
 </div>
 <?= $this->endSection() ?>
+
+
+
 
 
 <?= $this->section('script') ?>
@@ -836,180 +824,78 @@ Data Aset
         return 'Rp ' + ribuan;
     }
 
-    // =================================================================
-    // BAGIAN 2: SCRIPT YANG DIJALANKAN SAAT HALAMAN SIAP (EVENT LISTENERS)
+// =================================================================
+    // SCRIPT YANG DIJALANKAN SAAT HALAMAN SIAP
     // =================================================================
     $(document).ready(function() {
-
-        // 1. Logika untuk checkbox "Pilih Semua"
-const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function() {
-        // Cari semua checkbox di dalam Tampilan QR Code dan atur statusnya
-        document.querySelectorAll('#qrcode-view .barcode-checkbox').forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
-}
-
-// 2. Logika untuk tombol "CETAK YANG DIPILIH"
-const printButton = document.getElementById('printButton');
-if (printButton) {
-    printButton.addEventListener('click', function() {
-        // Buat atau temukan area cetak yang tersembunyi
-        let printArea = document.querySelector('.print-area');
-        if (!printArea) {
-            printArea = document.createElement('div');
-            printArea.classList.add('print-area');
-            document.body.appendChild(printArea);
-        }
-        printArea.innerHTML = ''; // Kosongkan area cetak setiap kali tombol diklik
-
-        // Buat grid untuk menampung label
-        const labelGrid = document.createElement('div');
-        labelGrid.classList.add('label-grid');
-
-        let selectedCount = 0;
-        // Cari semua checkbox yang dicentang di dalam Tampilan QR Code
-        document.querySelectorAll('#qrcode-view .barcode-checkbox:checked').forEach(checkbox => {
-            selectedCount++;
-            // Ambil data cetak tersembunyi dari baris tabel yang sama
-            const row = checkbox.closest('tr');
-            const printDataHTML = row.querySelector('.print-data').innerHTML;
-            
-            // Buat elemen label dan masukkan datanya
-            const label = document.createElement('div');
-            label.classList.add('label');
-            label.innerHTML = printDataHTML;
-            labelGrid.appendChild(label);
-        });
-
-        // 3. Cek apakah ada yang dipilih sebelum mencetak
-        if (selectedCount > 0) {
-            printArea.appendChild(labelGrid);
-            window.print(); // Panggil fungsi cetak browser
-        } else {
-            // Tampilkan peringatan jika tidak ada yang dipilih
-            Swal.fire({
-                icon: 'warning',
-                title: 'Tidak Ada Barcode Dipilih',
-                text: 'Silakan pilih setidaknya satu barcode untuk dicetak.',
-            });
-        }
-    });
-}
 
         // --- Inisialisasi Tampilan Awal ---
         $('#view-container > div').hide();
         $('#aset-view').show();
 
-        // --- LOGIKA UTAMA: PENGALIH TAMPILAN (VIEW SWITCHER) ---
+        // --- PENGALIH TAMPILAN (VIEW SWITCHER) ---
         $('#view-switcher button').on('click', function() {
             $('#view-switcher button').removeClass('active btn-primary').addClass('btn-outline-primary');
             $(this).removeClass('btn-outline-primary').addClass('active btn-primary');
             var viewToShow = $(this).data('view');
             $('#view-container > div').hide();
             $('#' + viewToShow + '-view').show();
-            
-            // Inisialisasi carousel mini jika pindah ke tampilan dokumen
-            if (viewToShow === 'dokumen') {
-                initializeMiniCarousels();
-            }
         });
 
-        // --- LOGIKA FITUR 1: POP-UP GALERI DOKUMEN ---
+        // --- LOGIKA POP-UP BERKAS LEGAL ---
         $(document).on('click', '.view-docs', function() {
-            var namaAset = $(this).data('nama-aset');
-            var dokumen = $(this).data('dokumen');
-            $('#dokumenModalLabel span').text(namaAset);
-            var carouselInner = $('#dokumen-carousel .carousel-inner');
-            carouselInner.empty();
+            const namaAset = $(this).data('nama-aset');
+            const berkas_list = $(this).data('dokumen');
+            const modalTitle = $('#dokumenModalLabel span');
+            const listContainer = $('#berkas-list-container');
 
-            if (dokumen && dokumen.length > 0) {
-                dokumen.forEach(function(doc, index) {
-                    var activeClass = (index === 0) ? 'active' : '';
-                    var slideHtml = '';
-                    var fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
+            modalTitle.text(namaAset);
+            listContainer.empty();
 
-                    if (doc.tipe_file.startsWith('image/')) {
-                        slideHtml = `<div class="carousel-item ${activeClass}" data-deskripsi="${doc.nama_asli_file}"><img src="${fileUrl}" class="d-block w-100" style="max-height: 500px; object-fit: contain;"></div>`;
-                    } else {
-                        slideHtml = `<div class="carousel-item ${activeClass}" data-deskripsi="${doc.nama_asli_file}"><div class="d-flex flex-column justify-content-center align-items-center" style="height: 400px;"><i class="bi bi-file-earmark-text-fill" style="font-size: 5rem;"></i><h4>${doc.nama_asli_file}</h4><a href="${fileUrl}" target="_blank" class="btn btn-primary mt-2">Lihat File</a></div></div>`;
+            if (berkas_list && berkas_list.length > 0) {
+                berkas_list.forEach(function(berkas) {
+                    let ikon = 'bi-file-earmark-text';
+                    if (berkas.tipe_file && berkas.tipe_file.includes('pdf')) {
+                        ikon = 'bi-file-earmark-pdf-fill text-danger';
+                    } else if (berkas.tipe_file && berkas.tipe_file.startsWith('image/')) {
+                        ikon = 'bi-image text-success';
                     }
-                    carouselInner.append(slideHtml);
+                    const fileUrl = `<?= base_url('files/bukti/') ?>${berkas.path_file}`;
+                    const listItem = `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi ${ikon} me-2"></i>
+                                <strong>${berkas.nama_berkas}</strong>
+                            </div>
+                            <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye-fill me-1"></i> Lihat
+                            </a>
+                        </li>
+                    `;
+                    listContainer.append(listItem);
                 });
-                $('#dokumen-carousel .carousel-control-prev, #dokumen-carousel .carousel-control-next').toggle(dokumen.length > 1);
-                updateCarouselInfo();
             } else {
-                carouselInner.html('<div class="carousel-item active"><div class="text-center p-5">Tidak ada dokumen.</div></div>');
-                $('#dokumen-carousel .carousel-control-prev, #dokumen-carousel .carousel-control-next').hide();
-                $('#dokumen-deskripsi, #dokumen-counter').text('');
+                listContainer.append('<li class="list-group-item text-center text-muted">Tidak ada berkas legal untuk aset ini.</li>');
             }
         });
 
-        function updateCarouselInfo() {
-            var activeItem = $('#dokumen-carousel .carousel-item.active');
-            if (!activeItem.length) return;
-            var total = $('#dokumen-carousel .carousel-item').length;
-            var current = activeItem.index() + 1;
-            $('#dokumen-counter').text(`${current} / ${total}`);
-            $('#dokumen-deskripsi').text(activeItem.data('deskripsi'));
-        }
-        $('#dokumen-carousel').on('slid.bs.carousel', updateCarouselInfo);
-
-        // --- LOGIKA FITUR 2: CAROUSEL MINI DI TABEL DOKUMEN ---
-        function initializeMiniCarousels() {
-            $('.mini-carousel').each(function() {
-                var carousel = $(this);
-                if (carousel.hasClass('initialized')) return; // Mencegah inisialisasi ganda
-
-                var dokumen = carousel.data('dokumen');
-                if (!dokumen || dokumen.length === 0) return;
-                var currentIndex = 0;
-
-                function renderSlide(index) {
-                    var doc = dokumen[index];
-                    var fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
-                    var contentHtml = doc.tipe_file.startsWith('image/')
-                        ? `<img src="${fileUrl}" alt="${doc.nama_asli_file}" title="Klik untuk memperbesar">`
-                        : `<a href="${fileUrl}" target="_blank" title="Lihat File"><i class="bi bi-file-earmark-text-fill file-icon"></i></a>`;
-                    carousel.find('.carousel-content').html(contentHtml);
-                    carousel.find('.carousel-counter').text(`${index + 1} / ${dokumen.length}`);
-                }
-                renderSlide(currentIndex);
-
-                carousel.find('.prev-btn').off('click').on('click', function() {
-                    currentIndex = (currentIndex > 0) ? currentIndex - 1 : dokumen.length - 1;
-                    renderSlide(currentIndex);
-                });
-                carousel.find('.next-btn').off('click').on('click', function() {
-                    currentIndex = (currentIndex < dokumen.length - 1) ? currentIndex + 1 : 0;
-                    renderSlide(currentIndex);
-                });
-                carousel.find('.carousel-controls').toggle(dokumen.length > 1);
-                carousel.addClass('initialized'); // Tandai sudah diinisialisasi
-            });
-        }
-
-        // --- SEMUA LOGIKA LAMA ANDA YANG PERLU DIJALANKAN SAAT HALAMAN SIAP ---
-
-        // Menampilkan popup QR Code setelah tambah aset
+        // --- MENAMPILKAN POP-UP QR CODE SETELAH TAMBAH ASET ---
         <?php if (session()->getFlashdata('new_aset')): ?>
             const newAset = <?= json_encode(session()->getFlashdata('new_aset')) ?>;
             $('#qr-kode').text(newAset.kode);
-            $('#qr-detail').text(`${newAset.entitas_pembelian} - ${newAset.nama_sub_kategori}`);
+            $('#qr-detail').text(`${newAset.entitas_pembelian || ''} - ${newAset.nama_sub_kategori || ''}`);
             $('#qr-image').attr('src', `<?= base_url() ?>/${newAset.qrcode}`);
             new bootstrap.Modal(document.getElementById('qrCodeModal')).show();
         <?php endif; ?>
 
-        // Inisialisasi Select2 di modal tambah
+        // --- INISIALISASI SELECT2 DI MODAL TAMBAH ---
         $('#tambahAsetModal').on('shown.bs.modal', function () {
             $('#kategori_id-tambah, #sub_kategori_id-tambah, #merk_id-tambah, #tipe_id-tambah, #lokasi-tambah').select2({
                 dropdownParent: $('#tambahAsetModal')
             });
         });
 
-        // Logika Dropdown Kategori -> Sub Kategori
+        // --- LOGIKA DROPDOWN BERGANTUNG ---
         $('#kategori_id-tambah').on('change', function () {
             const kategoriId = $(this).val();
             const subKategoriSelect = $('#sub_kategori_id-tambah');
@@ -1026,7 +912,6 @@ if (printButton) {
             }
         });
 
-        // Logika Dropdown Merk -> Tipe
         $('#merk_id-tambah').on('change', function () {
             const merkId = $(this).val();
             const tipeSelect = $('#tipe_id-tambah');
@@ -1045,97 +930,58 @@ if (printButton) {
             }
         });
         
-        // Panggil generateKodeAset saat form berubah
+        // --- EVENT UNTUK GENERATE KODE ASET ---
         $('#sub_kategori_id-tambah, #merk_id-tambah, #tahun_beli-tambah').on('change', generateKodeAset);
         
-        // Logika Pencarian Real-time
-        $('#searchInput').on('keyup', function() {
-            const keyword = this.value;
-            const tableBody = $('#asetTableBody');
-            fetch(`<?= base_url('aset/search') ?>?q=${keyword}`)
-                .then(response => response.json())
-                .then(data => {
-                    tableBody.empty();
-                    if (data.length > 0) {
-                        data.forEach(aset => {
-                            const row = `<tr>...</tr>`; // Bangun baris tabel seperti di PHP
-                            tableBody.append(row);
-                        });
-                    } else {
-                        tableBody.append(`<tr><td colspan="8" class="text-center">Aset tidak ditemukan.</td></tr>`);
-                    }
-                });
-        });
-
-// --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
-const detailAsetModal = document.getElementById('detailAsetModal');
-        let currentAsetId = null;
-
+        // --- LOGIKA MODAL DETAIL & RIWAYAT ASET ---
+        const detailAsetModal = document.getElementById('detailAsetModal');
         if (detailAsetModal) {
             detailAsetModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                currentAsetId = button.getAttribute('data-id');
-
-                // Reset semua konten riwayat
+                const currentAsetId = button.getAttribute('data-id');
                 const verifikasiList = document.getElementById('timeline-verifikasi-list');
                 const perubahanList = document.getElementById('timeline-perubahan-list');
-                verifikasiList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
-                perubahanList.innerHTML = '<li class="list-group-item">Memuat riwayat...</li>';
+                verifikasiList.innerHTML = '<li class="list-group-item">Memuat...</li>';
+                perubahanList.innerHTML = '<li class="list-group-item">Memuat...</li>';
 
-                // Fetch Detail Aset
                 fetch(`/aset/${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
-                        document.getElementById('detail-kode').textContent = data.kode;
-                        document.getElementById('detail-kategori').textContent = data.nama_kategori;
-                        document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
-                        document.getElementById('detail-merk').textContent = data.nama_merk || '-';
-                        document.getElementById('detail-type').textContent = data.nama_tipe || '-';
-                        document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;
-                        document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
-                        document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
-                        document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
-                        document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
-                        document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
-                        document.getElementById('detail-status').textContent = data.status;
-                        // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
+                        // Mengisi semua detail di modal
+                        $('#detail-kode').text(data.kode || '-');
+                        $('#detail-kategori').text(data.nama_kategori || '-');
+                        $('#detail-sub-kategori').text(data.nama_sub_kategori || '-');
+                        $('#detail-merk').text(data.nama_merk || '-');
+                        $('#detail-type').text(data.nama_tipe || '-');
+                        $('#detail-serial_number').text(data.serial_number || '-');
+                        $('#detail-tahun_beli').text(data.tahun_beli || '-');
+                        $('#detail-harga_beli').text(formatRupiah(data.harga_beli));
+                        $('#detail-entitas_pembelian').text(data.entitas_pembelian || '-');
+                        $('#detail-user_pengguna').text(data.user_pengguna || '-');
+                        $('#detail-lokasi').text(data.nama_lokasi || '-');
+                        $('#detail-keterangan').text(data.keterangan || '-');
+                        $('#detail-status').text(data.status || '-');
+                        
+                        // Mengisi dokumentasi
                         const dokumentasiContainer = document.getElementById('detail-dokumentasi');
-                        dokumentasiContainer.innerHTML = ''; // Kosongkan dulu
-
+                        dokumentasiContainer.innerHTML = '';
                         if (data.dokumentasi && data.dokumentasi.length > 0) {
                             data.dokumentasi.forEach(doc => {
                                 let docItem = '';
                                 const fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
-
                                 if (doc.tipe_file.startsWith('image/')) {
-                                    docItem = `
-                                        <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank">
-                                                <img src="${fileUrl}" alt="Bukti" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
-                                            </a>
-                                        </div>
-                                    `;
+                                    docItem = `<div class="col-auto"><a href="${fileUrl}" target="_blank"><img src="${fileUrl}" class="img-thumbnail" style="width:80px;height:80px;object-fit:cover;"></a></div>`;
                                 } else {
-                                    docItem = `
-                                        <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
-                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
-                                                <small class="text-muted mt-1">PDF</small>
-                                            </a>
-                                        </div>
-                                    `;
+                                    docItem = `<div class="col-auto"><a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width:80px;height:80px;text-decoration:none;"><i class="bi bi-file-earmark-pdf-fill" style="font-size:2rem;color:#d33;"></i><small class="text-muted mt-1">PDF</small></a></div>`;
                                 }
                                 dokumentasiContainer.innerHTML += docItem;
                             });
                         } else {
-                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset yang diunggah.</p>';
+                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset.</p>';
                         }
-                        // --- AKHIR KODE BARU ---
-                    })
-                    .catch(error => console.error('Error fetching detail:', error));
+                    });
 
-                // Fetch Riwayat Verifikasi (Stock Opname)
+                // Fetch Riwayat Verifikasi
                 fetch(`<?= base_url('aset/stockopname_history/') ?>${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -1143,17 +989,15 @@ const detailAsetModal = document.getElementById('detailAsetModal');
                         if (data.length > 0) {
                             data.forEach(item => {
                                 const date = new Date(item.opname_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                                const badge = item.ada_perubahan == '1' ? '<span class="badge bg-warning">Ada Usulan Perubahan</span>' : '<span class="badge bg-success">Data Sesuai</span>';
-                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Diverifikasi oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Status verifikasi: ${badge}</p></li>`;
-                                verifikasiList.innerHTML += listItem;
+                                const badge = item.ada_perubahan == '1' ? '<span class="badge bg-warning">Ada Usulan</span>' : '<span class="badge bg-success">Sesuai</span>';
+                                verifikasiList.innerHTML += `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Oleh: ${item.full_name}</h6><small>${date}</small></div><p class="mb-1">Status: ${badge}</p></li>`;
                             });
                         } else {
-                            verifikasiList.innerHTML = '<li class="list-group-item">Belum ada riwayat verifikasi untuk aset ini.</li>';
+                            verifikasiList.innerHTML = '<li class="list-group-item">Belum ada riwayat verifikasi.</li>';
                         }
-                    })
-                    .catch(error => console.error('Error fetching stock opname history:', error));
+                    });
                 
-                // Fetch Riwayat Perubahan Data
+                // Fetch Riwayat Perubahan
                 fetch(`<?= base_url('aset/history/') ?>${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -1163,25 +1007,17 @@ const detailAsetModal = document.getElementById('detailAsetModal');
                                 const proposed = JSON.parse(item.proposed_data);
                                 let changes = '';
                                 for (const key in proposed) {
-                                    changes += `<span class="badge bg-secondary me-1">${key.replace('_', ' ')}: ${proposed[key]}</span>`;
+                                    changes += `<span class="badge bg-secondary me-1">${key.replace('_',' ')}: ${proposed[key]}</span> `;
                                 }
                                 const date = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-                                const listItem = `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Diajukan oleh: ${item.full_name}</h6><small>${date} WIB</small></div><p class="mb-1">Data yang diubah: ${changes}</p></li>`;
-                                perubahanList.innerHTML += listItem;
+                                perubahanList.innerHTML += `<li class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1">Oleh: ${item.full_name}</h6><small>${date}</small></div><p class="mb-1">Perubahan: ${changes}</p></li>`;
                             });
                         } else {
-                            perubahanList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan data untuk aset ini.</li>';
+                            perubahanList.innerHTML = '<li class="list-group-item">Tidak ada riwayat perubahan data.</li>';
                         }
-                    })
-                    .catch(error => console.error('Error fetching change history:', error));
+                    });
             });
         };
-
-    })  
-    
-    
-
-    
-    
+    });
 </script>
 <?= $this->endSection() ?>

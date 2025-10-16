@@ -106,7 +106,6 @@ class AsetController extends ResourceController
         ->join('merk m', 'm.id = aset.merk_id', 'left')
         ->join('tipe t', 't.id = aset.tipe_id', 'left')
         ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
-        // --- PERBAIKAN DI BARIS INI ---
         ->join('karyawan kry', 'kry.id = aset.user_pengguna', 'left');
 
     // Terapkan filter jika ada
@@ -142,22 +141,34 @@ class AsetController extends ResourceController
     // Mengambil semua dokumentasi terkait dalam satu query untuk efisiensi
     $asetIds = array_column($asets, 'id');
     $allDokumentasi = [];
-    if (!empty($asetIds)) {
-        $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
-        $allDokumentasi = $dokumentasiModel->whereIn('aset_id', $asetIds)->findAll();
-    }
+        if (!empty($asetIds)) {
+            $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+            $allDokumentasi = $dokumentasiModel->whereIn('aset_id', $asetIds)->findAll();
+        }
 
-    // Membuat map dokumentasi untuk akses cepat
-    $dokumentasiMap = [];
-    foreach ($allDokumentasi as $doc) {
-        $dokumentasiMap[$doc['aset_id']][] = $doc;
-    }
+        $allBerkas = [];
+        if (!empty($asetIds)) {
+            $berkasModel = new \App\Models\BerkasAsetModel();
+            $allBerkas = $berkasModel->whereIn('aset_id', $asetIds)->findAll();
+        }
 
-    // Menggabungkan dokumentasi ke dalam data aset
-    foreach ($asets as &$aset) {
-        $aset['dokumen'] = $dokumentasiMap[$aset['id']] ?? [];
-    }
-    unset($aset); // Membersihkan referensi
+        // Buat "peta" untuk akses cepat
+        $dokumentasiMap = [];
+        foreach ($allDokumentasi as $doc) {
+            $dokumentasiMap[$doc['aset_id']][] = $doc;
+        }
+
+        $berkasMap = [];
+        foreach ($allBerkas as $berkas) {
+            $berkasMap[$berkas['aset_id']][] = $berkas;
+        }
+
+        // Menggabungkan semua data ke dalam array aset utama
+        foreach ($asets as &$aset) {
+            $aset['dokumen'] = $dokumentasiMap[$aset['id']] ?? [];
+            $aset['berkas_list'] = $berkasMap[$aset['id']] ?? []; // <-- DATA BERKAS LEGAL DITAMBAHKAN DI SINI
+        }
+        unset($aset);
 
     // Siapkan data untuk view
     $data = [

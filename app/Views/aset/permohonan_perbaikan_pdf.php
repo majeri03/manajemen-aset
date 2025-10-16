@@ -89,13 +89,13 @@
             <div class="signature-col">
                 <p style="margin-bottom: 0;">Menyetujui,</p>
                 <div style="height: 60px;"></div>
-                <p style="margin: 0;"><strong><u>(<?= esc($penyetuju['nama'] ?? '.........................') ?>)</u></strong></p>
+                <p style="margin: 0;"><strong><u><?= esc($penyetuju['nama'] ?? '.........................') ?></u></strong></p>
                 <p style="margin: 0;"><?= esc($penyetuju['jabatan'] ?? 'Atasan') ?></p>
             </div>
             <div class="signature-col right">
                 <p style="margin-bottom: 0;">Pemohon,</p>
                 <div style="height: 60px;"></div>
-                <p style="margin: 0;"><strong><u>(<?= esc($pemohon['nama_karyawan'] ?? '.........................') ?>)</u></strong></p>
+                <p style="margin: 0;"><strong><u><?= esc($pemohon['nama_karyawan'] ?? '.........................') ?></u></strong></p>
                 <p style="margin: 0;"><?= esc($pemohon['jabatan'] ?? 'Staff') ?></p>
             </div>
             <div class="clear"></div>
