@@ -5,6 +5,21 @@ Dashboard
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+
+<style>
+    /* CSS untuk avatar pengguna */
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef; /* Warna abu-abu muda */
+        color: #495057; /* Warna teks abu-abu tua */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+</style>
 <div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     
     <div>
@@ -182,71 +197,91 @@ Dashboard
 </div>
 <?php endif; ?>
 
-
-<div class="table-container shadow-sm mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Progres Stock Opname per Lokasi</h5>
-        
-        <form id="reset-progress-form" action="<?= base_url('dashboard/reset-so-progress') ?>" method="post" onsubmit="return confirmReset(event);">
-            <?= csrf_field() ?>
-            <button type="submit" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-arrow-counterclockwise"></i> Reset Progres
-            </button>
-        </form>
-    </div>
-
-    <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
-        <?php if (!empty($stock_opname_per_lokasi)): ?>
-            <?php foreach ($stock_opname_per_lokasi as $lokasi): ?>
-                <div class="list-group-item px-1 py-3">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 fw-bold"><?= esc($lokasi['nama_lokasi']) ?></h6>
-                        <small class="text-muted"><?= esc($lokasi['sudah_dicek']) ?> / <?= esc($lokasi['total_aset']) ?> Aset</small>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar" role="progressbar" style="width: <?= round($lokasi['persentase'], 2) ?>%;" aria-valuenow="<?= round($lokasi['persentase'], 2) ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="list-group-item text-center p-4">
-                <i class="bi bi-info-circle text-muted fs-3"></i>
-                <p class="mb-0 mt-2 text-muted">Belum ada aktivitas stock opname yang tercatat.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-        <div class="table-container shadow-sm flex-grow-1">
-            <h5 class="mb-3">Top user pengguna</h5>
-            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                <table class="table table-sm table-hover align-middle">
-                     <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th class="text-end">Jumlah Aset</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($daftar_penanggung_jawab)): ?>
-                            <?php foreach ($daftar_penanggung_jawab as $pj): ?>
-                                <tr>
-                                    <td><?= esc($pj['user_pengguna']) ?></td>
-                                    <td class="text-end">
-                                        <span class="badge bg-primary rounded-pill"><?= esc($pj['jumlah_aset']) ?></span>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="2" class="text-center p-3">Belum ada user pengguna.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+<div class="card shadow-sm mb-4 rounded-4 border-0"> 
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center pb-3 border-bottom">
+            <h5 class="mb-0">Progres Stock Opname</h5>
+            <form id="reset-progress-form" action="<?= base_url('dashboard/reset-so-progress') ?>" method="post" onsubmit="return confirmReset(event);">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Reset
+                </button>
+            </form>
         </div>
 
+        <div class="mt-3" style="max-height: 280px; overflow-y: auto;">
+            <?php if (!empty($stock_opname_per_lokasi)): ?>
+                <?php foreach ($stock_opname_per_lokasi as $lokasi): ?>
+                    <?php
+                        $isSelesai = ($lokasi['persentase'] >= 100);
+                        $statusBarClass = $isSelesai ? 'bg-success' : 'bg-primary';
+                        $statusText = $isSelesai ? 'Selesai' : 'Proses';
+                        $statusBadgeClass = $isSelesai ? 'bg-success' : 'bg-warning text-dark';
+                        $progressText = esc($lokasi['sudah_dicek']) . ' / ' . esc($lokasi['total_aset']) . ' Aset';
+                        $animationClass = $isSelesai ? '' : 'progress-bar-animated'; 
+                    ?>
+                    <div class="mb-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 text-uppercase small"><?= esc($lokasi['nama_lokasi']) ?></h6>
+                            <span class="badge rounded-pill <?= $statusBadgeClass ?>"><?= $statusText ?></span>
+                        </div>
+
+                        <div class="progress position-relative" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped <?= $animationClass ?> <?= $statusBarClass ?>" role="progressbar" style="width: <?= round($lokasi['persentase'], 2) ?>%;" aria-valuenow="<?= round($lokasi['persentase'], 2) ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                            <span class="progress-text position-absolute w-100 text-center text-white fw-bold" style="line-height: 20px; font-size: 0.85em; text-shadow: 1px 1px 2px rgba(0,0,0,0.6);">
+                                <?= $progressText ?>
+                            </span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="text-center p-4">
+                    <i class="bi bi-info-circle text-muted fs-3"></i>
+                    <p class="mb-0 mt-2 text-muted">Belum ada aktivitas stock opname.</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
+</div>
+    <div class="card shadow-sm flex-grow-1 rounded-4 border-0">
+    <div class="card-body d-flex flex-column">
+        
+        <div class="pb-3 border-bottom">
+            <h5 class="mb-0">Top User Pengguna</h5>
+        </div>
+
+        <div class="table-responsive mt-3" style="max-height: 250px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-muted small text-uppercase fw-normal border-0">Nama</th>
+                        <th class="text-muted small text-uppercase fw-normal border-0 text-end">Jumlah Aset</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($daftar_penanggung_jawab)): ?>
+                        <?php foreach ($daftar_penanggung_jawab as $pj): ?>
+                            <tr>
+                                <td class="fw-bold border-0"><?= esc($pj['user_pengguna']) ?></td>
+                                
+                                <td class="text-end border-0">
+                                    <span class="badge bg-primary rounded-pill"><?= esc($pj['jumlah_aset']) ?></span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="2" class="text-center p-4 border-0">
+                                <i class="bi bi-people text-muted fs-3"></i>
+                                <p class="mb-0 mt-2 text-muted">Belum ada user pengguna.</p>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 </div>
 
