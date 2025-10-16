@@ -270,15 +270,12 @@ Data Aset
 
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <label class="form-label small text-muted mb-1">Mode Tampilan</label>
-        <div class="btn-group" role="group" id="view-switcher">
-            <button type="button" class="btn btn-primary active" data-view="aset"><i class="fas fa-server me-2"></i> Berbasis Aset</button>
-            <button type="button" class="btn btn-outline-primary" data-view="dokumen"><i class="fas fa-file-alt me-2"></i> Berbasis Dokumen</button>
-            <button type="button" class="btn btn-outline-primary" data-view="qrcode"><i class="fas fa-qrcode me-2"></i> Berbasis QR Code</button>
-        </div>
+    <div class="btn-group" role="group" id="view-switcher">
+        <button type="button" class="btn btn-primary active" data-view="aset"><i class="fas fa-server me-2"></i> Berbasis Aset</button>
+        <button type="button" class="btn btn-outline-primary" data-view="dokumen"><i class="fas fa-file-alt me-2"></i> Berbasis Dokumen</button>
+        <button type="button" class="btn btn-outline-primary" data-view="qrcode"><i class="fas fa-qrcode me-2"></i> Berbasis QR Code</button>
     </div>
-    </div>
+</div>
 
 
 <div id="view-container">
