@@ -91,6 +91,21 @@ Data Aset
     }
 
     /* =================================
+    CSS UNTUK TAMPILAN 'BERBASIS QR CODE'
+    =================================
+    */
+    #qrcode-view .qr-thumbnail,
+    #qrcode-view .print-data img {
+        width: 120px;
+        min-width: 60px;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+
+    /* =================================
     CSS UNTUK FREEZE KOLOM'
     =================================
     */
@@ -255,12 +270,15 @@ Data Aset
 
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="btn-group" role="group" id="view-switcher">
-        <button type="button" class="btn btn-primary active" data-view="aset"><i class="fas fa-server me-2"></i> Berbasis Aset</button>
-        <button type="button" class="btn btn-outline-primary" data-view="dokumen"><i class="fas fa-file-alt me-2"></i> Berbasis Dokumen</button>
-        <button type="button" class="btn btn-outline-primary" data-view="qrcode"><i class="fas fa-qrcode me-2"></i> Berbasis QR Code</button>
+    <div>
+        <label class="form-label small text-muted mb-1">Mode Tampilan</label>
+        <div class="btn-group" role="group" id="view-switcher">
+            <button type="button" class="btn btn-primary active" data-view="aset"><i class="fas fa-server me-2"></i> Berbasis Aset</button>
+            <button type="button" class="btn btn-outline-primary" data-view="dokumen"><i class="fas fa-file-alt me-2"></i> Berbasis Dokumen</button>
+            <button type="button" class="btn btn-outline-primary" data-view="qrcode"><i class="fas fa-qrcode me-2"></i> Berbasis QR Code</button>
+        </div>
     </div>
-</div>
+    </div>
 
 
 <div id="view-container">
@@ -452,7 +470,7 @@ Data Aset
                                 <td><input type="checkbox" class="form-check-input barcode-checkbox"></td>
                                 <td>
                                     <?php if (!empty($aset['qrcode'])): ?>
-                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid" style="width: 100px; height: 100px;">
+                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid qr-thumbnail">
                                         <div class="print-data d-none">
                                             <p class="kode-aset"><?= esc($aset['kode'] ?? 'N/A') ?></p>
                                             <p class="detail-aset"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></p> 
@@ -1018,7 +1036,7 @@ const detailAsetModal = document.getElementById('detailAsetModal');
                         document.getElementById('detail-merk').textContent = data.nama_merk || '-';
                         document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;
+                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;z
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                         document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
