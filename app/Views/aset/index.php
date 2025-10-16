@@ -156,7 +156,7 @@ Data Aset
                         <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
                         <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
                     </div>
-                    <?php if (session()->get('role') === 'admin'): ?>
+                    <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                     <button class="btn btn-custom-icon flex-shrink-0" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
                         <i class="bi bi-plus-circle me-2"></i> Tambah Aset
                     </button>
@@ -404,7 +404,7 @@ Data Aset
                                             </li>
                                             <?php endif; ?>
 
-                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
@@ -485,7 +485,7 @@ Data Aset
                                                     <i class="bi bi-eye-fill me-2"></i>Lihat Detail
                                                 </button>
                                             </li>
-                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                                             <li>
                                                 <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
                                                     <i class="bi bi-pencil-fill me-2"></i>Edit
