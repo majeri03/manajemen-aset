@@ -6,20 +6,6 @@ Dashboard
 
 <?= $this->section('content') ?>
 
-<style>
-    /* CSS untuk avatar pengguna */
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #e9ecef; /* Warna abu-abu muda */
-        color: #495057; /* Warna teks abu-abu tua */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
-</style>
 <div class="main-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     
     <div>
