@@ -71,7 +71,7 @@ Dashboard
                     </div>
                 </a>
             </div>
-            <?php if (session()->get('role') === 'admin'): ?>
+            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
             <div class="col-lg-6 col-md-6">
                 <a href="<?= base_url('aset') ?>" class="stat-card-link">
                     <div class="stat-card shadow-sm green h-100">
@@ -84,7 +84,7 @@ Dashboard
                 </a>
             </div>
             <?php endif; ?>
-            <?php if (session()->get('role') === 'admin'): ?>
+            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
             <div class="col-lg-6 col-md-6">
                 <a href="<?= base_url('requests') ?>" class="stat-card-link">
                     <div class="stat-card shadow-sm yellow h-100">
@@ -118,7 +118,7 @@ Dashboard
                             <i class="bi bi-clipboard2-check-fill"></i> Kondisi
                         </button>
                     </li>
-                    <?php if (session()->get('role') === 'admin'): ?>
+                    <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="lokasi-tab" data-bs-toggle="tab" data-bs-target="#lokasi" type="button" role="tab">
                             <i class="bi bi-geo-alt-fill"></i> Lokasi
@@ -155,7 +155,7 @@ Dashboard
     </div>
 
     <div class="col-lg-4 d-flex flex-column">
-        <?php if (session()->get('role') === 'admin'): ?>
+        <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
 <div class="d-grid gap-2 mb-4">
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
         <i class="bi bi-plus-circle me-2"></i> Tambah Aset

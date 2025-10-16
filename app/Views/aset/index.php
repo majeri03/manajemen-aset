@@ -109,6 +109,21 @@ Data Aset
     }
 
     /* =================================
+    CSS UNTUK TAMPILAN 'BERBASIS QR CODE'
+    =================================
+    */
+    #qrcode-view .qr-thumbnail,
+    #qrcode-view .print-data img {
+        width: 120px;
+        min-width: 60px;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+
+    /* =================================
     CSS UNTUK FREEZE KOLOM'
     =================================
     */
@@ -141,7 +156,7 @@ Data Aset
                         <input type="text" class="form-control" id="searchInput" placeholder="Cari aset...">
                         <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
                     </div>
-                    <?php if (session()->get('role') === 'admin'): ?>
+                    <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                     <button class="btn btn-custom-icon flex-shrink-0" data-bs-toggle="modal" data-bs-target="#tambahAsetModal">
                         <i class="bi bi-plus-circle me-2"></i> Tambah Aset
                     </button>
@@ -389,7 +404,7 @@ Data Aset
                                                 </li>
                                             <?php endif; ?>
 
-                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
@@ -470,7 +485,7 @@ Data Aset
                                                     <i class="bi bi-eye-fill me-2"></i>Lihat Detail
                                                 </button>
                                             </li>
-                                            <?php if (session()->get('role') === 'admin'): ?>
+                                            <?php if (in_array(session()->get('role'), ['admin', 'super_admin'])): ?>
                                             <li>
                                                 <a class="dropdown-item" href="<?= base_url('aset/' . $aset['id'] . '/edit') ?>">
                                                     <i class="bi bi-pencil-fill me-2"></i>Edit
@@ -526,7 +541,7 @@ Data Aset
                                 <td><input type="checkbox" class="form-check-input barcode-checkbox"></td>
                                 <td>
                                     <?php if (!empty($aset['qrcode'])): ?>
-                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid" style="width: 100px; height: 100px;">
+                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid qr-thumbnail">
                                         <div class="print-data d-none">
                                             <p class="kode-aset"><?= esc($aset['kode'] ?? 'N/A') ?></p>
                                             <p class="detail-aset"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></p> 
@@ -947,22 +962,20 @@ Data Aset
                 fetch(`/aset/${currentAsetId}`)
                     .then(response => response.json())
                     .then(data => {
-                        // Mengisi semua detail di modal
-                        $('#detail-kode').text(data.kode || '-');
-                        $('#detail-kategori').text(data.nama_kategori || '-');
-                        $('#detail-sub-kategori').text(data.nama_sub_kategori || '-');
-                        $('#detail-merk').text(data.nama_merk || '-');
-                        $('#detail-type').text(data.nama_tipe || '-');
-                        $('#detail-serial_number').text(data.serial_number || '-');
-                        $('#detail-tahun_beli').text(data.tahun_beli || '-');
-                        $('#detail-harga_beli').text(formatRupiah(data.harga_beli));
-                        $('#detail-entitas_pembelian').text(data.entitas_pembelian || '-');
-                        $('#detail-user_pengguna').text(data.user_pengguna || '-');
-                        $('#detail-lokasi').text(data.nama_lokasi || '-');
-                        $('#detail-keterangan').text(data.keterangan || '-');
-                        $('#detail-status').text(data.status || '-');
-                        
-                        // Mengisi dokumentasi
+                        document.getElementById('detail-kode').textContent = data.kode;
+                        document.getElementById('detail-kategori').textContent = data.nama_kategori;
+                        document.getElementById('detail-sub-kategori').textContent = data.nama_sub_kategori;
+                        document.getElementById('detail-merk').textContent = data.nama_merk || '-';
+                        document.getElementById('detail-type').textContent = data.nama_tipe || '-';
+                        document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
+                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;z
+                        document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
+                        document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
+                        document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
+                        document.getElementById('detail-lokasi').textContent = data.nama_lokasi || '-';
+                        document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
+                        document.getElementById('detail-status').textContent = data.status;
+                        // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
                         const dokumentasiContainer = document.getElementById('detail-dokumentasi');
                         dokumentasiContainer.innerHTML = '';
                         if (data.dokumentasi && data.dokumentasi.length > 0) {

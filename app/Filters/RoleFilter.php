@@ -20,11 +20,13 @@ class RoleFilter implements FilterInterface
         // Ambil role dari session
         $userRole = $session->get('role');
 
-        // Anggap 'super_admin' sebagai 'admin' untuk keperluan pengecekan hak akses
-        $effectiveRole = ($userRole === 'super_admin') ? 'admin' : $userRole;
+        // Jika pengguna adalah super_admin, izinkan akses ke mana saja.
+        if ($userRole === 'super_admin') {
+            return;
+        }
 
-        // Periksa apakah peran efektif pengguna ada dalam daftar peran yang diizinkan.
-        if (!$session->has('role') || !in_array($effectiveRole, $arguments)) {
+        // Periksa apakah peran pengguna ada dalam daftar peran yang diizinkan.
+        if (!$session->has('role') || !in_array($userRole, $arguments)) {
             return redirect()->to('/dashboard')->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
     }

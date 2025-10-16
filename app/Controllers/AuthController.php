@@ -138,31 +138,47 @@ class AuthController extends BaseController
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
-        // Kirim email (simulasi)
-        $email = \Config\Services::email();
-        $email->setTo($user->email);
-        $email->setSubject('Reset Password Akun Anda');
+        // --- AWAL PERUBAHAN ---
+        // Konfigurasi email secara eksplisit di dalam controller
+        $config = [
+            'protocol'   => getenv('email.protocol'),
+            'SMTPHost'   => getenv('email.SMTPHost'),
+            'SMTPPort'   => (int) getenv('email.SMTPPort'),
+            'SMTPUser'   => getenv('email.SMTPUser'),
+            'SMTPPass'   => getenv('email.SMTPPass'),
+            'SMTPCrypto' => getenv('email.SMTPCrypto'),
+            'mailType'   => getenv('email.mailType'),
+            'charset'    => getenv('email.charset'),
+            'newline'    => "\r\n", // Wajib diset secara eksplisit
+            'CRLF'       => "\r\n", // Wajib diset secara eksplisit
+        ];
+        
+        $emailService = \Config\Services::email();
+        $emailService->initialize($config);
+        
+        // Atur pengirim setelah inisialisasi
+        $emailService->setFrom(getenv('email.fromEmail'), getenv('email.fromName'));
+        // --- AKHIR PERUBAHAN ---
+
+        $emailService->setTo($user->email);
+        $emailService->setSubject('Reset Password Akun Anda');
+
         $resetLink = base_url('reset-password/' . $token);
-        $message = "Halo " . $user->full_name . ",<br><br>"
-                 . "Anda menerima email ini karena ada permintaan untuk mereset password akun Anda.<br>"
+        $message = "Halo " . esc($user->full_name) . ",<br><br>"
+                 . "Anda menerima email ini karena ada permintaan untuk mereset password akun Anda pada Sistem Manajemen Aset.<br>"
                  . "Silakan klik tautan di bawah ini untuk melanjutkan:<br>"
                  . "<a href='" . $resetLink . "'>" . $resetLink . "</a><br><br>"
-                 . "Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan email ini.<br><br>"
-                 . "Terima kasih.";
-        $email->setMessage($message);
+                 . "Tautan ini berlaku selama 1 jam.<br><br>"
+                 . "Jika Anda tidak merasa melakukan permintaan ini, abaikan email ini.";
 
-        // Untuk sekarang, kita tampilkan pesan sukses karena pengiriman email mungkin belum dikonfigurasi
-        // if ($email->send()) {
-        //  return redirect()->back()->with('success', 'Tautan reset password telah dikirim ke email Anda. Silakan periksa kotak masuk Anda.');
-        // } else {
-        //     return redirect()->back()->with('error', 'Gagal mengirim email. Silakan coba lagi nanti.');
-        // }
+        $emailService->setMessage($message);
 
-
-        // UNTUK PENGUJIAN DI LOCALHOST: Tampilkan link di layar
-        $message = '<strong>[MODE PENGUJIAN]</strong> Tautan reset password telah dibuat. Silakan klik link di bawah ini (salin dan tempel di browser Anda jika tidak bisa diklik):<br><br>'
-                . '<a href="' . $resetLink . '">' . $resetLink . '</a>';
-        return redirect()->back()->with('success', $message);
+        if ($emailService->send()) {
+            return redirect()->back()->with('success', 'Tautan reset password telah dikirim ke email Anda. Silakan periksa kotak masuk atau folder spam.');
+        } else {
+            $debug = $emailService->printDebugger(['headers']);
+            return redirect()->back()->with('error', 'Gagal mengirim email. Debug: ' . esc($debug));
+        }
     }
 
     public function resetPassword($token = null)
@@ -221,3 +237,4 @@ class AuthController extends BaseController
         return redirect()->to('/login')->with('success', 'Password Anda telah berhasil direset! Silakan login dengan password baru.');
     }
 }
+
