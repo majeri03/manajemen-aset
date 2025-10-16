@@ -109,6 +109,21 @@ Data Aset
     }
 
     /* =================================
+    CSS UNTUK TAMPILAN 'BERBASIS QR CODE'
+    =================================
+    */
+    #qrcode-view .qr-thumbnail,
+    #qrcode-view .print-data img {
+        width: 120px;
+        min-width: 60px;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+
+    /* =================================
     CSS UNTUK FREEZE KOLOM'
     =================================
     */
@@ -526,7 +541,7 @@ Data Aset
                                 <td><input type="checkbox" class="form-check-input barcode-checkbox"></td>
                                 <td>
                                     <?php if (!empty($aset['qrcode'])): ?>
-                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid" style="width: 100px; height: 100px;">
+                                        <img src="<?= base_url($aset['qrcode']) ?>" alt="QR Code" class="img-fluid qr-thumbnail">
                                         <div class="print-data d-none">
                                             <p class="kode-aset"><?= esc($aset['kode'] ?? 'N/A') ?></p>
                                             <p class="detail-aset"><?= esc($aset['nama_sub_kategori'] ?? 'N/A') ?></p> 
@@ -1092,7 +1107,7 @@ const detailAsetModal = document.getElementById('detailAsetModal');
                         document.getElementById('detail-merk').textContent = data.nama_merk || '-';
                         document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;
+                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;z
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                         document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
