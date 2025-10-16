@@ -59,25 +59,31 @@
                         <i class="bi bi-qr-code-scan"></i> <span>Scan Aset</span>
                     </a>
                 </li>
-                
-                <?php if (session()->get('role') === 'admin'): ?>
+                <?php
+                    $role = session()->get('role');
+                ?>
                 <li class="nav-item mt-2">
                     <div class="sidebar-heading <?= $manajemen_aset_active ? 'active-group' : '' ?>">Manajemen Aset</div>
                     <ul class="nav flex-column">
+                        
+                        <?php // Tampilkan "Data Aset" untuk semua role ?>
                         <li><a href="<?= base_url('aset') ?>" class="nav-link submenu-link <?= ($current_page == 'aset') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Aset"><i class="bi bi-box-seam"></i> <span>Data Aset</span></a></li>
-                        <li><a href="<?= base_url('master-data') ?>" class="nav-link submenu-link <?= ($current_page == 'master-data') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Master"><i class="bi bi-hdd-stack-fill"></i> <span>Data Master</span></a></li>
-                        <li><a href="<?= base_url('import') ?>" class="nav-link submenu-link <?= ($current_page == 'import') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Import Data"><i class="bi bi-file-earmark-excel"></i> <span>Import Data</span></a></li>
+                        
+                        <?php // Tampilkan "Import Data" hanya untuk admin dan super_admin ?>
+                        <?php if (in_array($role, ['admin', 'super_admin'])): ?>
+                            <li><a href="<?= base_url('import') ?>" class="nav-link submenu-link <?= ($current_page == 'import') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Import Data"><i class="bi bi-file-earmark-excel"></i> <span>Import Data</span></a></li>
+                        <?php endif; ?>
+                        
+                        <?php // Tampilkan "Data Master" hanya untuk super_admin ?>
+                        <?php if ($role === 'super_admin'): ?>
+                            <li><a href="<?= base_url('master-data') ?>" class="nav-link submenu-link <?= ($current_page == 'master-data') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Master"><i class="bi bi-hdd-stack-fill"></i> <span>Data Master</span></a></li>
+                        <?php endif; ?>
+
                     </ul>
                 </li>
-                <?php else: // Jika bukan admin, hanya tampilkan Data Aset ?>
-                <li class="nav-item mt-2">
-                    <div class="sidebar-heading">Manajemen Aset</div>
-                    <ul class="nav flex-column">
-                        <li><a href="<?= base_url('aset') ?>" class="nav-link submenu-link <?= ($current_page == 'aset') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Data Aset"><i class="bi bi-box-seam"></i> <span>Data Aset</span></a></li>
-                    </ul>
-                </li>
-                <?php endif; ?>   
-                <?php if (session()->get('role') === 'admin'): ?>
+
+
+                <?php if (in_array($role, ['admin', 'super_admin'])): // Tampilkan grup ini hanya untuk admin & super_admin ?>
                 <li class="nav-item mt-2">
                     <div class="sidebar-heading <?= $operasional_active ? 'active-group' : '' ?>">Operasional</div>
                     <ul class="nav flex-column">
@@ -88,11 +94,16 @@
                                 <?php if (isset($pending_requests) && $pending_requests > 0): ?>
                                     <span class="badge bg-danger rounded-pill"><?= $pending_requests ?></span>
                                 <?php endif; ?>
-                            <li><a href="<?= base_url('user') ?>" class="nav-link submenu-link <?= ($current_page == 'user') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manajemen Pengguna"><i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span>
                             </a>
                         </li>
-                            </a>
+                        
+                        <?php // Tampilkan "Manajemen Pengguna" hanya untuk super_admin ?>
+                        <?php if ($role === 'super_admin'): ?>
+                        <li>
+                            <a href="<?= base_url('user') ?>" class="nav-link submenu-link <?= ($current_page == 'user') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manajemen Pengguna"><i class="bi bi-people-fill"></i> <span>Manajemen Pengguna</span></a>
                         </li>
+                        <?php endif; ?>
+
                     </ul>
                 </li>
                 <?php endif; ?>
