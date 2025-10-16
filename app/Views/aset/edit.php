@@ -10,8 +10,8 @@ Edit Aset
     <p class="text-muted small">Hanya field yang diizinkan yang dapat diubah.</p>
 </div>
 
-<div class="table-container shadow-sm">
-    <form action="<?= base_url('aset/' . $aset['id']) ?>" method="post" enctype="multipart/form-data">
+<div class="table-container shadow-sm mb-4">
+    <form action="<?= base_url('aset/' . $aset['id']) ?>" method="post">
         <?= csrf_field() ?>
         <input type="hidden" name="_method" value="PUT">
 
@@ -20,15 +20,12 @@ Edit Aset
                 <label for="kode" class="form-label">Kode Aset</label>
                 <input type="text" class="form-control" id="kode" value="<?= esc($aset['kode']) ?>" readonly style="background-color: #e9ecef;">
             </div>
-            
             <div class="col-md-6">
                 <label for="merk_id" class="form-label">Merk</label>
                 <select class="form-select" id="merk_id" name="merk_id" required>
                     <option value="">Pilih Merk</option>
                     <?php foreach ($merk_list as $merk): ?>
-                        <option value="<?= $merk['id'] ?>" <?= ($aset['merk_id'] == $merk['id']) ? 'selected' : '' ?>>
-                            <?= esc($merk['nama_merk']) ?>
-                        </option>
+                        <option value="<?= $merk['id'] ?>" <?= ($aset['merk_id'] == $merk['id']) ? 'selected' : '' ?>><?= esc($merk['nama_merk']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -37,9 +34,7 @@ Edit Aset
                 <select class="form-select" id="tipe_id" name="tipe_id" required>
                     <option value="">Pilih Merk Dahulu</option>
                     <?php foreach ($tipe_list as $tipe): ?>
-                        <option value="<?= $tipe['id'] ?>" <?= ($aset['tipe_id'] == $tipe['id']) ? 'selected' : '' ?>>
-                            <?= esc($tipe['nama_tipe']) ?>
-                        </option>
+                        <option value="<?= $tipe['id'] ?>" <?= ($aset['tipe_id'] == $tipe['id']) ? 'selected' : '' ?>><?= esc($tipe['nama_tipe']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -47,17 +42,13 @@ Edit Aset
                 <label for="serial_number" class="form-label">Serial Number</label>
                 <input type="text" class="form-control" id="serial_number" value="<?= esc($aset['serial_number']) ?>" readonly style="background-color: #e9ecef;">
             </div>
-
             <hr class="my-4">
-
             <div class="col-md-6">
                 <label for="kategori_id" class="form-label">Kategori Barang</label>
                 <select class="form-select" id="kategori_id" name="kategori_id" required>
                     <option value="">Pilih Kategori</option>
                     <?php foreach ($kategori_list as $kategori): ?>
-                        <option value="<?= $kategori['id'] ?>" <?= ($aset['kategori_id'] == $kategori['id']) ? 'selected' : '' ?>>
-                            <?= esc($kategori['nama_kategori']) ?>
-                        </option>
+                        <option value="<?= $kategori['id'] ?>" <?= ($aset['kategori_id'] == $kategori['id']) ? 'selected' : '' ?>><?= esc($kategori['nama_kategori']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -66,14 +57,12 @@ Edit Aset
                 <select class="form-select" id="sub_kategori_id" name="sub_kategori_id" required>
                     <option value="">Pilih Sub Kategori</option>
                     <?php foreach ($subkategori_list as $sub): ?>
-                        <option value="<?= $sub['id'] ?>" <?= ($aset['sub_kategori_id'] == $sub['id']) ? 'selected' : '' ?>>
-                            <?= esc($sub['nama_sub_kategori']) ?>
-                        </option>
+                        <option value="<?= $sub['id'] ?>" <?= ($aset['sub_kategori_id'] == $sub['id']) ? 'selected' : '' ?>><?= esc($sub['nama_sub_kategori']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-6">
-                <label for="tahun_beli" class="form-label">tahun beli</label>
+                <label for="tahun_beli" class="form-label">Tahun Beli</label>
                 <input type="number" class="form-control" id="tahun_beli" name="tahun_beli" value="<?= esc($aset['tahun_beli']) ?>" required>
             </div>
             <div class="col-md-6">
@@ -85,17 +74,18 @@ Edit Aset
                 <input type="text" class="form-control" id="entitas_pembelian" name="entitas_pembelian" value="<?= esc($aset['entitas_pembelian']) ?>">
             </div>
             <div class="col-md-6">
-                <label for="user_pengguna" class="form-label">User Pengguna</label>
-                <input type="text" class="form-control" id="user_pengguna" name="user_pengguna" value="<?= esc($aset['user_pengguna']) ?>" oninput="this.value = this.value.toUpperCase()">
+                <label for="user_pengguna_display" class="form-label">User Pengguna</label>
+                <input type="text" class="form-control" id="user_pengguna_display" 
+                    value="<?= esc($aset['nama_karyawan'] ?? $aset['user_pengguna']) ?>" 
+                    readonly style="background-color: #e9ecef;">
+                <div class="form-text">User Pengguna akan otomatis diperbarui saat serah terima.</div>
             </div>
             <div class="col-md-6">
                 <label for="lokasi_id" class="form-label">Lokasi</label>
                 <select class="form-select" id="lokasi_id" name="lokasi_id" required>
                     <option value="">Pilih Lokasi</option>
                     <?php foreach ($lokasi_list as $lokasi): ?>
-                        <option value="<?= $lokasi['id'] ?>" <?= ($aset['lokasi_id'] == $lokasi['id']) ? 'selected' : '' ?>>
-                            <?= esc($lokasi['nama_lokasi']) ?>
-                        </option>
+                        <option value="<?= $lokasi['id'] ?>" <?= ($aset['lokasi_id'] == $lokasi['id']) ? 'selected' : '' ?>><?= esc($lokasi['nama_lokasi']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -117,65 +107,315 @@ Edit Aset
                                 <option value="<?= $karyawan['id'] ?>"><?= esc($karyawan['nama_karyawan']) ?> (<?= esc($karyawan['jabatan']) ?>)</option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info" id="download-pdf-btn">
-                            <i class="bi bi-download"></i> Unduh PDF
-                        </button>
+                        <button type="button" class="btn btn-info" id="download-pdf-btn"><i class="bi bi-download"></i> Unduh PDF</button>
                     </div>
                     <div class="form-text">Pilih penerima aset untuk membuat surat serah terima.</div>
                 </div>
-                </div>
-            <div class="col-12">
-                <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
-                <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
-            </div>
-            <div class="col-12">
-                <label for="bukti_aset" class="form-label">Tambah Dok. Aset Baru (Maks. 2 File)</label>
-                <input type="file" class="form-control" id="bukti_aset" name="bukti_aset[]" multiple accept="image/png, image/jpeg, image/jpg, application/pdf">
-                <div class="form-text">Anda dapat menambahkan hingga 2 file bukti. Mengunggah file baru tidak akan menghapus file lama.</div>
-            </div>
 
-            <div class="col-12">
-                <label class="form-label">Dok. Aset Tersimpan</label>
-                <div class="row g-2" id="existing-proofs">
-                    <?php if (!empty($dokumentasi)): ?>
-                        <?php foreach ($dokumentasi as $doc): ?>
-                            <div class="col-auto" id="doc-<?= $doc['id'] ?>">
-                                <div class="position-relative">
-                                    <?php if (str_starts_with($doc['tipe_file'], 'image/')): ?>
-                                        <a href="<?= base_url('files/bukti/' . $doc['path_file']) ?>" target="_blank">
-                                            <img src="<?= base_url('files/bukti/' . $doc['path_file']) ?>" alt="Bukti Aset" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
-                                        </a>
-                                    <?php else: // Jika bukan gambar (misal: PDF) ?>
-                                        <a href="<?= base_url('files/bukti/' . $doc['path_file']) ?>" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 100px; height: 100px; text-decoration: none;">
-                                            <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2.5rem; color: #d33;"></i>
-                                            <small class="text-muted mt-1">PDF</small>
-                                        </a>
-                                    <?php endif; ?>
-                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="margin: 2px;" onclick="hapusDokumen(<?= $doc['id'] ?>)">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-muted small">Belum ada bukti aset yang diunggah.</p>
-                    <?php endif; ?>
+                <div class="mt-3" id="perbaikan-controls-wrapper" style="display: none;">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#perbaikanModal">
+                        <i class="bi bi-tools me-2"></i>Buat Permohonan Perbaikan
+                    </button>
                 </div>
             </div>
-        </div>
+                <div class="col-12">
+                            <label for="keterangan" class="form-label">Keterangan (Opsional)</label>
+                            <textarea class="form-control" id="keterangan" name="keterangan" rows="3" oninput="this.value = this.value.toUpperCase()"><?= esc($aset['keterangan']) ?></textarea>
+                        </div>
 
-        <div class="mt-4 d-flex justify-content-end">
-            <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
-            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <input type="hidden" id="hidden_penyetuju_nama" name="penyetuju_nama">
+                        <input type="hidden" id="hidden_keterangan_kerusakan" name="keterangan_kerusakan">
+                        <input type="hidden" id="hidden_estimasi_biaya" name="estimasi_biaya">
+                        </div>
+
+                    <div class="mt-4 d-flex justify-content-end">
+                        <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </form>
+
+<div class="modal fade" id="perbaikanModal" tabindex="-1" aria-labelledby="perbaikanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="perbaikanModalLabel">Detail Permohonan Perbaikan Aset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="penyetuju_nama" class="form-label">Nama Penyetuju</label>
+                    <input type="text" class="form-control" id="penyetuju_nama" name="penyetuju_nama" placeholder="Nama atasan atau pemberi persetujuan">
+                </div>
+                <div class="mb-3">
+                    <label for="keterangan_kerusakan" class="form-label">Keterangan Kerusakan</label>
+                    <textarea class="form-control" id="keterangan_kerusakan" name="keterangan_kerusakan" rows="3" placeholder="Jelaskan kerusakan secara singkat..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="estimasi_biaya" class="form-label">Estimasi Biaya (Rp)</label>
+                    <input type="number" class="form-control" id="estimasi_biaya" name="estimasi_biaya" placeholder="Contoh: 500000">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-info" id="download-perbaikan-pdf-btn">
+                    <i class="bi bi-download"></i> Unduh Draf PDF
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    Simpan Detail
+                </button>
+            </div>
         </div>
-    </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header"><h5 class="mb-0">Dokumentasi Fisik Aset (Foto)</h5></div>
+    <div class="card-body">
+        <p class="text-muted small">Unggah foto yang menunjukkan kondisi fisik atau kelengkapan aset.</p>
+        
+        <form id="form-unggah-foto" action="<?= base_url('aset/add-dokumentasi/' . $aset['id']) ?>" method="post" enctype="multipart/form-data">
+            <?= csrf_field() ?>
+            <div class="input-group">
+                <input type="file" class="form-control" name="bukti_aset[]" multiple required accept="image/png, image/jpeg, image/jpg">
+                <button class="btn btn-outline-primary" type="submit"><i class="bi bi-upload me-2"></i>Unggah Foto</button>
+            </div>
+            <div class="form-text">Anda bisa memilih lebih dari satu file gambar (jpg, png).</div>
+        </form>
+
+        <hr>
+        <h6>Dokumentasi yang Sudah Ada:</h6>
+        <?php if (!empty($dokumentasi)): ?>
+            <div class="row g-2 mt-2">
+                <?php foreach ($dokumentasi as $doc): ?>
+                    <div class="col-auto" id="doc-<?= $doc['id'] ?>">
+                        <div class="position-relative">
+                            <a href="<?= base_url('files/bukti/' . $doc['path_file']) ?>" target="_blank">
+                                <img src="<?= base_url('files/bukti/' . $doc['path_file']) ?>" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </a>
+                             <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="margin: 2px;" onclick="hapusDokumen(<?= $doc['id'] ?>, 'dokumentasi')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <p class="text-center text-muted">Belum ada dokumentasi fisik.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header"><h5 class="mb-0">Berkas Legal Aset</h5></div>
+    <div class="card-body">
+        <p class="text-muted small">Unggah berkas legal seperti Faktur, Surat Garansi, atau Bukti Serah Terima.</p>
+        <form id="form-unggah-berkas" action="<?= base_url('aset/add-berkas/' . $aset['id']) ?>" method="post" enctype="multipart/form-data" class="mb-3">
+             <?= csrf_field() ?>
+            <div class="row g-2">
+                <div class="col-md-5"><input type="text" name="nama_berkas" class="form-control" placeholder="Nama Berkas (Cth: Faktur Pembelian)" required></div>
+                <div class="col-md-5"><input type="file" class="form-control" name="file_berkas" required accept="application/pdf, image/png, image/jpeg"></div>
+                <div class="col-md-2"><button class="btn btn-outline-success w-100" type="submit">Unggah Berkas</button></div>
+            </div>
+        </form>
+        <hr>
+        <h6>Berkas yang Sudah Ada:</h6>
+        <?php if (!empty($berkas_list)): ?>
+            <ul class="list-group">
+                <?php foreach ($berkas_list as $berkas): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center" id="berkas-<?= $berkas['id'] ?>">
+                        <div><i class="bi bi-file-earmark-text me-2"></i><strong><?= esc($berkas['nama_berkas']) ?></strong><small class="text-muted d-block">Diunggah pada: <?= date('d M Y', strtotime($berkas['created_at'])) ?></small></div>
+                        <div>
+                            <a href="<?= base_url('files/bukti/' . $berkas['path_file']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download me-1"></i> Lihat</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusDokumen(<?= $berkas['id'] ?>, 'berkas')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="text-center text-muted">Belum ada berkas legal.</p>
+        <?php endif; ?>
+    </div>
 </div>
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
 <script>
+    // =================================================================
+// FUNGSI GLOBAL (Bisa dipanggil dari HTML onclick)
+// =================================================================
+function hapusDokumen(id, type) {
+    Swal.fire({
+        title: 'Anda Yakin?',
+        text: "File ini akan dihapus secara permanen!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`<?= base_url('aset/delete-document/') ?>${id}/${type}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                }
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let elementId = (type === 'dokumentasi') ? `#doc-${id}` : `#berkas-${id}`;
+                    $(elementId).fadeOut(300, function() { $(this).remove(); });
+                    Swal.fire('Terhapus!', data.message, 'success');
+                } else {
+                    Swal.fire('Gagal!', data.message || 'Gagal menghapus file.', 'error');
+                }
+            });
+        }
+    });
+}
 
-    // Event handler untuk Sub Kategori
+$(document).ready(function() {
+
+    // =================================================================
+    // 1. FUNGSI UNGGAH FILE (AJAX) UNTUK FOTO & BERKAS
+    // =================================================================
+    function handleAjaxFormSubmit(formId) {
+        $(formId).on('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitButton = $(form).find('button[type="submit"]');
+            const originalButtonContent = submitButton.html();
+            let formData = new FormData(form);
+
+            submitButton.html('<span class="spinner-border spinner-border-sm"></span> Mengunggah...').prop('disabled', true);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => { location.reload(); });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Terjadi kesalahan.' });
+                    submitButton.html(originalButtonContent).prop('disabled', false);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({ icon: 'error', title: 'Error Jaringan', text: 'Tidak dapat terhubung ke server.' });
+                submitButton.html(originalButtonContent).prop('disabled', false);
+            });
+        });
+    }
+
+    handleAjaxFormSubmit('#form-unggah-foto');
+    handleAjaxFormSubmit('#form-unggah-berkas');
+
+
+    // =================================================================
+    // 2. LOGIKA KONTROL FORM SERAH TERIMA & PERBAIKAN (DIPERBARUI)
+    // =================================================================
+    const statusDropdown = document.getElementById('status');
+    const pihakKeduaWrapper = document.getElementById('pihak-kedua-wrapper');
+    const perbaikanControlsWrapper = document.getElementById('perbaikan-controls-wrapper');
+    const statusAwal = '<?= esc($aset['status']) ?>';
+    const asetId = '<?= esc($aset['id']) ?>';
+
+    function toggleConditionalControls() {
+        const statusBaru = statusDropdown.value;
+        // Tampilkan/sembunyikan kontrol serah terima
+        pihakKeduaWrapper.style.display = (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai') ? 'block' : 'none';
+        // Tampilkan/sembunyikan tombol perbaikan
+        perbaikanControlsWrapper.style.display = (statusBaru === 'Perbaikan') ? 'block' : 'none';
+    }
+
+    statusDropdown.addEventListener('change', toggleConditionalControls);
+    toggleConditionalControls(); // Panggil saat halaman pertama kali dimuat
+
+    // Validasi saat form utama akan disubmit
+    $('form[action="<?= base_url('aset/' . $aset['id']) ?>"]').on('submit', function(e) {
+        const statusBaru = $('#status').val();
+        
+        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai' && !$('#pihak-kedua').val()) {
+            e.preventDefault();
+            Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Anda harus memilih Pihak Kedua (Penerima) untuk melanjutkan.' });
+        }
+        
+        if (statusBaru === 'Perbaikan') {
+            if (!$('#penyetuju_nama').val() || !$('#keterangan_kerusakan').val() || !$('#estimasi_biaya').val()) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'Data Permohonan Belum Lengkap', text: 'Silakan klik "Buat Permohonan Perbaikan" dan lengkapi semua detailnya.' });
+            }
+        }
+    });
+
+    // Event listener untuk tombol download PDF Serah Terima
+    $('#download-pdf-btn').on('click', function() {
+        const pihakKeduaId = $('#pihak-kedua').val();
+        if (!pihakKeduaId) {
+            Swal.fire('Peringatan', 'Silakan pilih Pihak Kedua terlebih dahulu.', 'warning');
+            return;
+        }
+        window.open(`<?= base_url('aset/generateSerahTerimaPdf/') ?>${asetId}/${pihakKeduaId}`, '_blank');
+    });
+
+    // Event listener untuk tombol download PDF Perbaikan
+    $('#download-perbaikan-pdf-btn').on('click', function() {
+        const penyetujuNama = $('#penyetuju_nama').val();
+        const keteranganKerusakan = $('#keterangan_kerusakan').val();
+        const estimasiBiaya = $('#estimasi_biaya').val();
+
+        if (!penyetujuNama || !keteranganKerusakan || !estimasiBiaya) {
+            Swal.fire('Peringatan', 'Harap lengkapi semua field di pop-up permohonan sebelum mengunduh draf.', 'warning');
+            return;
+        }
+
+        const url = `<?= base_url('aset/generatePerbaikanPdf/') ?>${asetId}?penyetuju=${encodeURIComponent(penyetujuNama)}&kerusakan=${encodeURIComponent(keteranganKerusakan)}&biaya=${estimasiBiaya}`;
+        window.open(url, '_blank');
+    });
+
+    
+
+    // Ambil tombol "Simpan Detail" dari modal perbaikan
+    const simpanDetailPerbaikanBtn = document.querySelector('#perbaikanModal .btn-primary');
+
+    if (simpanDetailPerbaikanBtn) {
+        simpanDetailPerbaikanBtn.addEventListener('click', function() {
+            // Ambil nilai dari form di dalam modal
+            const penyetuju = document.getElementById('penyetuju_nama').value;
+            const kerusakan = document.getElementById('keterangan_kerusakan').value;
+            const biaya = document.getElementById('estimasi_biaya').value;
+
+            // Salin nilai tersebut ke hidden input di form utama
+            document.getElementById('hidden_penyetuju_nama').value = penyetuju;
+            document.getElementById('hidden_keterangan_kerusakan').value = kerusakan;
+            document.getElementById('hidden_estimasi_biaya').value = biaya;
+
+            // Beri notifikasi (opsional tapi sangat membantu)
+            if(penyetuju && kerusakan && biaya) {
+                 Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Detail perbaikan disimpan sementara. Silakan simpan perubahan utama.',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+        });
+    }
+
+    // =================================================================
+    // 3. FUNGSI UNTUK SELECT2 (TAMBAH DATA MASTER BARU)
+    // =================================================================
+    // (Kode Select2 Anda yang sudah ada saya pindahkan ke sini agar terorganisir)
     $('#sub_kategori_id').on('select2:select', function(e) {
         var data = e.params.data;
         // Cek apakah ini adalah tag baru
@@ -295,83 +535,10 @@ Edit Aset
             });
         }
     });
+
     
-// Fungsi ini akan dijalankan setelah semua elemen halaman dimuat
-    document.addEventListener('DOMContentLoaded', function() {
-    const statusDropdown = document.getElementById('status');
-    const pihakKeduaWrapper = document.getElementById('pihak-kedua-wrapper');
-    const pihakKeduaSelect = document.getElementById('pihak-kedua');
-    const downloadButton = document.getElementById('download-pdf-btn');
-    const statusAwal = '<?= esc($aset['status']) ?>';
-    const asetId = '<?= esc($aset['id']) ?>';
+});
 
-    function togglePihakKedua() {
-        const statusBaru = statusDropdown.value;
-
-        if (statusAwal === 'Baik Tidak Terpakai' && statusBaru === 'Baik Terpakai') {
-            pihakKeduaWrapper.style.display = 'block';
-        } else {
-            pihakKeduaWrapper.style.display = 'none';
-        }
-    }
-
-    statusDropdown.addEventListener('change', togglePihakKedua);
-
-    downloadButton.addEventListener('click', function() {
-        const pihakKeduaId = pihakKeduaSelect.value;
-        if (!pihakKeduaId) {
-            Swal.fire('Peringatan', 'Silakan pilih Pihak Kedua terlebih dahulu.', 'warning');
-            return;
-        }
-        // Buka URL baru untuk men-download PDF dengan menyertakan ID Pihak Kedua
-        const url = `<?= base_url('aset/generate-pdf/') ?>${asetId}/${pihakKeduaId}`;
-        window.open(url, '_blank');
-    });
-
-
-        // Tambahkan event listener untuk perubahan pada dropdown kategori
-        kategoriSelect.addEventListener('change', function() {
-            populateSubKategori(this.value);
-        });
-        
-        // Panggil fungsi saat halaman pertama kali dimuat untuk mengisi sub-kategori yang sudah ada
-        if (kategoriSelect.value) {
-            populateSubKategori(kategoriSelect.value, "<?= esc($aset['sub_kategori_id']) ?>");
-        }
-    });
-
-</script>
-<script>
-    function hapusDokumen(id) {
-        Swal.fire({
-            title: 'Anda Yakin?',
-            text: "File bukti ini akan dihapus secara permanen!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Kita akan membuat rute dan fungsi ini di langkah berikutnya
-                fetch(`<?= base_url('aset/delete-document/') ?>${id}`, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                    }
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById(`doc-${id}`).remove();
-                        Swal.fire('Terhapus!', 'File bukti telah dihapus.', 'success');
-                    } else {
-                        Swal.fire('Gagal!', 'Gagal menghapus file.', 'error');
-                    }
-                });
-            }
-        });
-    }
-</script>
+   </script>
 <?= $this->endSection() ?>
+

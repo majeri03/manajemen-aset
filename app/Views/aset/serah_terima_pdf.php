@@ -101,7 +101,7 @@
         <table class="info-table">
             <tr>
                 <td width="20%">Nama</td>
-                <td>: <?= esc($pihak_pertama['user_pengguna'] ?? '(Belum Ada)') ?></td>
+                <td>: <?= esc($pihak_pertama['nama_karyawan'] ?? '(Belum Ada)') ?></td>
             </tr>
             <tr>
                 <td>Jabatan</td>
@@ -154,13 +154,13 @@
             <div class="signature-col">
                 <p style="margin-bottom: 0;">Pihak Pertama,</p>
                 <div style="height: 60px;"></div>
-                <p style="margin: 0;"><strong>( <u><?= esc($pihak_pertama['user_pengguna'] ?? '.........................') ?></u> )</strong></p>
+                <p style="margin: 0;"><strong> <u><?= esc($pihak_pertama['nama_karyawan'] ?? '.........................') ?></u> </strong></p>
                 <p style="margin: 0;">HCGA</p>
             </div>
             <div class="signature-col right">
                 <p style="margin-bottom: 0;">Pihak Kedua,</p>
                 <div style="height: 60px;"></div>
-                <p style="margin: 0;"><strong>( <u><?= esc($pihak_kedua['nama_karyawan']) ?></u> )</strong></p>
+                <p style="margin: 0;"><strong> <u><?= esc($pihak_kedua['nama_karyawan']) ?></u> </strong></p>
                 <p style="margin: 0;"><?= esc($pihak_kedua['jabatan']) ?></p>
             </div>
             <div class="clear"></div>

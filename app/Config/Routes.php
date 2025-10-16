@@ -50,6 +50,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('stockopname/process-scan', 'StockOpnameController::processScan');
     $routes->get('api/last-verification/(:num)', 'StockOpnameController::getLastVerificationInfo/$1');
     $routes->get('api/aset-by-location/(:num)', 'StockOpnameController::getAsetByLocation/$1');
+    $routes->post('quick-scan-store', 'StockOpnameController::quickScanStore');
+    $routes->match(['get', 'post'], 'stockopname/session-report', 'StockOpnameController::sessionReport');
    
     //profile
     $routes->get('profile', 'UserController::profile');
@@ -57,6 +59,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('user/update-password', 'UserController::updatePassword'); // Khusus untuk password
 
     $routes->get('files/bukti/(:segment)', 'AsetController::serveDocument/$1');
+
+
     // ===================================================================
     // RUTE YANG HANYA BISA DIAKSES OLEH ADMIN
     // ===================================================================
@@ -72,9 +76,14 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->put('aset/(:num)', 'AsetController::update/$1');
         $routes->post('aset/(:num)', 'AsetController::update/$1'); // Fallback untuk form tanpa PUT
         $routes->delete('aset/(:num)', 'AsetController::delete/$1');
-        $routes->post('aset/delete-document/(:num)', 'AsetController::deleteDocument/$1');
+        //$routes->post('aset/delete-document/(:num)', 'AsetController::deleteDocument/$1');
         $routes->get('aset/barcodes', 'AsetController::barcodes');
         $routes->get('aset/laporan/export', 'AsetController::export');
+
+        $routes->post('aset/add-dokumentasi/(:num)', 'AsetController::add_dokumentasi/$1');
+        $routes->post('aset/add-berkas/(:num)', 'AsetController::add_berkas/$1');
+        $routes->post('aset/delete-document/(:num)/(:alpha)', 'AsetController::delete_document/$1/$2');
+        $routes->get('files/bukti/(:segment)', 'AsetController::serveDocument/$1');
 
         // Permintaan Perubahan Aset (Melihat daftar & persetujuan)
         $routes->get('requests', 'RequestController::index');
@@ -89,7 +98,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         $routes->get('laporan/stockopname', 'LaporanController::stockOpnameReport');
         $routes->get('laporan/stockopname/export/(:num)', 'LaporanController::exportStockOpnameReport/$1');
 
-        $routes->match(['get', 'post'], 'stockopname/session-report', 'StockOpnameController::sessionReport');
+        
         $routes->post('stockopname/process-scan-report', 'StockOpnameController::processScanReport'); // Kita akan buat fungsi ini nanti
         $routes->post('stockopname/update-session-report', 'StockOpnameController::updateSessionReportData');
 
@@ -133,7 +142,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
         
         //download serah terima pdf
-        $routes->get('aset/generate-pdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
+        $routes->get('aset/generateSerahTerimaPdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
+        $routes->get('aset/generatePerbaikanPdf/(:num)', 'AsetController::generatePerbaikanPdf/$1');
 
         // Manajemen Akun
         $routes->get('user', 'UserController::index');

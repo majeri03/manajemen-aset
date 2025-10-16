@@ -7,8 +7,13 @@ use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
 use App\Models\MerkModel; 
-use App\Models\TipeModel; 
+use App\Models\TipeModel;
+
 use App\Models\DokumentasiAsetModel;
+use App\Models\DokumenPerbaikanModel;
+
+use App\Models\BerkasAsetModel;
+
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -85,83 +90,89 @@ class AsetController extends ResourceController
      *
      * @return ResponseInterface
      */
-        public function index()
-    {
-        $filters = [
-            'kategori_id' => $this->request->getGet('kategori_id'),
-            'status'      => $this->request->getGet('status'),
-            'keyword'     => $this->request->getGet('keyword'),
-        ];
+    public function index()
+{
+    // Ambil filter dari request
+    $filters = [
+        'kategori_id' => $this->request->getGet('kategori_id'),
+        'status' => $this->request->getGet('status'),
+        'keyword' => $this->request->getGet('keyword'),
+    ];
 
-        // [BAGIAN QUERY ANDA]
-        // Kita tambahkan join ke tabel karyawan untuk mendapatkan nama, bukan hanya ID
-        $query = $this->asetModel
-            ->select('aset.*, k.nama_kategori, sk.nama_sub_kategori, l.nama_lokasi, m.nama_merk, t.nama_tipe, karyawan.nama_karyawan')
-            ->join('kategori k', 'k.id = aset.kategori_id', 'left')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-            ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
-            ->join('merk m', 'm.id = aset.merk_id', 'left')
-            ->join('tipe t', 't.id = aset.tipe_id', 'left')
-            ->join('karyawan', 'karyawan.id = aset.user_pengguna', 'left'); // Join ke tabel karyawan
+    // Mulai build query dengan join yang diperlukan
+    $this->asetModel
+        ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
+        ->join('kategori k', 'k.id = sk.kategori_id', 'left')
+        ->join('merk m', 'm.id = aset.merk_id', 'left')
+        ->join('tipe t', 't.id = aset.tipe_id', 'left')
+        ->join('lokasi l', 'l.id = aset.lokasi_id', 'left')
+        // --- PERBAIKAN DI BARIS INI ---
+        ->join('karyawan kry', 'kry.id = aset.user_pengguna', 'left');
 
-        if (!empty($filters['kategori_id'])) {
-            $query = $query->where('aset.kategori_id', $filters['kategori_id']);
-        }
-        if (!empty($filters['status'])) {
-            $query = $query->where('aset.status', $filters['status']);
-        }
-        if (!empty($filters['keyword'])) {
-            $query = $query->groupStart()
-                ->like('aset.kode', $filters['keyword'])
-                ->orLike('m.nama_merk', $filters['keyword'])
-                ->orLike('aset.serial_number', $filters['keyword'])
-                ->orLike('l.nama_lokasi', $filters['keyword'])
-                ->orLike('karyawan.nama_karyawan', $filters['keyword']) // Pencarian berdasarkan nama karyawan
-                ->orLike('aset.entitas_pembelian', $filters['keyword'])
-                ->groupEnd();
-        }
-        
-        // [PENGAMBILAN DATA BARU] Menggunakan paginate() untuk performa
-        $asets_data = $query->orderBy('aset.updated_at', 'DESC')->findAll();
-
-        // ======================= PENINGKATAN DIMULAI DI SINI =======================
-        // Jika ada aset yang ditemukan di halaman ini, ambil dokumennya
-        if (!empty($asets_data)) {
-            // 1. Kumpulkan semua ID aset dari hasil paginasi
-            $asetIds = array_column($asets_data, 'id');
-
-            // 2. Ambil semua dokumen yang terkait dalam SATU query
-            $dokumentasiModel = new DokumentasiAsetModel();
-            // Disini kita pastikan menggunakan nama kolom yang benar yaitu 'aset_id'
-            $allDokumen = $dokumentasiModel->whereIn('aset_id', $asetIds)->findAll();
-
-            // 3. Buat "peta" dokumen agar mudah dicari
-            $dokumenMap = [];
-            foreach ($allDokumen as $dokumen) {
-                // Disini juga, gunakan 'aset_id' sebagai key
-                $dokumenMap[$dokumen['aset_id']][] = $dokumen;
-            }
-
-            // 4. Lampirkan array dokumen ke setiap aset
-            foreach ($asets_data as &$aset) { // tanda '&' penting
-                $aset['dokumen'] = $dokumenMap[$aset['id']] ?? [];
-            }
-            unset($aset); // Hapus referensi setelah loop selesai
-        }
-        // ======================== PENINGKATAN SELESAI ========================
-
-        $data = [
-            'title'            => 'Data Aset',
-            'asets'            => $asets_data, // Sekarang sudah ada sub-array 'dokumen'
-            'kategori_list'    => $this->kategoriModel->findAll(),
-            'subkategori_list' => $this->subKategoriModel->findAll(), // Anda menggunakan ini di view asli
-            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
-            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
-            'filters'          => $filters
-        ];
-
-        return view('aset/index', $data);
+    // Terapkan filter jika ada
+    if (!empty($filters['kategori_id'])) {
+        $this->asetModel->where('k.id', $filters['kategori_id']);
     }
+    if (!empty($filters['status'])) {
+        $this->asetModel->where('aset.status', $filters['status']);
+    }
+    if (!empty($filters['keyword'])) {
+        $this->asetModel->groupStart()
+            ->like('aset.kode', $filters['keyword'])
+            ->orLike('m.nama_merk', $filters['keyword'])
+            ->orLike('t.nama_tipe', $filters['keyword'])
+            ->orLike('aset.serial_number', $filters['keyword'])
+            ->orLike('l.nama_lokasi', $filters['keyword'])
+            ->orLike('aset.user_pengguna', $filters['keyword'])
+            ->groupEnd();
+    }
+
+    // Tambahkan select statement setelah semua join dan filter diterapkan
+    $asets = $this->asetModel->select('
+        aset.*, 
+        k.nama_kategori, 
+        sk.nama_sub_kategori, 
+        m.nama_merk, 
+        t.nama_tipe, 
+        l.nama_lokasi, 
+        kry.nama_karyawan,
+        (SELECT MAX(soh.opname_at) FROM stock_opname_history soh WHERE soh.aset_id = aset.id) as last_so_date
+    ')->findAll();
+
+    // Mengambil semua dokumentasi terkait dalam satu query untuk efisiensi
+    $asetIds = array_column($asets, 'id');
+    $allDokumentasi = [];
+    if (!empty($asetIds)) {
+        $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+        $allDokumentasi = $dokumentasiModel->whereIn('aset_id', $asetIds)->findAll();
+    }
+
+    // Membuat map dokumentasi untuk akses cepat
+    $dokumentasiMap = [];
+    foreach ($allDokumentasi as $doc) {
+        $dokumentasiMap[$doc['aset_id']][] = $doc;
+    }
+
+    // Menggabungkan dokumentasi ke dalam data aset
+    foreach ($asets as &$aset) {
+        $aset['dokumen'] = $dokumentasiMap[$aset['id']] ?? [];
+    }
+    unset($aset); // Membersihkan referensi
+
+    // Siapkan data untuk view
+    $data = [
+        'asets' => $asets,
+        'kategori_list' => (new \App\Models\KategoriModel())->findAll(),
+        'subkategori_list' => (new \App\Models\SubKategoriModel())->findAll(),
+        'merk_list' => (new \App\Models\MerkModel())->findAll(),
+        'tipe_list' => (new \App\Models\TipeModel())->findAll(),
+        'lokasi_list' => (new \App\Models\LokasiModel())->findAll(),
+        'filters' => $filters,
+        'pager' => $this->asetModel->pager,
+    ];
+
+    return view('aset/index', $data);
+}
 
 
     /**
@@ -264,7 +275,7 @@ public function show($id = null)
                         // Validasi ukuran dan tipe
                         if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
                             $newName = $file->getRandomName();
-                            $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+                            $file->move(FCPATH . 'uploads/aset_bukti', $newName);
 
                             $this->dokumentasiAsetModel->save([
                                 'aset_id'        => $newAsetId,
@@ -331,28 +342,36 @@ public function show($id = null)
      */
     public function edit($id = null)
     {
-        $aset = $this->asetModel->find($id);
+        $aset = $this->asetModel->getAsetDetail($id);
         if (!$aset) {
             return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
 
         $karyawanModel = new KaryawanModel();
-
+        
+        // Ini untuk mengambil data FOTO FISIK (tetap ada)
         $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
+
+        // ▼▼▼ TAMBAHKAN DUA BARIS INI ▼▼▼
+        $berkasModel = new \App\Models\BerkasAsetModel();
+        $berkas_list = $berkasModel->where('aset_id', $id)->findAll();
+        // ▲▲▲ ------------------------- ▲▲▲
+
         $data = [
-            'title'            => 'Edit Aset',
-            'aset'             => $aset,
-            'kategori_list'    => $this->kategoriModel->findAll(),
+            'title'           => 'Edit Aset',
+            'aset'            => $aset,
+            'kategori_list'   => $this->kategoriModel->findAll(),
             'subkategori_list' => $this->subKategoriModel->where('kategori_id', $aset['kategori_id'])->findAll(),
-            'lokasi_list'      => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
-            'merk_list'        => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
-            'tipe_list'        => $this->tipeModel->where('merk_id', $aset['merk_id'])->findAll(),
-            'dokumentasi'      => $dokumentasi,
-            'karyawan_list'    => $karyawanModel->orderBy('nama_karyawan', 'ASC')->findAll(), 
+            'lokasi_list'     => $this->lokasiModel->orderBy('nama_lokasi', 'ASC')->findAll(),
+            'merk_list'       => $this->merkModel->orderBy('nama_merk', 'ASC')->findAll(),
+            'tipe_list'       => $this->tipeModel->where('merk_id', $aset['merk_id'])->findAll(),
+            'dokumentasi'     => $dokumentasi,
+            'karyawan_list'   => $karyawanModel->orderBy('nama_karyawan', 'ASC')->findAll(),
+            'berkas_list'     => $berkas_list, // <-- Kirim data berkas ke view
         ];
 
         return view('aset/edit', $data);
-    }    
+    }   
 
     /**
      * Add or update a model resource, from "posted" properties.
@@ -362,78 +381,215 @@ public function show($id = null)
      * @return ResponseInterface
      */
     public function update($id = null)
-    {
-        $allowedFields = [
-            'kategori_id',
-            'sub_kategori_id',
-            'merk_id',
-            'tipe_id',
-            'tahun_beli',
-            'lokasi_id', 
-            'status',
-            'keterangan',
-            'harga_beli',
-            'entitas_pembelian',
-            'user_pengguna',
-        ];
-
-        $data = $this->request->getPost($allowedFields);
-        // --- AWAL KODE BARU UNTUK PROSES UPLOAD SAAT UPDATE ---
-        $existingDocsCount = $this->dokumentasiAsetModel->where('aset_id', $id)->countAllResults();
-        $files = $this->request->getFiles('bukti_aset');
-        $uploadedFilesCount = 0;
-
-        if (isset($files['bukti_aset'])) {
-            foreach ($files['bukti_aset'] as $file) {
-                if ($file->isValid() && !$file->hasMoved() && ($existingDocsCount + $uploadedFilesCount) < 2) {
-                    if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
-                        $newName = $file->getRandomName();
-                        $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
-
-                        $this->dokumentasiAsetModel->save([
-                            'aset_id'        => $id,
-                            'path_file'      => $newName, // Hanya simpan nama file
-                            'nama_asli_file' => $file->getClientName(),
-                            'tipe_file'      => $file->getClientMimeType(),
-                        ]);
-                        $uploadedFilesCount++;
-                    }
-                }
-            }
+{
+        $asetSebelumnya = $this->model->getAsetDetail($id);
+        if (!$asetSebelumnya) {
+            return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
-        if (!empty($data['entitas_pembelian'])) {
-            $data['entitas_pembelian'] = strtoupper($data['entitas_pembelian']);
+
+        $data = $this->request->getPost();
+        $statusSebelumnya = $asetSebelumnya['status'];
+        $statusSekarang = $data['status'] ?? $statusSebelumnya;
+        
+        $isSerahTerima = ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai');
+        $isPerbaikan = ($statusSekarang === 'Perbaikan');
+
+        // Validasi
+        if ($isSerahTerima && empty($this->request->getPost('pihak_kedua_id'))) {
+            return redirect()->back()->withInput()->with('error', 'Untuk serah terima, Anda wajib memilih Pihak Kedua (Penerima).');
+        }
+        if ($isPerbaikan && (empty($data['penyetuju_nama']) || empty($data['keterangan_kerusakan']) || empty($data['estimasi_biaya']))) {
+            return redirect()->back()->withInput()->with('error', 'Untuk status "Perbaikan", semua detail permohonan harus diisi.');
         }
         
+        // Proses update user pengguna jika ada serah terima
+        if ($isSerahTerima) {
+            $penerima = (new KaryawanModel())->find($this->request->getPost('pihak_kedua_id'));
+            if ($penerima) {
+                $data['user_pengguna'] = $penerima['id'];
+            }
+        }
 
-    // Ambil data aset sebelum diubah untuk perbandingan
-    $asetSebelumnya = $this->asetModel->find($id);
-    $statusSebelumnya = $asetSebelumnya['status'] ?? null;
-    $statusSekarang = $data['status'] ?? null;
+        // LAKUKAN UPDATE DATA UTAMA
+        if ($this->model->update($id, $data)) {
+            // PROSES PDF SERAH TERIMA (JIKA ADA)
+            if ($isSerahTerima) {
+                $pihakPertamaData = [
+                    'nama_karyawan' => $asetSebelumnya['nama_karyawan'] ?? $asetSebelumnya['user_pengguna'] ?? 'Gudang',
+                    'jabatan'       => $asetSebelumnya['jabatan'] ?? 'HCGA'
+                ];
+                $this->buatDanSimpanPdfSerahTerima($id, $pihakPertamaData, (new KaryawanModel())->find($this->request->getPost('pihak_kedua_id')));
+            }
 
-    // Ambil ID pihak kedua dari form
-    $pihakKeduaId = $this->request->getPost('pihak_kedua_id');
+            // PROSES PDF PERBAIKAN (JIKA ADA)
+            if ($isPerbaikan) {
+                $this->buatDanSimpanPdfPerbaikan($id, $data);
+            }
 
-    // --- LOGIKA BARU UNTUK UPDATE USER PENGGUNA ---
-    // Cek jika status berubah dari 'Baik Tidak Terpakai' ke 'Baik Terpakai' DAN pihak kedua dipilih
-    if ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai' && !empty($pihakKeduaId)) {
-        $karyawanModel = new KaryawanModel();
-        $pihakKedua = $karyawanModel->find($pihakKeduaId);
-
-        if ($pihakKedua) {
-            // Ganti nilai 'user_pengguna' di data yang akan disimpan
-            $data['user_pengguna'] = $pihakKedua['nama_karyawan'];
+            return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
         }
     }
-    // --- AKHIR LOGIKA BARU ---
 
-    if ($this->asetModel->update($id, $data)) {
-        return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
+    private function buatDanSimpanPdfSerahTerima($asetId, $pihakPertama, $pihakKedua)
+    {
+        $asetDetail = $this->model->getAsetDetail($asetId);
+        if (!$asetDetail || !$pihakKedua) return;
+
+        $pdfData = [
+            'aset'           => $asetDetail,
+            'pihak_pertama'  => $pihakPertama,
+            'pihak_kedua'    => $pihakKedua,
+            'tanggal'        => date('l, d F Y'),
+        ];
+        
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/serah_terima_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        $filename = 'serah_terima_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+        $path = FCPATH . 'uploads/aset_bukti/'; 
+
+        if (file_put_contents($path . $filename, $pdfOutput)) {
+            (new BerkasAsetModel())->save([
+                'aset_id'     => $asetId, 'path_file'   => $filename, 'nama_berkas' => 'BUKTI SERAH TERIMA',
+                'tipe_file'   => 'application/pdf', 'ukuran_file' => strlen($pdfOutput)
+            ]);
+        }
     }
 
-    return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
-}
+    private function buatDanSimpanPdfPerbaikan($asetId, $dataPermohonan)
+    {
+        $dokumenPerbaikanModel = new DokumenPerbaikanModel();
+        $dokumenPerbaikanModel->save([
+            'aset_id'              => $asetId,
+            'user_pemohon_id'      => session()->get('user_id'),
+            'penyetuju_nama'       => $dataPermohonan['penyetuju_nama'],
+            'keterangan_kerusakan' => $dataPermohonan['keterangan_kerusakan'],
+            'estimasi_biaya'       => $dataPermohonan['estimasi_biaya'],
+        ]);
+        $dokumenPerbaikanId = $dokumenPerbaikanModel->getInsertID();
 
+        $asetDetail = $this->model->getAsetDetail($asetId);
+        $karyawanModel = new KaryawanModel();
+            // Logika yang sama seperti di atas: prioritaskan data dari user_pengguna aset
+            $pemohon = $karyawanModel->find($asetDetail['user_pengguna']);
+
+            if (!$pemohon) {
+                $pemohon = [
+                    'nama_karyawan' => $asetDetail['nama_karyawan'] ?: ($asetDetail['user_pengguna'] ?: 'Tidak Ada'),
+                    'jabatan'       => $asetDetail['jabatan'] ?? 'Pengguna Aset'
+                ];
+            }
+
+        $pdfData = [
+            'aset'           => $asetDetail,
+            'pemohon'        => $pemohon, // <-- DATA PEMOHON SEKARANG SUDAH BENAR
+            'penyetuju'      => ['nama' => $dataPermohonan['penyetuju_nama'], 'jabatan' => 'HCGA'],
+            'perbaikan'      => [ // Menggunakan key 'perbaikan' agar konsisten dengan template
+                'keterangan_kerusakan' => $dataPermohonan['keterangan_kerusakan'],
+                'estimasi_biaya' => $dataPermohonan['estimasi_biaya']
+            ]
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/permohonan_perbaikan_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        $filename = 'permohonan_perbaikan_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+        $path = FCPATH . 'uploads/aset_bukti/';
+
+        if (file_put_contents($path . $filename, $pdfOutput)) {
+            (new BerkasAsetModel())->save([
+                'aset_id'     => $asetId, 'path_file'   => $filename, 'nama_berkas' => 'PERMOHONAN DANA PERBAIKAN',
+                'tipe_file'   => 'application/pdf', 'ukuran_file' => strlen($pdfOutput)
+            ]);
+            $dokumenPerbaikanModel->update($dokumenPerbaikanId, ['nama_file' => $filename]);
+        }
+    }
+
+    public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
+    {
+        $asetSaatIni = $this->model->getAsetDetail($id);
+        $pihakKedua = (new KaryawanModel())->find($pihakKeduaId);
+
+        if (!$asetSaatIni || !$pihakKedua) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Data aset atau karyawan tidak ditemukan.');
+        }
+
+        $pihakPertamaData = [
+            'nama_karyawan' => $asetSaatIni['nama_karyawan'] ?? $asetSaatIni['user_pengguna'] ?? 'Gudang',
+            'jabatan'       => $asetSaatIni['jabatan'] ?? 'HCGA'
+        ];
+
+        $filename = 'Berita_Acara_Serah_Terima_' . str_replace('/', '_', $asetSaatIni['kode']) . '.pdf';
+        
+        $pdfData = [
+            'aset'           => $asetSaatIni,
+            'pihak_pertama'  => $pihakPertamaData,
+            'pihak_kedua'    => $pihakKedua,
+            'tanggal'        => date('l, d F Y'),
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/serah_terima_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream($filename);
+    }
+    public function generatePerbaikanPdf($id = null)
+{
+    // Ambil data dari query string di URL
+    $penyetujuNama = $this->request->getGet('penyetuju');
+    $kerusakan = $this->request->getGet('kerusakan');
+    $biaya = $this->request->getGet('biaya');
+
+    // Ambil detail lengkap aset untuk memastikan kita punya 'nama_karyawan' jika ada
+    $asetDetail = $this->model->getAsetDetail($id);
+    $karyawanModel = new \App\Models\KaryawanModel();
+
+    // Prioritaskan mencari data karyawan berdasarkan ID 'user_pengguna'
+    $pemohon = $karyawanModel->find($asetDetail['user_pengguna']);
+
+    // Jika tidak ada di tabel karyawan (misal 'user_pengguna' hanya teks biasa),
+    // gunakan data dari detail aset itu sendiri.
+    if (!$pemohon) {
+        $pemohon = [
+            'nama_karyawan' => $asetDetail['nama_karyawan'] ?: ($asetDetail['user_pengguna'] ?: 'Tidak Ada'),
+            'jabatan'       => $asetDetail['jabatan'] ?? 'Pengguna Aset'
+        ];
+    }
+
+    // Validasi menggunakan variabel $asetDetail
+    if (!$asetDetail || !$penyetujuNama || !$kerusakan || !$biaya) {
+        throw new \CodeIgniter\Exceptions\PageNotFoundException('Data tidak lengkap untuk membuat PDF permohonan perbaikan.');
+    }
+
+    // Membuat nama file menggunakan variabel $asetDetail
+    $filename = 'Permohonan_Perbaikan_' . str_replace('/', '_', $asetDetail['kode']) . '.pdf';
+
+    $pdfData = [
+        'aset'           => $asetDetail, // Mengirim data ke view dengan nama 'aset'
+        'pemohon'        => $pemohon,
+        'penyetuju'      => ['nama' => $penyetujuNama, 'jabatan' => 'HCGA'],
+        'kerusakan'      => $kerusakan,
+        'estimasi_biaya' => $biaya,
+    ];
+
+    $options = new \Dompdf\Options();
+    $options->set('isRemoteEnabled', true);
+    $dompdf = new \Dompdf\Dompdf($options);
+    $dompdf->loadHtml(view('aset/permohonan_perbaikan_pdf', $pdfData));
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    $dompdf->stream($filename);
+}
     /**
      * Delete the designated resource object from the model.
      *
@@ -857,57 +1013,14 @@ public function barcodes()
         return $this->response->setJSON(['success' => false]);
     }
 
-
-    public function generateSerahTerimaPdf($id = null, $pihakKeduaId = null)
-    {
-        $karyawanModel = new KaryawanModel();
-
-        // Ambil data Pihak Pertama (user_pengguna saat ini)
-        $pihakPertama = $this->asetModel->find($id);
-
-        // Ambil data Pihak Kedua dari master data
-        $pihakKedua = $karyawanModel->find($pihakKeduaId);
-
-        // Ambil data lengkap aset untuk detail
-        $asetData = $this->asetModel
-            ->select('aset.*, sk.nama_sub_kategori, m.nama_merk, t.nama_tipe')
-            ->join('sub_kategori sk', 'sk.id = aset.sub_kategori_id', 'left')
-            ->join('merk m', 'm.id = aset.merk_id', 'left')
-            ->join('tipe t', 't.id = aset.tipe_id', 'left')
-            ->find($id);
-
-        if (!$asetData || !$pihakKedua) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Data aset atau karyawan tidak ditemukan.');
-        }
-
-        $filename = 'Berita_Acara_Serah_Terima_' . str_replace('/', '_', $asetData['kode']) . '.pdf';
-
-        $dompdf = new Dompdf();
-
-        // Kirim data Pihak Pertama dan Pihak Kedua ke view
-        $viewData = [
-            'aset' => $asetData,
-            'pihak_pertama' => $pihakPertama,
-            'pihak_kedua' => $pihakKedua,
-        ];
-        $dompdf->loadHtml(view('aset/serah_terima_pdf', $viewData));
-
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $dompdf->stream($filename);
-
-        return;
-    }
-
-
-    public function serveDocument($fileName = null)
+     public function serveDocument($fileName = null)
     {
         if (empty($fileName)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
 
-        // Tentukan path file di dalam folder writable
-        $path = WRITEPATH . 'uploads/aset_bukti/' . $fileName;
+        // Tentukan path file di dalam folder public/uploads
+        $path = FCPATH . 'uploads/aset_bukti/' . $fileName;
 
         if (!file_exists($path) || !is_file($path)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
@@ -924,8 +1037,9 @@ public function barcodes()
             ->setStatusCode(200)
             ->setContentType($mimeType)
             ->setBody($fileContent)
-            ->setHeader('Content-Disposition', 'inline; filename="' . $docInfo['nama_asli_file'] . '"'); // Menampilkan file, bukan download paksa
+            ->setHeader('Content-Disposition', 'inline; filename="' . ($docInfo['nama_asli_file'] ?? $fileName) . '"');
     }
+
 
     public function getAsetWithDetails($filters = [])
     {
@@ -1004,6 +1118,121 @@ public function barcodes()
     // Tampilkan view yang sudah kita rename tadi
     return view('aset/info_publik', $data);
 }
+
+// Fungsi baru untuk menangani unggahan FOTO FISIK
+public function add_dokumentasi($id)
+{
+    // Pastikan ini adalah request AJAX
+    if ($this->request->isAJAX()) {
+        $files = $this->request->getFiles();
+
+        if (empty($files) || !isset($files['bukti_aset'])) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tidak ada file yang dipilih.']);
+        }
+        
+        $isSuccess = false;
+        foreach ($files['bukti_aset'] as $file) {
+            if ($file->isValid() && !$file->hasMoved()) {
+                if ($file->getSize() > 2048000) continue; 
+                if (!in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/jpg'])) continue;
+
+                $newName = $file->getRandomName();
+                $file->move(FCPATH . 'uploads/aset_bukti', $newName); 
+
+                $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+                $dokumentasiModel->save([
+                    'aset_id'        => $id,
+                    'path_file'      => $newName,
+                    'nama_asli_file' => $file->getClientName(),
+                    'tipe_file'      => $file->getClientMimeType(),
+                    'ukuran_file'    => $file->getSize(),
+                ]);
+                $isSuccess = true;
+            }
+        }
+
+        if ($isSuccess) {
+            return $this->response->setJSON(['success' => true, 'message' => 'Dokumentasi fisik berhasil diunggah.']);
+        } else {
+            return $this->response->setJSON(['success' => false, 'message' => 'File tidak valid. Pastikan file adalah gambar (jpg/png) dan ukurannya di bawah 2MB.']);
+        }
+    }
+    
+    return redirect()->back()->with('error', 'Akses tidak diizinkan.');
+}
+// Fungsi baru untuk menangani unggahan BERKAS LEGAL
+public function add_berkas($id)
+{
+    // Pastikan ini adalah request AJAX
+    if ($this->request->isAJAX()) {
+        $file = $this->request->getFile('file_berkas');
+        $namaBerkas = $this->request->getPost('nama_berkas');
+
+        // Validasi sederhana
+        if (empty($namaBerkas) || !$file || !$file->isValid()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Nama berkas dan file tidak boleh kosong.']);
+        }
+
+        if ($file->hasMoved()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'File ini sepertinya sudah pernah diunggah.']);
+        }
+
+        // Pindahkan file ke folder public
+        $newName = $file->getRandomName();
+        $file->move(FCPATH . 'uploads/aset_bukti', $newName);
+
+        // Simpan ke database menggunakan model yang benar
+        $berkasModel = new \App\Models\BerkasAsetModel();
+        $berkasModel->save([
+            'aset_id'       => $id,
+            'path_file'     => $newName,
+            'nama_berkas'   => $namaBerkas,
+            'tipe_file'     => $file->getClientMimeType(),
+            'ukuran_file'   => $file->getSize()
+        ]);
+
+        // Kirim respons sukses dalam format JSON
+        return $this->response->setJSON(['success' => true, 'message' => 'Berkas legal berhasil diunggah.']);
+    }
+
+    // Jika diakses secara langsung, redirect saja
+    return redirect()->back()->with('error', 'Akses tidak diizinkan.');
+}
+public function delete_document($id = null, $type = null)
+{
+    if ($this->request->isAJAX()) {
+        $model = null;
+        if ($type === 'dokumentasi') {
+            $model = new \App\Models\DokumentasiAsetModel();
+        } elseif ($type === 'berkas') {
+            $model = new \App\Models\BerkasAsetModel();
+        } else {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tipe tidak valid.']);
+        }
+
+        $doc = $model->find($id);
+
+        if ($doc) {
+            // Hapus file fisik dari server
+            $filePath = FCPATH . 'uploads/aset_bukti/' . $doc['path_file'];
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Hapus record dari database
+            $model->delete($id);
+
+            return $this->response->setJSON(['success' => true, 'message' => 'File berhasil dihapus.']);
+        }
+
+        return $this->response->setJSON(['success' => false, 'message' => 'File tidak ditemukan.']);
+    }
+    return redirect()->back()->with('error', 'Akses tidak diizinkan.');
+}
+
+
+
+
 
 
 }
