@@ -876,38 +876,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                 document.getElementById('detail-status').textContent = data.status;
                 // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
-                        const dokumentasiContainer = document.getElementById('detail-dokumentasi');
-                        dokumentasiContainer.innerHTML = ''; // Kosongkan dulu
+                        const filesContainer = document.getElementById('detail-dokumentasi');
+                        filesContainer.innerHTML = ''; // Kosongkan dulu
 
-                        if (data.dokumentasi && data.dokumentasi.length > 0) {
-                            data.dokumentasi.forEach(doc => {
-                                let docItem = '';
-                                const fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
+                        if (data.all_files && data.all_files.length > 0) {
+                            data.all_files.forEach(file => {
+                                let fileItemHTML = '';
+                                // Buat URL menggunakan route 'files/bukti/'
+                                const fileUrl = `<?= base_url('files/bukti/') ?>${file.path_file}`;
 
-                                if (doc.tipe_file.startsWith('image/')) {
-                                    docItem = `
+                                if (file.jenis === 'gambar' || (file.tipe_file && file.tipe_file.startsWith('image/'))) {
+                                    // Jika jenisnya gambar atau tipe MIME adalah image
+                                    fileItemHTML = `
                                         <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank">
-                                                <img src="${fileUrl}" alt="Bukti" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}">
+                                                <img src="${fileUrl}" alt="${file.nama_file || 'Gambar Aset'}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </a>
+                                        </div>
+                                    `;
+                                } else if (file.jenis === 'berkas' || (file.tipe_file && file.tipe_file === 'application/pdf')) {
+                                    // Jika jenisnya berkas atau tipe MIME adalah PDF
+                                    fileItemHTML = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
+                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
+                                                <small class="text-muted mt-1 text-truncate" style="max-width: 70px;">${file.nama_file || 'PDF'}</small>
                                             </a>
                                         </div>
                                     `;
                                 } else {
-                                    docItem = `
+                                    // Fallback untuk tipe file lain (jika ada)
+                                    fileItemHTML = `
                                         <div class="col-auto">
-                                            <a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
-                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
-                                                <small class="text-muted mt-1">PDF</small>
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
+                                                <i class="bi bi-file-earmark-text" style="font-size: 2rem; color: #6c757d;"></i>
+                                                <small class="text-muted mt-1 text-truncate" style="max-width: 70px;">${file.nama_file || 'File'}</small>
                                             </a>
                                         </div>
                                     `;
                                 }
-                                dokumentasiContainer.innerHTML += docItem;
+                                filesContainer.innerHTML += fileItemHTML;
                             });
                         } else {
-                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset yang diunggah.</p>';
+                            filesContainer.innerHTML = '<p class="text-muted small col-12">Tidak ada dokumentasi atau berkas yang diunggah.</p>';
                         }
-                        // --- AKHIR KODE BARU ---
             })
             .catch(error => console.error('Error fetching detail:', error));
         
