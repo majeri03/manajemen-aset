@@ -24,7 +24,7 @@ class LaporanController extends BaseController
         $lokasiAset = $asetModel->select('lokasi, COUNT(id) as jumlah')
                                 ->groupBy('lokasi')
                                 ->orderBy('jumlah', 'DESC')
-                                ->limit(5) // Ambil 5 lokasi teratas
+                                ->limit(5)
                                 ->get()->getResultArray();
 
         // --- Data untuk Chart Tren Bulanan (Contoh 6 bulan terakhir) ---
@@ -109,7 +109,6 @@ class LaporanController extends BaseController
             return redirect()->to('laporan/stockopname')->with('error', 'Siklus laporan tidak ditemukan.');
         }
 
-        // Query super lengkap untuk mendapatkan semua data
         $query = "
             SELECT 
                 a.kode, a.serial_number, a.tahun, a.harga_beli, a.entitas_pembelian, a.penanggung_jawab, a.keterangan,

@@ -6,8 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
-use App\Models\MerkModel; // <-- TAMBAHKAN
-use App\Models\TipeModel; // <-- TAMBAHKAN
+use App\Models\MerkModel;
+use App\Models\TipeModel;
 use App\Models\KaryawanModel;
 
 
@@ -16,8 +16,8 @@ class MasterDataController extends BaseController
     protected $kategoriModel;
     protected $subKategoriModel;
     protected $lokasiModel;
-    protected $merkModel; // <-- TAMBAHKAN
-    protected $tipeModel; // <-- TAMBAHKAN
+    protected $merkModel;
+    protected $tipeModel;
     protected $karyawanModel;
     protected $helpers = ['form', 'url'];
 
@@ -26,8 +26,8 @@ class MasterDataController extends BaseController
         $this->kategoriModel = new KategoriModel();
         $this->subKategoriModel = new SubKategoriModel();
         $this->lokasiModel = new LokasiModel();
-        $this->merkModel = new MerkModel(); // <-- TAMBAHKAN
-        $this->tipeModel = new TipeModel(); // <-- TAMBAHKAN
+        $this->merkModel = new MerkModel();
+        $this->tipeModel = new TipeModel();
          $this->karyawanModel = new KaryawanModel();
     }
 
@@ -239,7 +239,7 @@ class MasterDataController extends BaseController
         return redirect()->to('/master-data?tab=merk')->with('success', 'Tipe berhasil diperbarui.');
     }
     
-    // [BARU] Fungsi untuk menghapus Tipe
+    //Fungsi untuk menghapus Tipe
     public function deleteTipe($id)
     {
         $db = \Config\Database::connect();

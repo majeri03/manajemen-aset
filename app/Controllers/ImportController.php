@@ -9,7 +9,6 @@ use App\Models\SubKategoriModel;
 use App\Models\LokasiModel;
 use App\Models\MerkModel;
 use App\Models\TipeModel;
-// Gunakan alias untuk membedakan Reader dan Writer dengan jelas
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
@@ -54,7 +53,7 @@ class ImportController extends BaseController
 
             // Kumpulkan serial number dari file
             for ($i = 2; $i <= count($sheet); $i++) {
-                $sn = strtoupper(trim($sheet[$i]['E'])); // Kolom Serial Number
+                $sn = strtoupper(trim($sheet[$i]['E']));
                 if (!empty($sn)) {
                     $serialsInFile[] = $sn;
                 }
@@ -81,15 +80,15 @@ class ImportController extends BaseController
                     'merk'              => strtoupper(trim($sheet[$i]['C'])),
                     'tipe'              => strtoupper(trim($sheet[$i]['D'])),
                     'serial_number'     => $serialNumber,
-                    'entitas_pembelian' => strtoupper(trim($sheet[$i]['F'])), // Kolom Entitas 'F'
-                    'tahun_beli'        => trim($sheet[$i]['G']),             // Kolom tahun_beli 'G'
-                    'harga_beli'        => trim($sheet[$i]['H']),             // Kolom Harga Beli 'H'
-                    'user_pengguna'     => strtoupper(trim($sheet[$i]['I'])), // Kolom USER PENGGUNA 'I'
-                    'lokasi'            => strtoupper(trim($sheet[$i]['J'])), // Kolom Lokasi 'J'
+                    'entitas_pembelian' => strtoupper(trim($sheet[$i]['F'])),
+                    'tahun_beli'        => trim($sheet[$i]['G']),
+                    'harga_beli'        => trim($sheet[$i]['H']),
+                    'user_pengguna'     => strtoupper(trim($sheet[$i]['I'])),
+                    'lokasi'            => strtoupper(trim($sheet[$i]['J'])),
                     'status'            => $statusFinal,
-                    'keterangan'        => strtoupper(trim($sheet[$i]['L'])), // Kolom Keterangan 'L'
+                    'keterangan'        => strtoupper(trim($sheet[$i]['L'])),
                     'is_duplicate'      => $isDuplicate,
-                    'errors'            => [] // TAMBAHKAN INI
+                    'errors'            => []
                 ];
 
                 // Hanya impor baris yang memiliki data
@@ -117,7 +116,7 @@ class ImportController extends BaseController
 
         $kodeSubKategori = strtoupper(substr($subKategori['nama_sub_kategori'], 0, 5));
         $kodeMerk = strtoupper(substr($merk['nama_merk'], 0, 3));
-        $kodeSubKategoriMerk = $kodeSubKategori . '_' . $kodeMerk;
+        $kodeSubKategoriMerk = $kodeSubKategori . '/' . $kodeMerk;
 
         // Kunci baru untuk keunikan: Tahun, Sub Kategori, dan Merk
         $lastAsset = $asetModel
@@ -145,9 +144,9 @@ class ImportController extends BaseController
     $asetModel = new AsetModel();
     $dokumentasiAsetModel = new DokumentasiAsetModel(); 
     $uploadedFiles = $this->request->getFiles();
-    $allRowsAreValid = true; // Anggap semua data valid pada awalnya
-    $validatedData = [];   // Untuk menampung data yang sudah divalidasi
-    $originalDataWithErrors = []; // Untuk menampung data asli jika ada error
+    $allRowsAreValid = true;
+    $validatedData = [];
+    $originalDataWithErrors = [];
 
     if (empty($importedData)) {
         return redirect()->to('/import')->with('error', 'Tidak ada data untuk disimpan.');
@@ -340,9 +339,9 @@ class ImportController extends BaseController
 {
     if ($this->request->isAJAX()) {
         $rowIndex    = $this->request->getPost('rowIndex');
-        $fieldName   = $this->request->getPost('fieldName'); // misal: 'kategori_id' atau 'serial_number'
-        $value       = $this->request->getPost('value');     // Teks yang diketik/dipilih
-        $id          = $this->request->getPost('id');         // ID dari master data (jika ada)
+        $fieldName   = $this->request->getPost('fieldName');
+        $value       = $this->request->getPost('value');
+        $id          = $this->request->getPost('id');
 
         $importData = session()->get('import_data');
 

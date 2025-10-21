@@ -34,9 +34,9 @@ class AsetController extends ResourceController
     protected $asetModel;
     protected $kategoriModel;
     protected $subKategoriModel;
-    protected $lokasiModel; // Deklarasikan
-    protected $merkModel; // TAMBAHKAN
-    protected $tipeModel; // TAMBAHKAN
+    protected $lokasiModel;
+    protected $merkModel;
+    protected $tipeModel;
     protected $dokumentasiAsetModel;
     protected $modelName = 'App\Models\AsetModel';
     
@@ -46,8 +46,8 @@ class AsetController extends ResourceController
         $this->kategoriModel = new KategoriModel();
         $this->subKategoriModel = new SubKategoriModel();
         $this->lokasiModel = new LokasiModel();
-        $this->merkModel = new MerkModel(); // TAMBAHKAN
-        $this->tipeModel = new TipeModel(); // TAMBAHKAN
+        $this->merkModel = new MerkModel();
+        $this->tipeModel = new TipeModel();
         $this->dokumentasiAsetModel = new DokumentasiAsetModel();
     }
 
@@ -61,11 +61,9 @@ class AsetController extends ResourceController
 
         $kodeSubKategori = strtoupper(substr($subKategori['nama_sub_kategori'], 0, 5));
         $kodeMerk = strtoupper(substr($merk['nama_merk'], 0, 3));
-        $kodeSubKategoriMerk = $kodeSubKategori . '_' . $kodeMerk;
+        $kodeSubKategoriMerk = $kodeSubKategori . '/' . $kodeMerk;
 
         // --- PERUBAHAN LOGIKA UTAMA ADA DI SINI ---
-        // Mencari aset terakhir berdasarkan kombinasi TAHUN, SUB KATEGORI, dan MERK
-        // Ini adalah kunci baru untuk menentukan nomor urut.
         $lastAsset = $this->asetModel
             ->where('tahun_beli', $tahunBeli)
             ->where('sub_kategori_id', $subKategoriId)
@@ -75,7 +73,7 @@ class AsetController extends ResourceController
 
         $nextNumber = 1;
         if ($lastAsset) {
-            $parts = explode('/', $lastAsset['kode_aset']);
+            $parts = explode('/', $lastAsset['kode']);
             $lastNumber = intval(end($parts));
             $nextNumber = $lastNumber + 1;
         }
@@ -252,7 +250,6 @@ public function show($id = null)
         $merkId = $this->request->getPost('merk_id');
 
         // --- PERUBAHAN DI SINI ---
-        // Panggil fungsi generateUniqueAssetCode TANPA menyertakan entitas pembelian.
         $newAssetCode = $this->generateUniqueAssetCode($tahun_beli, $subKategoriId, $merkId);
 
         // Variabel entitas tetap diambil untuk disimpan ke database, tapi tidak dipakai untuk generate kode.
@@ -363,10 +360,8 @@ public function show($id = null)
         // Ini untuk mengambil data FOTO FISIK (tetap ada)
         $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
 
-        // ▼▼▼ TAMBAHKAN DUA BARIS INI ▼▼▼
         $berkasModel = new \App\Models\BerkasAsetModel();
         $berkas_list = $berkasModel->where('aset_id', $id)->findAll();
-        // ▲▲▲ ------------------------- ▲▲▲
 
         $data = [
             'title'           => 'Edit Aset',
@@ -486,7 +481,6 @@ public function show($id = null)
 
         $asetDetail = $this->model->getAsetDetail($asetId);
         $karyawanModel = new KaryawanModel();
-            // Logika yang sama seperti di atas: prioritaskan data dari user_pengguna aset
             $pemohon = $karyawanModel->find($asetDetail['user_pengguna']);
 
             if (!$pemohon) {
@@ -498,9 +492,9 @@ public function show($id = null)
 
         $pdfData = [
             'aset'           => $asetDetail,
-            'pemohon'        => $pemohon, // <-- DATA PEMOHON SEKARANG SUDAH BENAR
+            'pemohon'        => $pemohon,
             'penyetuju'      => ['nama' => $dataPermohonan['penyetuju_nama'], 'jabatan' => 'HCGA'],
-            'perbaikan'      => [ // Menggunakan key 'perbaikan' agar konsisten dengan template
+            'perbaikan'      => [
                 'keterangan_kerusakan' => $dataPermohonan['keterangan_kerusakan'],
                 'estimasi_biaya' => $dataPermohonan['estimasi_biaya']
             ]
@@ -956,7 +950,7 @@ public function barcodes()
     $builder->join('tipe t', 't.id = aset.tipe_id', 'left');
     $builder->where('aset.qrcode IS NOT NULL');
     $builder->where('aset.qrcode !=', '');
-    $builder->where('aset.deleted_at IS NULL'); // Hanya ambil aset yang tidak dihapus
+    $builder->where('aset.deleted_at IS NULL');
 
     // Terapkan semua filter
     if (!empty($filters['kategori_id'])) {

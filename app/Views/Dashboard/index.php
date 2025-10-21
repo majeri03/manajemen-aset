@@ -559,7 +559,7 @@ Dashboard
                 '/XX';
             $('#kode-tambah').val(kodeAset);
         } else {
-            $('#kode-tambah').val(''); // Kosongkan jika belum lengkap
+            $('#kode-tambah').val(''); 
         }
     }
     
@@ -657,6 +657,7 @@ const statusColors = {
     'BAIK TERPAKAI': '#065f46',
     'BAIK TIDAK TERPAKAI': '#0694a2',
     'RUSAK': '#991b1b',
+    'PERBAIKAN': '#b45309'
 };
 
 const dynamicStatusColors = statusLabels.map(label => statusColors[label.toUpperCase()] || '#6c757d');
