@@ -203,8 +203,33 @@ public function show($id = null)
                 ->find($id);
 
         if ($aset) {
-            $dokumentasi = $this->dokumentasiAsetModel->where('aset_id', $id)->findAll();
-            $aset['dokumentasi'] = $dokumentasi;
+        $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+        $berkasModel = new \App\Models\BerkasAsetModel();
+
+        $dokumentasiList = $dokumentasiModel->where('aset_id', $id)->findAll();
+        $berkasList = $berkasModel->where('aset_id', $id)->findAll();
+
+        $allFiles = [];
+
+        foreach ($dokumentasiList as $doc) {
+            $allFiles[] = [
+                'path_file' => $doc['path_file'],
+                'nama_file' => $doc['nama_asli_file'], 
+                'tipe_file' => $doc['tipe_file'],
+                'jenis'     => 'gambar' 
+            ];
+        }
+
+        foreach ($berkasList as $berkas) {
+             $allFiles[] = [
+                'path_file' => $berkas['path_file'],
+                'nama_file' => $berkas['nama_berkas'], 
+                'tipe_file' => $berkas['tipe_file'],
+                'jenis'     => 'berkas' 
+            ];
+        }
+
+        $aset['all_files'] = $allFiles;
             $aset['updated_at'] = date('d F Y H:i:s', strtotime($aset['updated_at']));
             return $this->response->setJSON($aset);
         }
@@ -276,26 +301,46 @@ public function show($id = null)
             // --- AWAL KODE BARU UNTUK PROSES UPLOAD ---
             $files = $this->request->getFiles('bukti_aset');
             $uploadedFilesCount = 0; // Menghitung file yang berhasil diupload
-
+            $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
+            $berkasModel = new \App\Models\BerkasAsetModel();
             if (isset($files['bukti_aset'])) {
-                foreach ($files['bukti_aset'] as $file) {
-                    if ($file->isValid() && !$file->hasMoved() && $uploadedFilesCount < 2) {
-                        // Validasi ukuran dan tipe
-                        if ($file->getSize() <= 2048000 && in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'application/pdf'])) {
-                            $newName = $file->getRandomName();
-                            $file->move(FCPATH . 'uploads/aset_bukti', $newName);
+            foreach ($files['bukti_aset'] as $file) {
+                if ($file->isValid() && !$file->hasMoved() && $uploadedFilesCount < 2) {
+                    // Validasi ukuran
+                    if ($file->getSize() <= 2048000) {
+                        $newName = $file->getRandomName();
+                        $mimeType = $file->getMimeType();
 
-                            $this->dokumentasiAsetModel->save([
+                        // Pindahkan file ke writable
+                        $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
+
+                        // **LOGIKA PEMISAHAN BERDASARKAN TIPE MIME**
+                        if (strpos($mimeType, 'image/') === 0) {
+                            // Jika ini adalah gambar, simpan ke dokumentasi_aset
+                            $dokumentasiModel->save([
                                 'aset_id'        => $newAsetId,
-                                'path_file'      => $newName, // Hanya simpan nama file
+                                'path_file'      => $newName,
                                 'nama_asli_file' => $file->getClientName(),
-                                'tipe_file'      => $file->getClientMimeType(),
+                                'tipe_file'      => $mimeType,
+                                // 'ukuran_file'    => $file->getSize(), // Anda mungkin perlu menambahkan kolom ini jika belum ada di tabel dokumentasi_aset
+                            ]);
+                            $uploadedFilesCount++;
+                        } elseif ($mimeType === 'application/pdf') {
+                            // Jika ini adalah PDF (atau tipe dokumen lain yang Anda inginkan), simpan ke berkas_aset
+                            $berkasModel->save([
+                                'aset_id'       => $newAsetId,
+                                'path_file'     => $newName,
+                                'nama_berkas'   => 'DOKUMEN LEGAL - ' . $file->getClientName(), // Beri nama default
+                                'tipe_file'     => $mimeType,
+                                'ukuran_file'   => $file->getSize()
                             ]);
                             $uploadedFilesCount++;
                         }
+                        // Anda bisa menambahkan 'else if' lain untuk tipe file dokumen lain jika perlu
                     }
                 }
             }
+        }
             $url = base_url('aset/info/' . $newAsetId);
             if (!is_dir(FCPATH . 'qrcodes')) {
                 mkdir(FCPATH . 'qrcodes', 0777, true);
@@ -457,7 +502,7 @@ public function show($id = null)
         $pdfOutput = $dompdf->output();
 
         $filename = 'serah_terima_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
-        $path = FCPATH . 'uploads/aset_bukti/'; 
+        $path = WRITEPATH . 'uploads/aset_bukti/'; 
 
         if (file_put_contents($path . $filename, $pdfOutput)) {
             (new BerkasAsetModel())->save([
@@ -507,7 +552,7 @@ public function show($id = null)
         $pdfOutput = $dompdf->output();
 
         $filename = 'permohonan_perbaikan_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
-        $path = FCPATH . 'uploads/aset_bukti/';
+        $path = WRITEPATH . 'uploads/aset_bukti/';
 
         if (file_put_contents($path . $filename, $pdfOutput)) {
             (new BerkasAsetModel())->save([
@@ -1006,8 +1051,8 @@ public function barcodes()
 
         if ($doc) {
             // Hapus file fisik dari server
-            if (file_exists(FCPATH . $doc['path_file'])) {
-                unlink(FCPATH . $doc['path_file']);
+            if (file_exists(WRITEPATH . $doc['path_file'])) {
+                unlink(WRITEPATH . $doc['path_file']);
             }
             // Hapus record dari database
             $this->dokumentasiAsetModel->delete($docId);
@@ -1025,7 +1070,7 @@ public function barcodes()
         }
 
         // Tentukan path file di dalam folder public/uploads
-        $path = FCPATH . 'uploads/aset_bukti/' . $fileName;
+        $path = WRITEPATH . 'uploads/aset_bukti/' . $fileName;
 
         if (!file_exists($path) || !is_file($path)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
@@ -1142,7 +1187,7 @@ public function add_dokumentasi($id)
                 if (!in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/jpg'])) continue;
 
                 $newName = $file->getRandomName();
-                $file->move(FCPATH . 'uploads/aset_bukti', $newName); 
+                $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
 
                 $dokumentasiModel = new \App\Models\DokumentasiAsetModel();
                 $dokumentasiModel->save([
@@ -1184,7 +1229,7 @@ public function add_berkas($id)
 
         // Pindahkan file ke folder public
         $newName = $file->getRandomName();
-        $file->move(FCPATH . 'uploads/aset_bukti', $newName);
+        $file->move(WRITEPATH . 'uploads/aset_bukti', $newName);
 
         // Simpan ke database menggunakan model yang benar
         $berkasModel = new \App\Models\BerkasAsetModel();
@@ -1219,7 +1264,7 @@ public function delete_document($id = null, $type = null)
 
         if ($doc) {
             // Hapus file fisik dari server
-            $filePath = FCPATH . 'uploads/aset_bukti/' . $doc['path_file'];
+            $filePath = WRITEPATH . 'uploads/aset_bukti/' . $doc['path_file'];
             if (file_exists($filePath)) {
                 unlink($filePath);
             }

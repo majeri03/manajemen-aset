@@ -968,7 +968,7 @@ Data Aset
                         document.getElementById('detail-merk').textContent = data.nama_merk || '-';
                         document.getElementById('detail-type').textContent = data.nama_tipe || '-';
                         document.getElementById('detail-serial_number').textContent = data.serial_number || '-';
-                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;z
+                        document.getElementById('detail-tahun_beli').textContent = data.tahun_beli;
                         document.getElementById('detail-harga_beli').textContent = formatRupiah(data.harga_beli);
                         document.getElementById('detail-entitas_pembelian').textContent = data.entitas_pembelian || '-';
                         document.getElementById('detail-user_pengguna').textContent = data.user_pengguna || '-';
@@ -976,21 +976,44 @@ Data Aset
                         document.getElementById('detail-keterangan').textContent = data.keterangan || '-';
                         document.getElementById('detail-status').textContent = data.status;
                         // --- KODE BARU UNTUK MENAMPILKAN DOKUMENTASI ---
-                        const dokumentasiContainer = document.getElementById('detail-dokumentasi');
-                        dokumentasiContainer.innerHTML = '';
-                        if (data.dokumentasi && data.dokumentasi.length > 0) {
-                            data.dokumentasi.forEach(doc => {
-                                let docItem = '';
-                                const fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`;
-                                if (doc.tipe_file.startsWith('image/')) {
-                                    docItem = `<div class="col-auto"><a href="${fileUrl}" target="_blank"><img src="${fileUrl}" class="img-thumbnail" style="width:80px;height:80px;object-fit:cover;"></a></div>`;
+                        const filesContainer = document.getElementById('detail-dokumentasi');
+                        filesContainer.innerHTML = ''; 
+                        if (data.all_files && data.all_files.length > 0) {
+                            data.all_files.forEach(file => {
+                                let fileItemHTML = '';
+                                const fileUrl = `<?= base_url('files/bukti/') ?>${file.path_file}`;
+
+                                if (file.jenis === 'gambar' || (file.tipe_file && file.tipe_file.startsWith('image/'))) {
+                                    fileItemHTML = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}">
+                                                <img src="${fileUrl}" alt="${file.nama_file || 'Gambar Aset'}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </a>
+                                        </div>
+                                    `;
+                                } else if (file.jenis === 'berkas' || (file.tipe_file && file.tipe_file === 'application/pdf')) {
+                                    fileItemHTML = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
+                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 2rem; color: #d33;"></i>
+                                                <small class="text-muted mt-1 text-truncate" style="max-width: 70px;">${file.nama_file || 'PDF'}</small>
+                                            </a>
+                                        </div>
+                                    `;
                                 } else {
-                                    docItem = `<div class="col-auto"><a href="${fileUrl}" target="_blank" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width:80px;height:80px;text-decoration:none;"><i class="bi bi-file-earmark-pdf-fill" style="font-size:2rem;color:#d33;"></i><small class="text-muted mt-1">PDF</small></a></div>`;
+                                    fileItemHTML = `
+                                        <div class="col-auto">
+                                            <a href="${fileUrl}" target="_blank" title="${file.nama_file || ''}" class="d-flex flex-column align-items-center justify-content-center img-thumbnail" style="width: 80px; height: 80px; text-decoration: none;">
+                                                <i class="bi bi-file-earmark-text" style="font-size: 2rem; color: #6c757d;"></i>
+                                                <small class="text-muted mt-1 text-truncate" style="max-width: 70px;">${file.nama_file || 'File'}</small>
+                                            </a>
+                                        </div>
+                                    `;
                                 }
-                                dokumentasiContainer.innerHTML += docItem;
+                                filesContainer.innerHTML += fileItemHTML;
                             });
                         } else {
-                            dokumentasiContainer.innerHTML = '<p class="text-muted small">Tidak ada dokumentasi aset.</p>';
+                            filesContainer.innerHTML = '<p class="text-muted small col-12">Tidak ada dokumentasi atau berkas yang diunggah.</p>';
                         }
                     });
 
