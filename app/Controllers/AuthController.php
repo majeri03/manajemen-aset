@@ -83,7 +83,7 @@ class AuthController extends BaseController
         $user = $userModel->where('email', $this->request->getPost('email'))->first();
 
         if (!$user || !password_verify($this->request->getPost('password'), $user->password_hash)) {
-            return redirect()->to('/login')->withInput()->with('error', 'Email atau password salah.');
+            return redirect()->to('/login')->withInput()->with('error', 'Email atau password salah');
         }
 
         $session = session();
@@ -138,7 +138,7 @@ class AuthController extends BaseController
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
-        // --- AWAL PERUBAHAN ---
+
         // Konfigurasi email secara eksplisit di dalam controller
         $config = [
             'protocol'   => getenv('email.protocol'),
@@ -149,8 +149,8 @@ class AuthController extends BaseController
             'SMTPCrypto' => getenv('email.SMTPCrypto'),
             'mailType'   => getenv('email.mailType'),
             'charset'    => getenv('email.charset'),
-            'newline'    => "\r\n", // Wajib diset secara eksplisit
-            'CRLF'       => "\r\n", // Wajib diset secara eksplisit
+            'newline'    => "\r\n",
+            'CRLF'       => "\r\n",
         ];
         
         $emailService = \Config\Services::email();
@@ -158,7 +158,7 @@ class AuthController extends BaseController
         
         // Atur pengirim setelah inisialisasi
         $emailService->setFrom(getenv('email.fromEmail'), getenv('email.fromName'));
-        // --- AKHIR PERUBAHAN ---
+
 
         $emailService->setTo($user->email);
         $emailService->setSubject('Reset Password Akun Anda');

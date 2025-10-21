@@ -60,8 +60,5 @@ abstract class BaseController extends Controller
 
             service('renderer')->setVar('pending_requests', $pendingRequests);
         }
-        // Preload any models, libraries, etc, here.
-
-        // E.g.: $this->session = service('session');
     }
 }

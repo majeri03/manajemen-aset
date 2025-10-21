@@ -7,7 +7,7 @@ Login
 <?= $this->section('content') ?>
 <div class="auth-card">
     <div class="auth-form-section">
-        <h2 class="text-center mb-4">SELAMAT DATANG KEMBALI</h2>
+        <h2 class="text-center mb-4">SELAMAT DATANG</h2>
         <p class="text-center mb-4">Silakan login untuk melanjutkan.</p>
 
         <?php if (session()->has('success')) : ?>

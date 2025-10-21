@@ -22,12 +22,12 @@ class TrackingController extends BaseController
         // 2. Ambil riwayat CREATE
         $createsQuery = $db->table('aset as a')
             ->select("a.kode as kode_aset, a.created_at as tanggal, 'Sistem' as nama_user, CONCAT('Aset baru dengan kategori ', a.kategori) as proposed_data, 'create' as tipe_aktivitas")
-            ->where('a.deleted_at IS NULL'); // Hanya aset yang belum dihapus
+            ->where('a.deleted_at IS NULL');
 
-        // 3. Ambil riwayat DELETE (BARU)
+        // 3. Ambil riwayat DELETE
         $deletesQuery = $db->table('aset as a')
             ->select("a.kode as kode_aset, a.deleted_at as tanggal, 'Sistem' as nama_user, 'Aset telah dihapus dari sistem' as proposed_data, 'delete' as tipe_aktivitas")
-            ->where('a.deleted_at IS NOT NULL'); // Hanya aset yang sudah ditandai terhapus
+            ->where('a.deleted_at IS NOT NULL');
 
         // Gabungkan semua query
         $activities = $updatesQuery->union($createsQuery)->union($deletesQuery)->orderBy('tanggal', 'DESC')->get()->getResultArray();

@@ -6,8 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\AsetModel;
 use App\Models\KategoriModel;
 use App\Models\SubKategoriModel;
-use App\Models\LokasiModel; // 1. Tambahkan LokasiModel
-use App\Models\MerkModel; // <-- TAMBAHKAN INI
+use App\Models\LokasiModel;
+use App\Models\MerkModel;
 
 class Dashboard extends BaseController
 {
@@ -28,7 +28,6 @@ class Dashboard extends BaseController
         $nilaiAsetRusak = $asetModel->selectSum('harga_beli')->where('status', 'Rusak')->first()['harga_beli'] ?? 0;
 
         // --- 2. DATA UNTUK CHART ---
-        // Pie Chart Kategori
         $distribusiAset = $asetModel->select('k.nama_kategori as kategori, COUNT(aset.id) as jumlah')
                                     ->join('kategori k', 'k.id = aset.kategori_id', 'left')
                                     ->groupBy('k.nama_kategori')
@@ -37,7 +36,7 @@ class Dashboard extends BaseController
         $dataKategori = array_column($distribusiAset, 'jumlah');
 
         // Bar Chart Status
-        $semuaStatus = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak'];
+        $semuaStatus = ['Baik Terpakai', 'Baik Tidak Terpakai', 'Rusak', 'Perbaikan'];
         $hasilStatus = array_fill_keys($semuaStatus, 0);
         $statusDariDB = $asetModel->select('status, COUNT(id) as jumlah')->groupBy('status')->findAll();
         foreach ($statusDariDB as $status) {
@@ -49,7 +48,6 @@ class Dashboard extends BaseController
         $dataStatus = array_values($hasilStatus);
 
 
-    // --- [PENGGANTI] DATA BARU: LAPORAN STOCK OPNAME PER LOKASI ---
     // Langkah 1: Dapatkan ID lokasi yang sudah ada aktivitas SO
 $activeLokasiIds = $db->table('aset')
     ->distinct()
@@ -76,8 +74,6 @@ if (!empty($lokasiIds)) {
         ->get()
         ->getResultArray();
 }
-
-// === BAGIAN PENTING YANG MUNGKIN TERLEWAT ===
 // Bagian ini bertugas menghitung dan menambahkan 'persentase' ke setiap lokasi
 foreach ($stockOpnamePerLokasi as &$lokasi) { // Gunakan referensi '&'
     if ($lokasi['total_aset'] > 0) {
@@ -90,7 +86,7 @@ unset($lokasi); // Hapus referensi setelah loop selesai
 
 
 
-   // --- [FINAL] DATA UNTUK DAFTAR PENANGGUNG JAWAB ---
+   // --- DATA UNTUK DAFTAR PENANGGUNG JAWAB ---
     $daftarPenanggungJawab = $db->table('aset')
         ->select('user_pengguna, COUNT(id) as jumlah_aset')
         ->where('deleted_at', null) // Tetap filter aset yang aktif
@@ -107,7 +103,7 @@ unset($lokasi); // Hapus referensi setelah loop selesai
         ->where('a.deleted_at', null)
         ->groupBy('l.nama_lokasi')
         ->orderBy('total_nilai', 'DESC')
-        ->limit(7) // Ambil 7 lokasi teratas
+        ->limit(7)
         ->get()
         ->getResultArray();
         
@@ -115,7 +111,7 @@ unset($lokasi); // Hapus referensi setelah loop selesai
         for ($i = 5; $i >= 0; $i--) {
             $bulan = date('m', strtotime("-$i months"));
             $tahun = date('Y', strtotime("-$i months"));
-            $namaBulan = date('M Y', strtotime("-$i months")); // Format: Jan 2024
+            $namaBulan = date('M Y', strtotime("-$i months"));
             
             $jumlah = $asetModel->where('MONTH(created_at)', $bulan)
                                 ->where('YEAR(created_at)', $tahun)
@@ -199,11 +195,11 @@ unset($lokasi); // Hapus referensi setelah loop selesai
         ->join('aset a', 'a.id = soh.aset_id')
         ->join('sub_kategori sk', 'sk.id = a.sub_kategori_id', 'left')
         ->join('merk m', 'm.id = a.merk_id', 'left')
-        ->join('lokasi l', 'l.id = a.lokasi_id', 'left') // Join untuk mendapatkan lokasi seharusnya
-        ->where('soh.lokasi_scan_id', $lokasi_id) // Filter berdasarkan lokasi scan
-        ->where('a.lokasi_id !=', $lokasi_id)      // Pastikan lokasi aset aslinya BUKAN di sini
+        ->join('lokasi l', 'l.id = a.lokasi_id', 'left')
+        ->where('soh.lokasi_scan_id', $lokasi_id)
+        ->where('a.lokasi_id !=', $lokasi_id)
         ->where('a.deleted_at IS NULL')
-        ->groupBy('a.id') // Hindari duplikat jika aset discan berkali-kali
+        ->groupBy('a.id')
         ->orderBy('a.kode', 'ASC')
         ->get()->getResultArray();
 
