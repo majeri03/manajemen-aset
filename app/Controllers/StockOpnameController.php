@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\AsetModel;
-use App\Models\KategoriModel; // Tambahkan ini
+use App\Models\KategoriModel;
 use App\Models\LokasiModel;
 
 class StockOpnameController extends BaseController
