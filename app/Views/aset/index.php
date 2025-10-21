@@ -465,7 +465,7 @@ Data Aset
                                             </div>
                                         </div>
                                     <?php else: ?>
-                                        <span class="text-muted small">Tidak ada dokumen</span>
+                                        <span class="text-muted small">Tidak ada dokumentasi</span>
                                     <?php endif; ?>
                                 </td>
                                 <td><?= esc($aset['kode']); ?></td>
@@ -572,8 +572,8 @@ Data Aset
             </table>
         </div>
     </div>
+    <div id="printArea" class="print-area d-none"></div>
 </div>
-
 <div class="modal fade" id="detailAsetModal" tabindex="-1" aria-labelledby="detailAsetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -855,8 +855,75 @@ Data Aset
             var viewToShow = $(this).data('view');
             $('#view-container > div').hide();
             $('#' + viewToShow + '-view').show();
+
+            if (viewToShow === 'dokumen') {
+                initializeMiniCarousels();
+            }
         });
 
+        function initializeMiniCarousels() {
+            document.querySelectorAll('.mini-carousel').forEach(carouselEl => {
+                const dokumenData = JSON.parse(carouselEl.getAttribute('data-dokumen') || '[]');
+                const contentDiv = carouselEl.querySelector('.carousel-content');
+                const counterSpan = carouselEl.querySelector('.carousel-counter');
+                const prevBtn = carouselEl.querySelector('.prev-btn');
+                const nextBtn = carouselEl.querySelector('.next-btn');
+                let currentIndex = 0;
+
+                function showDokumen(index) {
+                    contentDiv.innerHTML = ''; // Kosongkan konten sebelumnya
+                    if (dokumenData.length === 0) {
+                        contentDiv.innerHTML = '<span class="text-muted small">Tidak ada dokumen</span>';
+                        if (counterSpan) counterSpan.textContent = '0 / 0';
+                        if (prevBtn) prevBtn.style.display = 'none';
+                        if (nextBtn) nextBtn.style.display = 'none';
+                        return;
+                    }
+                    currentIndex = (index + dokumenData.length) % dokumenData.length;
+                    const doc = dokumenData[currentIndex];
+                    const fileUrl = `<?= base_url('files/bukti/') ?>${doc.path_file}`; // Sesuaikan URL ini
+
+                    let itemHtml = '';
+                    if (doc.tipe_file && doc.tipe_file.startsWith('image/')) {
+                        itemHtml = `<a href="${fileUrl}" target="_blank" title="${doc.nama_asli_file || ''}">
+                                        <img src="${fileUrl}" alt="${doc.nama_asli_file || 'Gambar Aset'}" class="img-fluid">
+                                    </a>`;
+                    } else if (doc.tipe_file && doc.tipe_file === 'application/pdf') {
+                        itemHtml = `<a href="${fileUrl}" target="_blank" title="${doc.nama_asli_file || ''}" class="d-flex flex-column align-items-center text-decoration-none">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger file-icon"></i>
+                                        <small class="text-muted mt-1 text-truncate" style="max-width: 80%;">${doc.nama_asli_file || 'Lihat PDF'}</small>
+                                    </a>`;
+                    } else {
+                        itemHtml = `<a href="${fileUrl}" target="_blank" title="${doc.nama_asli_file || ''}" class="d-flex flex-column align-items-center text-decoration-none">
+                                        <i class="bi bi-file-earmark-text file-icon"></i>
+                                        <small class="text-muted mt-1 text-truncate" style="max-width: 80%;">${doc.nama_asli_file || 'Lihat File'}</small>
+                                    </a>`;
+                    }
+                    contentDiv.innerHTML = itemHtml;
+
+                    if (counterSpan) counterSpan.textContent = `${currentIndex + 1} / ${dokumenData.length}`;
+                    const showControls = dokumenData.length > 1;
+                    if (prevBtn) prevBtn.style.display = showControls ? 'inline-block' : 'none';
+                    if (nextBtn) nextBtn.style.display = showControls ? 'inline-block' : 'none';
+                    if (counterSpan && !showControls) counterSpan.style.display = 'none'; 
+                     else if (counterSpan) counterSpan.style.display = 'inline-block';
+
+                }
+
+                if (prevBtn) {
+                    prevBtn.onclick = () => showDokumen(currentIndex - 1);
+                }
+                if (nextBtn) {
+                    nextBtn.onclick = () => showDokumen(currentIndex + 1);
+                }
+
+                showDokumen(0);
+            });
+        }
+
+        if ($('#view-switcher button[data-view="dokumen"]').hasClass('active')) {
+            initializeMiniCarousels();
+        }
         // --- LOGIKA POP-UP BERKAS LEGAL ---
         $(document).on('click', '.view-docs', function() {
             const namaAset = $(this).data('nama-aset');
@@ -1055,5 +1122,108 @@ Data Aset
             });
         };
     });
+</script>
+<script>
+  $(function() {
+    const tbody      = document.getElementById('barcodeTableBody');
+    const selectAll  = document.getElementById('selectAllCheckbox');
+    const printBtn   = document.getElementById('printButton');
+    const printArea  = document.getElementById('printArea');
+
+    function updatePrintState() {
+      if (!tbody || !printBtn) return;
+      const checked = tbody.querySelectorAll('.barcode-checkbox:checked').length;
+      const disabled = checked === 0;
+      printBtn.disabled = disabled;
+      printBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+      printBtn.classList.toggle('disabled', disabled);
+    }
+
+    if (tbody) {
+      tbody.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('barcode-checkbox')) {
+          updatePrintState();
+        }
+      });
+    }
+
+    if (selectAll && tbody) {
+      selectAll.addEventListener('change', function() {
+        const checked = this.checked;
+        tbody.querySelectorAll('.barcode-checkbox').forEach(cb => { cb.checked = checked; });
+        updatePrintState();
+      });
+    }
+
+    if (printBtn && tbody) {
+      printBtn.addEventListener('click', function() {
+        const rows = Array.from(tbody.querySelectorAll('.barcode-checkbox:checked'))
+          .map(cb => cb.closest('tr'))
+          .filter(Boolean);
+        if (rows.length === 0) return;
+
+        let html = '<div class="label-grid">';
+        rows.forEach(row => {
+          const data = row.querySelector('.print-data');
+         if (data) html += '<div class="label">' + data.innerHTML + '</div>';
+        });
+        html += '</div>';
+
+        if (printArea) {
+
+          printArea.innerHTML = html;
+          printArea.classList.remove('d-none');
+
+          const images = printArea.querySelectorAll('img');
+          const imageLoadPromises = [];
+
+          if (images.length === 0) {
+            window.print();
+            setTimeout(() => {
+                printArea.innerHTML = '';
+                printArea.classList.add('d-none');
+            }, 500);
+            return; 
+          }
+
+          images.forEach(img => {
+            const promise = new Promise((resolve, reject) => {
+              if (img.complete) {
+                resolve();
+              } else {
+                img.onload = resolve;
+                img.onerror = reject;
+              }
+            });
+            imageLoadPromises.push(promise);
+          });
+
+          Promise.all(imageLoadPromises)
+            .then(() => {
+              window.print();
+
+              setTimeout(() => {
+                printArea.innerHTML = '';
+                printArea.classList.add('d-none');
+              }, 500);
+            })
+            .catch(error => {
+              console.error('Gagal memuat salah satu gambar QR code untuk dicetak:', error);
+              alert('Gagal memuat gambar QR code. Coba lagi.');
+              
+              printArea.innerHTML = '';
+              printArea.classList.add('d-none');
+            });
+          
+        } else {
+          const w = window.open('', '_blank');
+          w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Cetak Label</title></head><body class="print-area">' + html + '</body></html>');
+          w.document.close(); w.focus(); w.print(); w.close();
+        }
+      });
+    }
+
+    updatePrintState();
+  });
 </script>
 <?= $this->endSection() ?>
