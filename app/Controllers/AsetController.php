@@ -444,6 +444,7 @@ public function show($id = null)
         
         $isSerahTerima = ($statusSebelumnya === 'Baik Tidak Terpakai' && $statusSekarang === 'Baik Terpakai');
         $isPerbaikan = ($statusSekarang === 'Perbaikan');
+        $isPenjualan = ($statusSekarang === 'Penjualan');
 
         // Validasi
         if ($isSerahTerima && empty($this->request->getPost('pihak_kedua_id'))) {
@@ -451,6 +452,9 @@ public function show($id = null)
         }
         if ($isPerbaikan && (empty($data['penyetuju_nama']) || empty($data['keterangan_kerusakan']) || empty($data['estimasi_biaya']))) {
             return redirect()->back()->withInput()->with('error', 'Untuk status "Perbaikan", semua detail permohonan harus diisi.');
+        }
+        if ($isPenjualan && empty($data['harga_penjualan'])) {
+            return redirect()->back()->withInput()->with('error', 'Untuk status "Penjualan", harga penjualan harus diisi.');
         }
         
         // Proses update user pengguna jika ada serah terima
@@ -653,6 +657,29 @@ public function show($id = null)
             return redirect()->to('/aset')->with('success', 'Aset berhasil dihapus.');
         } else {
             return redirect()->to('/aset')->with('error', 'Gagal menghapus aset.');
+        }
+    }
+
+    /**
+     * Soft delete (pemusnahan) aset
+     *
+     * @param int|string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function destroy($id = null)
+    {
+        // Validate aset exists
+        $aset = $this->asetModel->find($id);
+        if (!$aset) {
+            return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
+        }
+
+        // Perform soft delete
+        if ($this->asetModel->delete($id)) {
+            return redirect()->to('/aset')->with('success', 'Aset berhasil dimusnahkan (soft delete).');
+        } else {
+            return redirect()->to('/aset')->with('error', 'Gagal memusnahkan aset.');
         }
     }
 

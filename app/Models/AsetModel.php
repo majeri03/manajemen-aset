@@ -26,6 +26,7 @@ class AsetModel extends Model
         'keterangan',
         'status',
         'harga_beli',
+        'harga_penjualan',
         'entitas_pembelian',
         'user_pengguna',
         'qrcode',
