@@ -96,8 +96,16 @@ Edit Aset
                     <option value="Baik Tidak Terpakai" <?= $aset['status'] == 'Baik Tidak Terpakai' ? 'selected' : '' ?>>Baik (Tidak Terpakai)</option>
                     <option value="Rusak" <?= $aset['status'] == 'Rusak' ? 'selected' : '' ?>>Rusak</option>
                     <option value="Perbaikan" <?= $aset['status'] == 'Perbaikan' ? 'selected' : '' ?>>Perbaikan</option>
+                    <option value="Penjualan" <?= $aset['status'] == 'Penjualan' ? 'selected' : '' ?>>Penjualan</option>
                 </select>
-                
+            </div>
+            <div class="col-md-6" id="harga-penjualan-wrapper" style="display: none;">
+                <label for="harga_penjualan" class="form-label">Harga Penjualan</label>
+                <input type="number" class="form-control" id="harga_penjualan" name="harga_penjualan" 
+                       value="<?= esc($aset['harga_penjualan'] ?? '') ?>" step="0.01" min="0">
+                <div class="form-text">Masukkan harga penjualan aset dalam Rupiah.</div>
+            </div>
+            <div class="col-md-6">
                 <div class="mt-3" id="pihak-kedua-wrapper" style="display: none;">
                     <label for="pihak-kedua" class="form-label fw-bold">Pihak Kedua (Penerima)</label>
                     <div class="input-group">
@@ -128,9 +136,14 @@ Edit Aset
                         <input type="hidden" id="hidden_estimasi_biaya" name="estimasi_biaya">
                         </div>
 
-                    <div class="mt-4 d-flex justify-content-end">
-                        <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    <div class="mt-4 d-flex justify-content-between">
+                        <button type="button" class="btn btn-danger" id="btn-pemusnahan">
+                            <i class="bi bi-trash-fill me-2"></i>Pemusnahan Aset
+                        </button>
+                        <div>
+                            <a href="<?= base_url('aset') ?>" class="btn btn-secondary me-2">Batal</a>
+                            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        </div>
                     </div>
                 </form>
 
@@ -536,6 +549,70 @@ $(document).ready(function() {
         }
     });
 
+    // =================================================================
+    // 4. LOGIKA UNTUK HARGA PENJUALAN (SHOW/HIDE)
+    // =================================================================
+    const statusDropdownHarga = document.getElementById('status');
+    const hargaPenjualanWrapper = document.getElementById('harga-penjualan-wrapper');
+    const hargaPenjualanInput = document.getElementById('harga_penjualan');
+
+    // Function to toggle harga penjualan visibility
+    function toggleHargaPenjualan() {
+        if (statusDropdownHarga.value === 'Penjualan') {
+            hargaPenjualanWrapper.style.display = 'block';
+            hargaPenjualanInput.required = true;
+        } else {
+            hargaPenjualanWrapper.style.display = 'none';
+            hargaPenjualanInput.required = false;
+        }
+    }
+
+    // Trigger on status change
+    statusDropdownHarga.addEventListener('change', toggleHargaPenjualan);
+
+    // Trigger on page load
+    toggleHargaPenjualan();
+
+    // =================================================================
+    // 5. KONFIRMASI PEMUSNAHAN ASET (SOFT DELETE)
+    // =================================================================
+    const btnPemusnahan = document.getElementById('btn-pemusnahan');
+    if (btnPemusnahan) {
+        btnPemusnahan.addEventListener('click', function() {
+            Swal.fire({
+                title: 'PERHATIAN!',
+                text: 'Anda akan memusnahkan aset ini. Aset yang dimusnahkan akan di-soft delete dan tidak muncul di daftar aset aktif. Apakah Anda yakin ingin melanjutkan?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Musnahkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Create form untuk soft delete
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '<?= base_url('aset/' . $aset['id'] . '/destroy') ?>';
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '<?= csrf_token() ?>';
+                    csrfInput.value = '<?= csrf_hash() ?>';
+                    
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'DELETE';
+                    
+                    form.appendChild(csrfInput);
+                    form.appendChild(methodInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+    }
     
 });
 
