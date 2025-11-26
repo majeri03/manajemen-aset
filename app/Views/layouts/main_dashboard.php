@@ -106,7 +106,22 @@
 
                     </ul>
                 </li>
+
+                <li class="nav-item mt-2">
+                    <div class="sidebar-heading <?= ($current_page == 'history') ? 'active-group' : '' ?>">Laporan & Riwayat</div>
+                    <ul class="nav flex-column">
+                        
+                        <li>
+                            <a href="<?= base_url('history') ?>" class="nav-link submenu-link <?= ($current_page == 'history') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Riwayat Aktivitas">
+                                <i class="bi bi-clock-history"></i> <span>History</span>
+                            </a>
+                        </li>
+
+                        </ul>
+                </li>
                 <?php endif; ?>
+
+                
             
 
             </ul>

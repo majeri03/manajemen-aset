@@ -56,6 +56,9 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('api/aset-by-location/(:num)', 'StockOpnameController::getAsetByLocation/$1');
     $routes->get('files/bukti/(:segment)', 'AsetController::serveDocument/$1');
 
+    // HISTORY
+    $routes->get('history', 'HistoryController::index');
+
     // ===================================================================
     // RUTE HANYA UNTUK ADMIN & SUPER_ADMIN
     // ===================================================================
@@ -95,6 +98,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
         // Generate PDF
         $routes->get('aset/generateSerahTerimaPdf/(:num)/(:num)', 'AsetController::generateSerahTerimaPdf/$1/$2');
         $routes->get('aset/generatePerbaikanPdf/(:num)', 'AsetController::generatePerbaikanPdf/$1');
+        $routes->get('aset/generatePenjualanPdf/(:num)', 'AsetController::generatePenjualanPdf/$1');
 
         // Fitur Import Data
         $routes->get('import', 'ImportController::index');

@@ -100,10 +100,18 @@ Edit Aset
                 </select>
             </div>
             <div class="col-md-6" id="harga-penjualan-wrapper" style="display: none;">
-                <label for="harga_penjualan" class="form-label">Harga Penjualan</label>
-                <input type="number" class="form-control" id="harga_penjualan" name="harga_penjualan" 
-                       value="<?= esc($aset['harga_penjualan'] ?? '') ?>" step="0.01" min="0">
-                <div class="form-text">Masukkan harga penjualan aset dalam Rupiah.</div>
+                <div class="mb-3">
+                    <label for="harga_penjualan" class="form-label">Harga Penjualan</label>
+                    <input type="number" class="form-control" id="harga_penjualan" name="harga_penjualan" 
+                        value="<?= esc($aset['harga_penjualan'] ?? '') ?>" step="0.01" min="0">
+                    <div class="form-text">Masukkan harga penjualan aset dalam Rupiah.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tanggal_penjualan" class="form-label">Tanggal Transaksi</label>
+                    <input type="date" class="form-control" id="tanggal_penjualan" name="tanggal_penjualan" 
+                        value="<?= date('Y-m-d') ?>" required> <div class="form-text">Tanggal yang akan tercetak di Berita Acara.</div>
+                </div>
             </div>
             <div class="col-md-6">
                 <div class="mt-3" id="pihak-kedua-wrapper" style="display: none;">
