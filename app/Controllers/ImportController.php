@@ -18,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use App\Models\DokumentasiAsetModel;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class ImportController extends BaseController
 {
@@ -222,12 +223,13 @@ class ImportController extends BaseController
 
         if ($asetModel->save([
             'kode'              => $kode,
+            'sumber_input'      => 'import',
             'kategori_id'       => $data['kategori_id'],
             'sub_kategori_id'   => $data['sub_kategori_id'],
             'merk_id'           => $data['merk_id'],
             'tipe_id'           => $data['tipe_id'],
             'serial_number'     => $data['serial_number'],
-            'tahun_beli'             => $data['tahun_beli'],
+            'tahun_beli'        => $data['tahun_beli'],
             'harga_beli'        => $data['harga_beli'],
             'entitas_pembelian' => $data['entitas_pembelian'],
             'user_pengguna'     => $data['user_pengguna'],
@@ -472,27 +474,49 @@ public function downloadTemplate()
     foreach ($statusList as $index => $item) {
         $masterSheet->setCellValue('D' . ($index + 1), $item);
     }
-    
-    $colIndex = 5; // Kolom E
+
+    $colIndex = 5; 
+
+    // LOOP 1: SUB KATEGORI
     foreach ($groupedSubKategori as $kategoriNama => $subKategoris) {
+        // [PERBAIKAN] Gunakan fungsi ini untuk mendapatkan huruf kolom (A, Z, AA, AB...)
+        $colLetter = Coordinate::stringFromColumnIndex($colIndex);
+
         foreach($subKategoris as $rowIndex => $subValue) {
-            $masterSheet->setCellValue(chr(64 + $colIndex) . ($rowIndex + 1), $subValue);
+            // Gunakan $colLetter menggantikan chr(...)
+            $masterSheet->setCellValue($colLetter . ($rowIndex + 1), $subValue);
         }
+        
+        // Update referensi NamedRange menggunakan huruf kolom yang benar
         $spreadsheet->addNamedRange(
-            new \PhpOffice\PhpSpreadsheet\NamedRange($kategoriNama, $masterSheet, '$'.chr(64 + $colIndex).'$1:$'.chr(64 + $colIndex).'$'.count($subKategoris))
-        );
-        $colIndex++;
-    }
-    foreach ($groupedTipe as $merkNama => $tipes) {
-        foreach($tipes as $rowIndex => $tipeValue) {
-            $masterSheet->setCellValue(chr(64 + $colIndex) . ($rowIndex + 1), $tipeValue);
-        }
-        $spreadsheet->addNamedRange(
-            new \PhpOffice\PhpSpreadsheet\NamedRange($merkNama, $masterSheet, '$'.chr(64 + $colIndex).'$1:$'.chr(64 + $colIndex).'$'.count($tipes))
+            new \PhpOffice\PhpSpreadsheet\NamedRange(
+                $kategoriNama, 
+                $masterSheet, 
+                '$' . $colLetter . '$1:$' . $colLetter . '$' . count($subKategoris)
+            )
         );
         $colIndex++;
     }
 
+    // LOOP 2: TIPE
+    foreach ($groupedTipe as $merkNama => $tipes) {
+        // [PERBAIKAN] Gunakan fungsi ini lagi
+        $colLetter = Coordinate::stringFromColumnIndex($colIndex);
+
+        foreach($tipes as $rowIndex => $tipeValue) {
+            $masterSheet->setCellValue($colLetter . ($rowIndex + 1), $tipeValue);
+        }
+        
+        // Update referensi NamedRange
+        $spreadsheet->addNamedRange(
+            new \PhpOffice\PhpSpreadsheet\NamedRange(
+                $merkNama, 
+                $masterSheet, 
+                '$' . $colLetter . '$1:$' . $colLetter . '$' . count($tipes)
+            )
+        );
+        $colIndex++;
+    }
     $masterSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
     // 4. Tulis header dan terapkan validasi ke semua baris

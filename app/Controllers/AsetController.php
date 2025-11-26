@@ -281,7 +281,7 @@ public function show($id = null)
         $entitas = $this->request->getPost('entitas_pembelian');
 
         $data = [
-            'kode'                => $newAssetCode, // Gunakan kode aset yang baru
+            'kode'                => $newAssetCode,
             'kategori_id'         => $this->request->getPost('kategori_id'),
             'sub_kategori_id'     => $subKategoriId,
             'merk_id'             => $merkId,
@@ -432,7 +432,7 @@ public function show($id = null)
      * @return ResponseInterface
      */
     public function update($id = null)
-{
+    {
         $asetSebelumnya = $this->model->getAsetDetail($id);
         if (!$asetSebelumnya) {
             return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
@@ -465,6 +465,8 @@ public function show($id = null)
             }
         }
 
+        $isPenjualan = ($statusSekarang === 'Penjualan');
+
         // LAKUKAN UPDATE DATA UTAMA
         if ($this->model->update($id, $data)) {
             // PROSES PDF SERAH TERIMA (JIKA ADA)
@@ -481,11 +483,54 @@ public function show($id = null)
                 $this->buatDanSimpanPdfPerbaikan($id, $data);
             }
 
+            if ($isPenjualan) {
+                $this->buatDanSimpanPdfPenjualan($id, $data);
+            }
+
             return redirect()->to('/aset')->with('success', 'Data aset berhasil diperbarui.');
         } else {
             return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data aset.');
         }
     }
+
+    private function buatDanSimpanPdfPenjualan($asetId, $dataPenjualan)
+{
+    $asetDetail = $this->asetModel->getAsetDetail($asetId);
+    if (!$asetDetail) return;
+
+    $userModel = new \App\Models\UserModel();
+    $currentUser = $userModel->find(session()->get('user_id'));
+
+    // AMBIL TANGGAL DARI INPUT, JIKA KOSONG PAKAI HARI INI
+    $tanggalInput = $dataPenjualan['tanggal_penjualan'] ?? date('Y-m-d');
+
+    $pdfData = [
+        'aset'       => $asetDetail,
+        'penjual'    => $currentUser,
+        'harga_jual' => $dataPenjualan['harga_penjualan'] ?? 0,
+        'tanggal'    => $tanggalInput, // Mengirim data tanggal custom ke View PDF
+    ];
+
+    $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+    $dompdf->loadHtml(view('aset/penjualan_pdf', $pdfData));
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+    $pdfOutput = $dompdf->output();
+
+    // ... (Sisa kode penyimpanan file sama seperti sebelumnya) ...
+    $filename = 'berita_acara_penjualan_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+    $path = WRITEPATH . 'uploads/aset_bukti/';
+
+    if (file_put_contents($path . $filename, $pdfOutput)) {
+        (new BerkasAsetModel())->save([
+            'aset_id'     => $asetId,
+            'path_file'   => $filename,
+            'nama_berkas' => 'BUKTI PENJUALAN ASET',
+            'tipe_file'   => 'application/pdf',
+            'ukuran_file' => strlen($pdfOutput)
+        ]);
+    }
+}
 
     private function buatDanSimpanPdfSerahTerima($asetId, $pihakPertama, $pihakKedua)
     {
@@ -515,6 +560,7 @@ public function show($id = null)
             ]);
         }
     }
+    
 
     private function buatDanSimpanPdfPerbaikan($asetId, $dataPermohonan)
     {
@@ -667,20 +713,80 @@ public function show($id = null)
      *
      * @return ResponseInterface
      */
-    public function destroy($id = null)
+public function destroy($id = null)
     {
-        // Validate aset exists
-        $aset = $this->asetModel->find($id);
-        if (!$aset) {
+        // 1. Ambil data aset LENGKAP sebelum dihapus
+        $asetDetail = $this->asetModel->getAsetDetail($id);
+        
+        if (!$asetDetail) {
             return redirect()->to('/aset')->with('error', 'Aset tidak ditemukan.');
         }
 
-        // Perform soft delete
+        // 2. Generate PDF Pemusnahan
+        $userModel = new \App\Models\UserModel();
+        $currentUser = $userModel->find(session()->get('user_id'));
+
+        $pdfData = [
+            'aset' => $asetDetail,
+            'user_pelaksana' => $currentUser
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/pemusnahan_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        // 3. Simpan PDF ke Server & Database (PENTING: Agar ada arsip)
+        $filename = 'BA_PEMUSNAHAN_' . str_replace('/', '-', $asetDetail['kode']) . '_' . time() . '.pdf';
+        $path = WRITEPATH . 'uploads/aset_bukti/';
+
+        if (file_put_contents($path . $filename, $pdfOutput)) {
+            (new BerkasAsetModel())->save([
+                'aset_id'     => $id,
+                'path_file'   => $filename,
+                'nama_berkas' => 'BERITA ACARA PEMUSNAHAN',
+                'tipe_file'   => 'application/pdf',
+                'ukuran_file' => strlen($pdfOutput)
+            ]);
+        }
+
+        // 4. Lakukan Soft Delete
         if ($this->asetModel->delete($id)) {
-            return redirect()->to('/aset')->with('success', 'Aset berhasil dimusnahkan (soft delete).');
+            
+            // 5. Buat Link Download untuk Notifikasi
+            // Kita arahkan ke route 'serveDocument' yang sudah Anda punya
+            $downloadLink = base_url("files/bukti/$filename");
+            
+            $message = "Aset berhasil dimusnahkan. <a href='$downloadLink' target='_blank' class='fw-bold text-decoration-underline'>Unduh Berita Acara Pemusnahan</a>";
+
+            return redirect()->to('/aset')->with('success', $message);
         } else {
             return redirect()->to('/aset')->with('error', 'Gagal memusnahkan aset.');
         }
+    }
+
+    public function generatePenjualanPdf($id = null)
+    {
+        $asetDetail = $this->asetModel->getAsetDetail($id);
+        if (!$asetDetail) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+
+        // Gunakan user login saat ini sebagai downloader/penanggung jawab cetak
+        $userModel = new \App\Models\UserModel();
+        $currentUser = $userModel->find(session()->get('user_id'));
+
+        $pdfData = [
+            'aset'       => $asetDetail,
+            'penjual'    => $currentUser,
+            'harga_jual' => $asetDetail['harga_penjualan'] ?? 0,
+            'tanggal'    => date('Y-m-d'),
+        ];
+
+        $dompdf = new Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml(view('aset/penjualan_pdf', $pdfData));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream('Salinan_BA_Penjualan_' . $asetDetail['kode'] . '.pdf');
     }
 
     public function search()
